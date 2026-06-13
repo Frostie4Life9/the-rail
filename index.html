@@ -1,0 +1,1892 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="The Rail" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#EFEBE3" />
+<title>The Rail</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600;6..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ink:#211F1C;
+    --ink-soft:#5A554D;
+    --bone:#EFEBE3;
+    --paper:#FBFAF6;
+    --line:#D8D2C6;
+    --line-soft:#E5DFD4;
+    --accent:#2A2EBF;
+    --accent-ink:#1B1E8A;
+    --danger:#A6402C;
+    --shadow:0 1px 2px rgba(33,31,28,.06), 0 8px 24px rgba(33,31,28,.06);
+    --radius:4px;
+    --display:'Bodoni Moda', Georgia, serif;
+    --sans:'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bone);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .eyebrow{
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    font-weight:600;color:var(--ink-soft);
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    background:rgba(239,235,227,.86);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1160px;margin:0 auto;padding:18px 24px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .wordmark{
+    font-family:var(--display);font-weight:600;font-size:34px;line-height:.9;
+    letter-spacing:.01em;
+  }
+  .wordmark .the{font-style:italic;font-weight:400;font-size:20px;color:var(--ink-soft);margin-right:6px}
+  .tagline{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+
+  .nav{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px}
+  .nav button{
+    border:0;background:transparent;color:var(--ink-soft);
+    padding:8px 18px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.04em;
+    transition:color .15s, background .15s;
+  }
+  .nav button .count{font-weight:500;opacity:.6;margin-left:5px}
+  .nav button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+  .nav button:not([aria-selected="true"]):hover{color:var(--ink)}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1160px;margin:0 auto;padding:28px 24px 96px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+  .view-title{font-family:var(--display);font-size:26px;font-weight:500;letter-spacing:.01em}
+  .view-sub{font-size:13px;color:var(--ink-soft);margin-top:2px}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+    padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.03em;
+    transition:transform .12s, background .15s, opacity .15s;
+  }
+  .btn:hover{background:#000}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn.ghost:hover{background:var(--paper)}
+  .btn.accent{background:var(--accent);border-color:var(--accent)}
+  .btn.accent:hover{background:var(--accent-ink)}
+  .btn.sm{padding:7px 13px;font-size:12px}
+  .btn svg{width:15px;height:15px;display:block}
+
+  /* ---------- Filters ---------- */
+  .filterbar{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line-soft);
+  }
+  .search{
+    flex:1;min-width:180px;display:flex;align-items:center;gap:8px;
+    background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:8px 14px;
+  }
+  .search input{border:0;background:transparent;outline:none;width:100%}
+  .search svg{width:15px;height:15px;color:var(--ink-soft);flex:none}
+  .chipset{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{
+    border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);
+    padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;
+    transition:all .14s;
+  }
+  .chip:hover{border-color:var(--ink-soft);color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+  /* ---------- Item grid ---------- */
+  .grid{
+    display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+  }
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 4px 8px rgba(33,31,28,.08),0 16px 36px rgba(33,31,28,.1)}
+  .card .thumb{
+    aspect-ratio:4/5;background:var(--line-soft);position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .thumb .ph{font-family:var(--display);font-style:italic;font-size:14px;color:var(--ink-soft)}
+  .card .cat-tag{
+    position:absolute;top:8px;left:8px;
+    background:rgba(251,250,246,.92);backdrop-filter:blur(4px);
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+    padding:4px 8px;border-radius:3px;color:var(--ink);
+  }
+  .card .meta{padding:11px 13px 13px}
+  .card .name{font-weight:600;font-size:14px;line-height:1.3;margin-bottom:5px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card .sub{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .dots{display:flex;gap:3px}
+  .dot{width:11px;height:11px;border-radius:50%;border:1px solid rgba(33,31,28,.18)}
+  .card .actions{display:flex;border-top:1px solid var(--line-soft)}
+  .card .actions button{
+    flex:1;border:0;background:transparent;color:var(--ink-soft);
+    padding:9px;font-size:12px;font-weight:600;letter-spacing:.03em;transition:background .14s,color .14s;
+  }
+  .card .actions button:hover{background:var(--bone);color:var(--ink)}
+  .card .actions button + button{border-left:1px solid var(--line-soft)}
+  .card .actions button.del:hover{color:var(--danger)}
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    text-align:center;padding:64px 24px;border:1px dashed var(--line);border-radius:var(--radius);
+    background:var(--paper);
+  }
+  .empty .mark{font-family:var(--display);font-style:italic;font-size:40px;color:var(--line);margin-bottom:8px}
+  .empty h3{font-family:var(--display);font-weight:500;font-size:20px;margin:0 0 6px}
+  .empty p{color:var(--ink-soft);font-size:14px;margin:0 0 20px;max-width:340px;margin-inline:auto}
+
+  /* ---------- Studio ---------- */
+  .studio{display:grid;grid-template-columns:1fr 360px;gap:28px;align-items:start}
+  .studio-pick .cat-block{margin-bottom:24px}
+  .studio-pick .cat-block h4{
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);
+    margin:0 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line-soft);
+  }
+  .pickrow{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .pick{
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--paper);
+    cursor:pointer;position:relative;transition:transform .12s;text-align:left;padding:0;
+  }
+  .pick:hover{transform:translateY(-2px)}
+  .pick .pthumb{aspect-ratio:1;background:var(--line-soft);overflow:hidden}
+  .pick .pthumb img{width:100%;height:100%;object-fit:cover}
+  .pick .pname{font-size:11.5px;font-weight:600;padding:7px 8px;line-height:1.25;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pick[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .pick[aria-pressed="true"]::after{
+    content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .board{
+    position:sticky;top:96px;background:var(--paper);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+  }
+  .board-head{padding:16px 18px;border-bottom:1px solid var(--line-soft)}
+  .board-head .eyebrow{margin-bottom:4px}
+  .board-head h3{font-family:var(--display);font-weight:500;font-size:19px;margin:0}
+  .board-body{padding:16px 18px;min-height:120px}
+  .lay{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .lay .laycell{position:relative;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden;aspect-ratio:1;background:var(--line-soft)}
+  .lay .laycell img{width:100%;height:100%;object-fit:cover}
+  .lay .laycell .x{
+    position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:0;
+    background:rgba(33,31,28,.78);color:#fff;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;
+  }
+  .lay .laycell .clabel{position:absolute;bottom:0;left:0;right:0;background:rgba(251,250,246,.9);font-size:9px;
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:3px 5px;color:var(--ink-soft)}
+  .board-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:18px 4px;font-style:italic;font-family:var(--display)}
+  .board-foot{padding:14px 18px 18px;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:10px}
+  .board-foot input{width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;background:var(--bone);outline:none}
+  .board-foot .row{display:flex;gap:8px}
+  .board-foot .row .btn{flex:1;justify-content:center}
+
+  /* ---------- Lookbook ---------- */
+  .looks{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+  .look{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .look .lhead{padding:14px 16px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .look .lhead h3{font-family:var(--display);font-weight:500;font-size:18px;margin:0;line-height:1.2}
+  .look .lhead .when{font-size:11px;color:var(--ink-soft);margin-top:3px;letter-spacing:.04em}
+  .look .lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line-soft)}
+  .look .lgrid .lc{aspect-ratio:1;background:var(--line-soft);overflow:hidden}
+  .look .lgrid .lc img{width:100%;height:100%;object-fit:cover}
+  .look .lfoot{padding:11px 16px;display:flex;justify-content:space-between;align-items:center}
+  .look .lfoot .pieces{font-size:11.5px;color:var(--ink-soft);letter-spacing:.03em}
+  .iconbtn{border:0;background:transparent;color:var(--ink-soft);padding:5px;border-radius:5px;display:flex;transition:color .14s,background .14s}
+  .iconbtn:hover{color:var(--danger);background:var(--bone)}
+  .iconbtn svg{width:16px;height:16px}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:60;background:rgba(33,31,28,.42);backdrop-filter:blur(3px);
+    display:none;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;
+  }
+  .overlay.open{display:flex;animation:fade .2s ease}
+  .modal{
+    background:var(--paper);border-radius:6px;width:100%;max-width:540px;box-shadow:0 24px 64px rgba(0,0,0,.3);
+    animation:pop .24s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  .modal-head{padding:20px 24px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center}
+  .modal-head h2{font-family:var(--display);font-weight:500;font-size:22px;margin:0}
+  .modal-head .close{border:0;background:transparent;font-size:22px;color:var(--ink-soft);line-height:1;padding:4px 8px;border-radius:6px}
+  .modal-head .close:hover{background:var(--bone);color:var(--ink)}
+  .modal-body{padding:22px 24px}
+
+  .uploader{
+    border:1px dashed var(--line);border-radius:var(--radius);aspect-ratio:4/5;max-height:280px;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+    background:var(--bone);cursor:pointer;overflow:hidden;position:relative;transition:border-color .15s;
+  }
+  .uploader:hover{border-color:var(--ink-soft)}
+  .uploader.has{background:#15140f;cursor:default}
+  .uploader.has img{width:100%;height:100%;object-fit:contain;background:#15140f;cursor:crosshair}
+  .uploader .hint{font-size:13px;color:var(--ink-soft);text-align:center;padding:0 20px}
+  .uploader .hint b{color:var(--ink);font-weight:600}
+  .uploader svg{width:26px;height:26px;color:var(--ink-soft)}
+  .reshoot{position:absolute;top:8px;right:8px;border:0;background:rgba(33,31,28,.82);color:#fff;font-size:11px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;z-index:2}
+  .cp-tip{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(33,31,28,.78);color:#fff;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:4px 11px;border-radius:999px;pointer-events:none;z-index:2}
+
+  .field label .lbl-aux{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink-soft);opacity:.85;font-size:11px}
+  .cp-hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 11px}
+  .cp-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .cp-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bone);border-radius:999px;padding:4px 10px 4px 5px;font-size:12px;font-weight:600;color:var(--ink)}
+  .cp-chip.open{border-color:var(--ink-soft);background:var(--paper)}
+  .cp-face{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:0;cursor:pointer;color:inherit;font:inherit}
+  .cp-dot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(33,31,28,.22);flex:none}
+  .cp-name{text-transform:capitalize;letter-spacing:.01em}
+  .cp-detail{display:inline-flex;align-items:center;gap:7px;padding-left:8px;border-left:1px solid var(--line)}
+  .cp-square{width:26px;height:26px;border-radius:5px;border:1px solid rgba(33,31,28,.22);flex:none}
+  .cp-hex{font-variant-numeric:tabular-nums;letter-spacing:.04em;text-transform:uppercase;font-size:11px;color:var(--ink-soft)}
+  .cp-x{border:0;background:none;color:var(--ink-soft);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;margin-left:1px}
+  .cp-chip:hover .cp-x, .cp-x:hover{color:var(--danger)}
+  .cp-add{display:inline-flex;align-items:center;gap:9px;border:1px dashed var(--line);border-radius:999px;padding:6px 15px 6px 7px;font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+  .cp-add:hover{border-color:var(--ink-soft);color:var(--ink)}
+  .cp-add input[type=color]{width:26px;height:26px;border:0;background:none;padding:0;cursor:pointer}
+  .cp-add input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .cp-add input[type=color]::-webkit-color-swatch{border:1px solid rgba(33,31,28,.25);border-radius:50%}
+  .cp-add input[type=color]::-moz-color-swatch{border:1px solid rgba(33,31,28,.25);border-radius:50%}
+
+  .field{margin-top:16px}
+  .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);margin-bottom:7px}
+  .field input[type=text], .field select, .field textarea{
+    width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:var(--bone);outline:none;
+  }
+  .field textarea{resize:vertical;min-height:60px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .swatches{display:flex;flex-wrap:wrap;gap:8px}
+  .sw{width:30px;height:30px;border-radius:50%;border:1px solid rgba(33,31,28,.2);position:relative;cursor:pointer;transition:transform .12s}
+  .sw:hover{transform:scale(1.1)}
+  .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--accent)}
+  .seasons{display:flex;gap:7px;flex-wrap:wrap}
+  .modal-foot{padding:16px 24px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end;gap:10px}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--paper);padding:12px 22px;border-radius:999px;font-size:13px;font-weight:600;
+    box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .3s;z-index:80;letter-spacing:.02em;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .storage-note{
+    margin-top:14px;font-size:11.5px;color:var(--ink-soft);text-align:center;letter-spacing:.02em;
+  }
+
+  /* ---------- Stylist ---------- */
+  .nav{max-width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{white-space:nowrap}
+
+  .brief{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 20px;box-shadow:var(--shadow);margin-bottom:26px}
+  .brief > label.eyebrow{display:block;margin-bottom:9px}
+  .brief textarea{width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;background:var(--bone);outline:none;resize:vertical;min-height:54px;font-size:15px;line-height:1.45}
+  .brief-chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 16px}
+  .brief-chips .chip{cursor:pointer}
+  .brief-go{width:100%;justify-content:center}
+  .brief-go.loading{opacity:.7;pointer-events:none}
+
+  .composing{display:flex;align-items:center;gap:11px;font-family:var(--display);font-style:italic;font-size:16px;color:var(--ink-soft);margin-bottom:18px}
+  .dot-pulse{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite ease-in-out}
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+
+  .prop-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .prop{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:14px}
+  .prop-head h3{font-family:var(--display);font-weight:500;font-size:21px;margin:3px 0 0;line-height:1.15}
+  .prop-items{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+  .pi{flex:0 0 auto;width:74px}
+  .pi-img{width:74px;height:88px;border-radius:3px;overflow:hidden;background:var(--line-soft);display:flex;align-items:center;justify-content:center}
+  .pi-img img{width:100%;height:100%;object-fit:cover}
+  .pi-img .np{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;text-align:center;padding:4px}
+  .pi-name{display:block;font-size:11px;line-height:1.25;margin-top:5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prop-row{display:flex;flex-direction:column;gap:5px}
+  .plabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+  .prop-row p{margin:0;font-size:13.5px;line-height:1.5}
+  .wtags{display:flex;flex-wrap:wrap;gap:6px}
+  .wtag{background:var(--bone);border:1px solid var(--line-soft);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--ink)}
+  .prop-actions{display:flex;gap:8px;margin-top:2px}
+  .prop-actions .btn{flex:1;justify-content:center}
+  .prop-placeholder{border:1px dashed var(--line);border-radius:var(--radius);background:var(--paper);padding:34px 24px;text-align:center;color:var(--ink-soft);font-size:14px}
+  .gaps{margin-top:22px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+  .gaps p{margin:0;font-size:13.5px;line-height:1.5}
+  .stylist-note{margin-top:16px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.5}
+  .recompose{margin-top:22px;text-align:center}
+
+  .skel .sk-line{height:12px;border-radius:4px;margin-top:4px;background:linear-gradient(90deg,var(--line-soft),#efe9dd,var(--line-soft));background-size:200% 100%;animation:sh 1.3s infinite}
+  .skel .sk-line.w40{width:40%}.skel .sk-line.w70{width:70%}.skel .sk-line.w90{width:90%}
+  .skel .sk-items{display:flex;gap:10px}
+  .skel .sk-items span{width:74px;height:88px;border-radius:3px;background:linear-gradient(90deg,var(--line-soft),#efe9dd,var(--line-soft));background-size:200% 100%;animation:sh 1.3s infinite}
+  @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* discovery toggle */
+  .toggle{position:relative;display:flex;align-items:flex-start;gap:11px;cursor:pointer;margin:2px 0 16px;font-size:13px;color:var(--ink-soft);font-weight:500}
+  .toggle input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+  .tg-track{flex:0 0 auto;box-sizing:border-box;width:40px;height:23px;border-radius:999px;background:#c4bdad;border:1px solid rgba(33,31,28,.14);position:relative;transition:background .18s,border-color .18s;margin-top:1px}
+  .tg-thumb{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;border:1px solid rgba(33,31,28,.2);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .18s}
+  .toggle input:checked ~ .tg-track{background:var(--accent);border-color:var(--accent)}
+  .toggle input:checked ~ .tg-track .tg-thumb{transform:translateX(17px)}
+  .toggle input:focus-visible ~ .tg-track{outline:2px solid var(--accent);outline-offset:2px}
+  .tg-label{flex:1;min-width:0;line-height:1.35;padding-top:1px}
+
+  /* body map figure */
+  .bodymap{position:relative;width:154px;height:248px;margin:6px auto 4px;color:var(--line)}
+  .bm-figure{position:absolute;inset:0;width:100%;height:100%}
+  .bm-node{position:absolute;width:36px;height:36px;transform:translate(-50%,-50%);border-radius:8px;overflow:hidden;background:var(--paper);border:1px solid var(--ink);box-shadow:0 2px 7px rgba(33,31,28,.2);display:flex;align-items:center;justify-content:center}
+  .bm-node img{width:100%;height:100%;object-fit:cover}
+  .bm-node.bm-new{border:1.5px dashed var(--accent);background:var(--bone)}
+  .bm-concept{width:18px;height:18px;border-radius:50%;border:1px solid rgba(33,31,28,.25)}
+  .bm-abbr{font-size:10px;font-weight:700;color:var(--ink-soft)}
+  .prop-caption{font-size:12px;color:var(--ink-soft);line-height:1.55;text-align:center;margin:2px 0 0}
+  .concept-name{color:var(--accent);font-weight:600}
+  .prop-legend{display:flex;justify-content:center;gap:16px;font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);margin-top:4px}
+  .prop-legend span{display:inline-flex;align-items:center;gap:5px}
+  .lg-own{width:11px;height:11px;border-radius:3px;border:1px solid var(--ink);background:var(--paper)}
+  .lg-new{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--accent);background:var(--bone)}
+
+  /* backup bar */
+  .backup-bar{margin-top:30px;padding-top:18px;border-top:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .bk-status{font-size:12px;color:var(--ink-soft);line-height:1.5;flex:1;min-width:200px}
+  .bk-actions{display:flex;gap:8px}
+
+  /* connect-AI */
+  .ai-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px;padding:11px 14px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+  .ai-state{font-size:12.5px;font-weight:600;color:var(--ink-soft);letter-spacing:.02em}
+  .ai-panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:-6px 0 20px;display:flex;flex-direction:column;gap:12px}
+  .ai-panel[hidden]{display:none}
+  .ai-help{margin:0;font-size:13px;line-height:1.5;color:var(--ink)}
+  .ai-help a{color:var(--accent);font-weight:600}
+  .ai-panel input{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:var(--bone);outline:none;font-size:14px}
+  .ai-actions{display:flex;gap:8px;justify-content:flex-end}
+  .ai-note{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-soft)}
+
+  /* cross-device sync */
+  .sync-bar{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .sync-steps{margin:0;padding-left:20px;font-size:13px;line-height:1.6;color:var(--ink)}
+  .sync-steps a{color:var(--accent);font-weight:600}
+  .sync-sql{width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:11px 12px;background:#15140f;color:#e9e4d8;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
+  #sync-panel input{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:var(--bone);outline:none;font-size:14px}
+
+  @media (max-width:780px){
+    .studio{grid-template-columns:1fr}
+    .board{position:static}
+    .wordmark{font-size:28px}
+    .topbar-inner{padding:14px 18px}
+    .wrap{padding:22px 18px 96px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="wordmark"><span class="the">the</span>RAIL</div>
+      <div class="tagline">Catalog · Compose · Reinvent</div>
+    </div>
+    <nav class="nav" role="tablist">
+      <button role="tab" aria-selected="true" data-view="rail">Rail<span class="count" id="cnt-rail"></span></button>
+      <button role="tab" aria-selected="false" data-view="stylist">Stylist</button>
+      <button role="tab" aria-selected="false" data-view="studio">Studio</button>
+      <button role="tab" aria-selected="false" data-view="lookbook">Lookbook<span class="count" id="cnt-looks"></span></button>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- RAIL (catalog) -->
+  <section class="view active" id="view-rail" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <div class="view-title">Your Rail</div>
+        <div class="view-sub">Every piece you own, photographed and tagged.</div>
+      </div>
+      <button class="btn accent" id="add-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add a piece
+      </button>
+    </div>
+
+    <div class="filterbar" id="filterbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input type="text" id="search" placeholder="Search your pieces…" />
+      </div>
+      <div class="chipset" id="cat-filters"></div>
+    </div>
+
+    <div id="rail-grid" class="grid"></div>
+
+    <div class="backup-bar" id="backup-bar">
+      <div class="bk-status" id="bk-status"></div>
+      <div class="bk-actions">
+        <button class="btn ghost sm" id="export-btn">Export backup</button>
+        <button class="btn ghost sm" id="import-btn">Import</button>
+      </div>
+    </div>
+    <input type="file" id="import-input" accept="application/json,.json" hidden />
+
+    <div class="sync-bar">
+      <span class="bk-status" id="sync-state">Cloud sync: off</span>
+      <div class="bk-actions">
+        <button class="btn ghost sm" id="sync-now-btn" hidden>Sync now</button>
+        <button class="btn ghost sm" id="sync-settings-btn">Set up sync</button>
+      </div>
+    </div>
+    <div class="ai-panel" id="sync-panel" hidden>
+      <p class="ai-help">Free auto-sync across your devices via Supabase. One-time setup:</p>
+      <ol class="sync-steps">
+        <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> (no card needed).</li>
+        <li>Open the project's <b>SQL Editor</b> → New query, paste this, and hit Run:</li>
+      </ol>
+      <textarea id="sync-sql" class="sync-sql" readonly rows="6"></textarea>
+      <button class="btn ghost sm" id="copy-sql-btn">Copy SQL</button>
+      <ol class="sync-steps" start="3">
+        <li>In <b>Project Settings → API</b>, copy your <b>Project URL</b> and the <b>anon public</b> key below.</li>
+        <li>Choose a private sync code — any phrase. Use the <i>same</i> one on every device.</li>
+      </ol>
+      <input type="text" id="sync-url" placeholder="Project URL (https://xxxx.supabase.co)" autocomplete="off" spellcheck="false" />
+      <input type="password" id="sync-key" placeholder="anon public key" autocomplete="off" spellcheck="false" />
+      <input type="text" id="sync-code" placeholder="Your private sync code" autocomplete="off" spellcheck="false" />
+      <div class="ai-actions">
+        <button class="btn ghost sm" id="sync-disconnect">Disconnect</button>
+        <button class="btn accent sm" id="sync-save">Save &amp; sync</button>
+      </div>
+      <p class="ai-note">Keep your sync code private — anyone with your URL, key, and code could read this wardrobe. Don't store anything sensitive.</p>
+    </div>
+  </section>
+
+  <!-- STUDIO (builder) -->
+  <section class="view" id="view-studio" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <div class="view-title">The Studio</div>
+        <div class="view-sub">Tap pieces to build a look — or shuffle for something you'd never try.</div>
+      </div>
+      <button class="btn ghost" id="shuffle-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg>
+        Shuffle a look
+      </button>
+    </div>
+    <div class="studio">
+      <div class="studio-pick" id="studio-pick"></div>
+      <div class="board">
+        <div class="board-head">
+          <div class="eyebrow">Now styling</div>
+          <h3 id="board-title">Untitled look</h3>
+        </div>
+        <div class="board-body" id="board-body"></div>
+        <div class="board-foot">
+          <input type="text" id="look-name" placeholder="Name this look (e.g. Friday dinner)" />
+          <div class="row">
+            <button class="btn ghost sm" id="clear-look">Clear</button>
+            <button class="btn accent sm" id="save-look">Save to Lookbook</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STYLIST (smart creator) -->
+  <section class="view" id="view-stylist" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <div class="view-title">The Stylist</div>
+        <div class="view-sub">Tell me where you're headed — I'll invent looks from your rail and say where to wear them.</div>
+      </div>
+    </div>
+
+    <div class="brief">
+      <label class="eyebrow" for="brief-input">Your brief</label>
+      <textarea id="brief-input" rows="2" placeholder="e.g. first day at a creative studio · dinner date downtown · weekend travel in mild weather"></textarea>
+      <div class="brief-chips" id="brief-chips"></div>
+      <label class="toggle">
+        <input type="checkbox" id="discover-toggle" />
+        <span class="tg-track"><span class="tg-thumb"></span></span>
+        <span class="tg-label">Discovery mode — suggest pieces I don't own yet, to try new styles</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="visual-toggle" />
+        <span class="tg-track"><span class="tg-thumb"></span></span>
+        <span class="tg-label">Visual mode — let the AI see your clothes' photos (richer, but slower)</span>
+      </label>
+      <button class="btn accent brief-go" id="compose-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.4 6.6L22 12l-6.6 2.4L13 21l-2.4-6.6L4 12l6.6-2.4L13 3Z"/></svg>
+        Compose looks
+      </button>
+    </div>
+
+    <div class="ai-bar">
+      <span class="ai-state" id="ai-state">Stylist engine: on-device</span>
+      <button class="btn ghost sm" id="ai-settings-btn">Connect free AI</button>
+    </div>
+    <div class="ai-panel" id="ai-panel" hidden>
+      <p class="ai-help">Get a <b>free</b> Google AI key (no credit card) at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, paste it below, and the Stylist invents real AI outfits — free, right on your phone.</p>
+      <input type="password" id="ai-key" placeholder="Paste your Gemini API key" autocomplete="off" spellcheck="false" />
+      <div class="ai-actions">
+        <button class="btn ghost sm" id="ai-remove">Remove</button>
+        <button class="btn accent sm" id="ai-save">Save key</button>
+      </div>
+      <p class="ai-note">Stored only on this device, never in the shared file. On Google's free tier, prompts may be used to improve their models — fine for wardrobe data, but don't enter anything sensitive.</p>
+    </div>
+
+    <div id="stylist-results"></div>
+  </section>
+
+  <!-- LOOKBOOK -->
+  <section class="view" id="view-lookbook" role="tabpanel">
+    <div class="view-head">
+      <div>
+        <div class="view-title">Lookbook</div>
+        <div class="view-sub">Outfits you've composed and saved.</div>
+      </div>
+    </div>
+    <div id="looks-grid" class="looks"></div>
+  </section>
+
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <h2 id="modal-title">Add a piece</h2>
+      <button class="close" id="modal-close" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="file" accept="image/*" id="file-input" hidden />
+      <div class="uploader" id="uploader"></div>
+
+      <div class="field">
+        <label for="f-name">Name</label>
+        <input type="text" id="f-name" placeholder="e.g. Cream linen overshirt" />
+      </div>
+
+      <div class="field">
+        <label for="f-cat">Category</label>
+        <select id="f-cat"></select>
+      </div>
+
+      <div class="field">
+        <label>Dress code <span class="lbl-aux">— pick all that apply</span></label>
+        <div class="chipset" id="f-formality"></div>
+      </div>
+
+      <div class="field">
+        <label>Colors <span class="lbl-aux">— tap the photo to sample</span></label>
+        <div class="colorpick">
+          <p class="cp-hint" id="cp-hint">Add a photo, then tap it to pull exact colors.</p>
+          <div class="cp-chips" id="cp-chips"></div>
+          <label class="cp-add">
+            <input type="color" id="cp-input" value="#7a6f5d" />
+            <span>＋ Pick a color manually</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Season</label>
+        <div class="seasons chipset" id="f-seasons"></div>
+      </div>
+
+      <div class="field">
+        <label for="f-notes">Notes</label>
+        <textarea id="f-notes" placeholder="Fit, fabric, what it pairs with, where you bought it…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="modal-cancel">Cancel</button>
+      <button class="btn accent" id="modal-save">Save piece</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- constants ---------------- */
+  const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
+  const FORMALITY  = ["Casual","Smart casual","Formal","Activewear","Loungewear"];
+  const SEASONS    = ["Spring","Summer","Fall","Winter","All-season"];
+  // Legacy color names from the first version → hex, for migrating old items.
+  const LEGACY = {Black:"#1d1d1d",White:"#f4f1e9",Grey:"#9a958c",Beige:"#d8c7a8",Brown:"#7a5230",
+    Navy:"#243049",Blue:"#3f6fb0",Green:"#4f6b43",Red:"#a93226",Pink:"#d98aa6",
+    Purple:"#6f4c8e",Yellow:"#e0b53d",Orange:"#cf7a2e",Multi:"#808080"};
+  const rgbToHex = (r,g,b) => "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+
+  /* ---------------- storage layer ----------------
+     Tiers: Claude artifact storage (in-chat) > IndexedDB (hosted / home-screen app
+     on your phone, persists permanently) > in-memory (last resort). */
+  const memory = {};
+  const nativeStore = (typeof window !== "undefined" && window.storage) ? window.storage : null;
+  const hasIDB = !nativeStore && (typeof indexedDB !== "undefined");
+  const persistAvailable = !!nativeStore || hasIDB;
+  const native = persistAvailable; // truthy when saving can actually persist
+
+  let _idb = null;
+  function idbOpen(){
+    return new Promise(resolve=>{
+      if(_idb) return resolve(_idb);
+      try{
+        const req = indexedDB.open("the-rail", 1);
+        req.onupgradeneeded = ()=>{ req.result.createObjectStore("kv"); };
+        req.onsuccess = ()=>{ _idb = req.result; resolve(_idb); };
+        req.onerror = ()=>resolve(null);
+      }catch(e){ resolve(null); }
+    });
+  }
+  const idbStore = {
+    async get(key){ const db=await idbOpen(); if(!db) throw 0; return new Promise((res,rej)=>{ const rq=db.transaction("kv","readonly").objectStore("kv").get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); },
+    async set(key,val){ const db=await idbOpen(); if(!db) throw 0; return new Promise((res,rej)=>{ const tx=db.transaction("kv","readwrite"); tx.objectStore("kv").put(val,key); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); },
+    async del(key){ const db=await idbOpen(); if(!db) throw 0; return new Promise((res,rej)=>{ const tx=db.transaction("kv","readwrite"); tx.objectStore("kv").delete(key); tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error); }); },
+    async keys(){ const db=await idbOpen(); if(!db) throw 0; return new Promise((res,rej)=>{ const rq=db.transaction("kv","readonly").objectStore("kv").getAllKeys(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); }
+  };
+
+  const store = {
+    async set(key, val){
+      const json = JSON.stringify(val);
+      if(nativeStore){ try{ await nativeStore.set(key, json, false); return true; }catch(e){ return false; } }
+      if(hasIDB){ try{ await idbStore.set(key, json); return true; }catch(e){ memory[key]=json; return true; } }
+      memory[key] = json; return true;
+    },
+    async get(key){
+      if(nativeStore){ try{ const r = await nativeStore.get(key, false); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } }
+      if(hasIDB){ try{ const v = await idbStore.get(key); return v ? JSON.parse(v) : null; }catch(e){ return memory[key]?JSON.parse(memory[key]):null; } }
+      return memory[key] ? JSON.parse(memory[key]) : null;
+    },
+    async del(key){
+      if(nativeStore){ try{ await nativeStore.delete(key, false); }catch(e){} return; }
+      if(hasIDB){ try{ await idbStore.del(key); }catch(e){} return; }
+      delete memory[key];
+    },
+    async listKeys(prefix){
+      if(nativeStore){ try{ const r = await nativeStore.list(prefix, false); return r ? r.keys : []; }catch(e){ return []; } }
+      if(hasIDB){ try{ const ks = await idbStore.keys(); return ks.filter(k=>String(k).startsWith(prefix)); }catch(e){ return []; } }
+      return Object.keys(memory).filter(k=>k.startsWith(prefix));
+    }
+  };
+
+  /* ---------------- state ---------------- */
+  let items = [];        // {id,name,category,formality,colors[],seasons[],notes,image}
+  let outfits = [];      // {id,name,itemIds[],createdAt}
+  let look = { name:"", ids:[] };
+  let editingId = null;
+  let draftImage = null;
+  let draftColors = [];   // hex strings sampled/picked for the piece being edited
+  let expandedColorHexes = new Set();  // which color chips are showing their hex
+  let sampleCV = null;    // offscreen canvas holding the current photo for color sampling
+  let proposals = [];     // current stylist outfit proposals
+  let proposalsLocal = false;
+  let proposalsGaps = "";
+  let persistConfirmed = false;  // becomes true once data is seen surviving a prior session
+  let lastSavedAt = null;
+  let geminiKey = null;       // user's free Google Gemini key, stored on-device only
+  let engineUsed = "on-device";
+  let lastAIError = "";
+  let supaUrl = null, supaKey = null, syncCode = null;  // Supabase cross-device sync
+  let localVer = 0;           // version stamp of this device's data
+  let lastSyncLabel = "";
+  let _pushTimer = null;
+  let filterCat = "All";
+  let searchTerm = "";
+
+  /* ---------------- helpers ---------------- */
+  const $ = s => document.querySelector(s);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const esc = s => (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function toast(msg){
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  // Robust decode: createImageBitmap handles EXIF orientation + large mobile photos
+  // efficiently; falls back to FileReader+Image where unsupported.
+  async function fileToDataURL(file, maxDim=900, quality=0.78){
+    let w, h, drawable;
+    try{
+      const bmp = await createImageBitmap(file, { imageOrientation:"from-image" });
+      w = bmp.width; h = bmp.height; drawable = bmp;
+    }catch(e){
+      drawable = await new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("read"));
+        reader.onload = ev => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("decode"));
+          img.onload = () => { w = img.naturalWidth; h = img.naturalHeight; resolve(img); };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    const cw = Math.max(1, Math.round(w*scale)), ch = Math.max(1, Math.round(h*scale));
+    const cv = document.createElement("canvas");
+    cv.width = cw; cv.height = ch;
+    cv.getContext("2d").drawImage(drawable, 0, 0, cw, ch);
+    if(drawable.close) drawable.close();
+    return cv.toDataURL("image/jpeg", quality);
+  }
+
+  // Hold the compressed photo in an offscreen canvas so taps can read pixels.
+  function prepareSample(dataURL){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onerror = () => { sampleCV = null; resolve(); };
+      img.onload = () => {
+        sampleCV = document.createElement("canvas");
+        sampleCV.width = img.naturalWidth; sampleCV.height = img.naturalHeight;
+        sampleCV.getContext("2d", { willReadFrequently:true }).drawImage(img, 0, 0);
+        resolve();
+      };
+      img.src = dataURL;
+    });
+  }
+
+  // Map a tap on the (object-fit:contain) preview to a source pixel and sample it.
+  function samplePhotoColor(ev){
+    if(!sampleCV) return;
+    const img = ev.currentTarget;
+    const rect = img.getBoundingClientRect();
+    const nx = sampleCV.width, ny = sampleCV.height;
+    const scale = Math.min(rect.width/nx, rect.height/ny);
+    const dispW = nx*scale, dispH = ny*scale;
+    const ox = (rect.width - dispW)/2, oy = (rect.height - dispH)/2;
+    let ix = (ev.clientX - rect.left - ox)/scale;
+    let iy = (ev.clientY - rect.top  - oy)/scale;
+    if(ix < 0 || iy < 0 || ix >= nx || iy >= ny) return; // tapped the letterbox
+    const d = sampleCV.getContext("2d", { willReadFrequently:true })
+                      .getImageData(Math.floor(ix), Math.floor(iy), 1, 1).data;
+    addColor(rgbToHex(d[0], d[1], d[2]));
+  }
+
+  function addColor(hex){
+    hex = hex.toLowerCase();
+    if(draftColors.includes(hex)){ toast("That color's already added"); return; }
+    if(draftColors.length >= 8){ toast("Up to 8 colors per piece"); return; }
+    draftColors.push(hex);
+    renderColorPicker();
+    toast("Color added");
+  }
+
+  function renderColorPicker(){
+    const chips = $("#cp-chips");
+    chips.innerHTML = draftColors.map((hex,i)=>{
+      const name = colorName(hex);
+      const open = expandedColorHexes.has(hex);
+      const detail = open
+        ? `<span class="cp-detail"><span class="cp-square" style="background:${hex}"></span><span class="cp-hex">${hex}</span></span>`
+        : "";
+      return `<div class="cp-chip${open?" open":""}">
+        <button type="button" class="cp-face" data-expand="${i}">
+          <span class="cp-dot" style="background:${hex}"></span><span class="cp-name">${esc(name)}</span>
+        </button>${detail}
+        <button type="button" class="cp-x" data-del="${i}" aria-label="Remove ${esc(name)}">×</button>
+      </div>`;
+    }).join("");
+    chips.querySelectorAll("[data-expand]").forEach(b=>b.addEventListener("click",()=>{
+      const hex = draftColors[+b.dataset.expand];
+      if(expandedColorHexes.has(hex)) expandedColorHexes.delete(hex); else expandedColorHexes.add(hex);
+      renderColorPicker();
+    }));
+    chips.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+      const hex = draftColors[+b.dataset.del];
+      expandedColorHexes.delete(hex);
+      draftColors.splice(+b.dataset.del,1);
+      renderColorPicker();
+    }));
+    const hint = $("#cp-hint");
+    if(!draftImage) hint.textContent = "Add a photo, then tap it to pull exact colors — or pick manually below.";
+    else if(draftColors.length===0) hint.textContent = "Tap anywhere on the photo to sample its colors.";
+    else hint.textContent = "Tap a color to see its exact shade, or the × to remove it.";
+  }
+
+  async function onFilePicked(e){
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ""; // let the same file be re-picked later
+    if(!file) return;
+    try{
+      toast("Processing photo…");
+      draftImage = await fileToDataURL(file);
+      await prepareSample(draftImage);
+      renderUploader();
+      renderColorPicker();
+    }catch(err){
+      console.error(err);
+      toast("Couldn't process that photo — try another");
+    }
+  }
+
+  /* ---------------- persistence ---------------- */
+  function normalizeItem(it){
+    if(typeof it.formality === "string") it.formality = it.formality ? [it.formality] : [];
+    if(!Array.isArray(it.formality)) it.formality = [];
+    it.colors = (it.colors||[]).map(c => (c && c[0]==="#") ? c : (LEGACY[c]||null)).filter(Boolean);
+    return it;
+  }
+
+  async function loadAll(){
+    const itemKeys = await store.listKeys("item:");
+    const loadedItems = [];
+    for(const k of itemKeys){ const v = await store.get(k); if(v) loadedItems.push(v); }
+    items = loadedItems.sort((a,b)=> (b.created||0)-(a.created||0)).map(normalizeItem);
+
+    const outfitKeys = await store.listKeys("outfit:");
+    const loadedOutfits = [];
+    for(const k of outfitKeys){ const v = await store.get(k); if(v) loadedOutfits.push(v); }
+    outfits = loadedOutfits.sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  }
+
+  async function saveItem(item){
+    const ok = await store.set("item:"+item.id, item);
+    if(ok){ lastSavedAt = Date.now(); updateBackupStatus(); }
+    else if(native){ toast("Couldn't save to this device — export a backup to be safe"); }
+    return ok;
+  }
+  async function removeItem(id){ await store.del("item:"+id); }
+  async function saveOutfit(o){
+    const ok = await store.set("outfit:"+o.id, o);
+    if(ok){ lastSavedAt = Date.now(); updateBackupStatus(); }
+    return ok;
+  }
+
+  // Write a sentinel; if a prior sentinel exists on load, persistence is genuinely working.
+  async function checkPersistence(){
+    if(!native) return;
+    try{
+      const prior = await store.get("railPersistCheck");
+      if(prior && prior.seen) persistConfirmed = true;
+    }catch(e){}
+    try{ await store.set("railPersistCheck", { seen:true, at:Date.now() }); }catch(e){}
+  }
+  function updateBackupStatus(){
+    const el = $("#bk-status"); if(!el) return;
+    let msg;
+    if(!persistAvailable){
+      msg = "Saving isn't available here. If you opened a downloaded file directly, host it and add it to your home screen instead — then saving is permanent. Export keeps a full backup either way.";
+    } else if(persistConfirmed){
+      msg = hasIDB ? "Saved on this device — your wardrobe carried over from last time."
+                   : "Saving is working — your wardrobe carried over from a previous session.";
+    } else {
+      msg = hasIDB ? "Saving to this phone. Add it to your home screen and reopen to confirm it sticks; export a backup to be safe."
+                   : "Saving to this device. Reopen later to confirm it sticks; export a backup to be safe.";
+    }
+    if(lastSavedAt) msg += " Last saved " + new Date(lastSavedAt).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) + ".";
+    el.textContent = msg;
+  }
+  async function removeOutfit(id){ await store.del("outfit:"+id); }
+
+  /* ---------------- rendering: RAIL ---------------- */
+  function buildCatFilters(){
+    const box = $("#cat-filters");
+    const cats = ["All", ...CATEGORIES];
+    box.innerHTML = cats.map(c =>
+      `<button class="chip" data-cat="${c}" aria-pressed="${c===filterCat}">${c}</button>`
+    ).join("");
+    box.querySelectorAll(".chip").forEach(b=>{
+      b.addEventListener("click",()=>{ filterCat = b.dataset.cat; buildCatFilters(); renderRail(); });
+    });
+  }
+
+  function filteredItems(){
+    return items.filter(it=>{
+      if(filterCat!=="All" && it.category!==filterCat) return false;
+      if(searchTerm){
+        const hay = (it.name+" "+it.category+" "+(it.colors||[]).join(" ")+" "+(it.notes||"")).toLowerCase();
+        if(!hay.includes(searchTerm)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderRail(){
+    const grid = $("#rail-grid");
+    $("#cnt-rail").textContent = items.length ? items.length : "";
+
+    if(items.length===0){
+      grid.className = "";
+      grid.innerHTML = `<div class="empty">
+        <div class="mark">∅</div>
+        <h3>Your rail is empty</h3>
+        <p>Photograph your first piece to start building a wardrobe you can actually browse and remix.</p>
+        <button class="btn accent" onclick="document.getElementById('add-btn').click()">Add your first piece</button>
+      </div>`;
+      return;
+    }
+    const list = filteredItems();
+    if(list.length===0){
+      grid.className="";
+      grid.innerHTML = `<div class="empty"><div class="mark">?</div><h3>Nothing matches</h3>
+        <p>No pieces fit this filter or search. Try a different category or clear the search.</p></div>`;
+      return;
+    }
+    grid.className="grid";
+    grid.innerHTML = list.map(it=>{
+      const img = it.image
+        ? `<img src="${it.image}" alt="${esc(it.name)}" loading="lazy"/>`
+        : `<span class="ph">no photo</span>`;
+      const dots = (it.colors||[]).slice(0,5).map(c=>
+        `<span class="dot" style="background:${c}" title="${esc(c)}"></span>`).join("");
+      const dress = (it.formality||[]).slice(0,2).join(" · ");
+      return `<div class="card">
+        <div class="thumb">${img}<span class="cat-tag">${esc(it.category)}</span></div>
+        <div class="meta">
+          <div class="name" title="${esc(it.name)}">${esc(it.name)||"Untitled piece"}</div>
+          <div class="sub"><span class="dots">${dots}</span><span>${esc(dress)}</span></div>
+        </div>
+        <div class="actions">
+          <button data-edit="${it.id}">Edit</button>
+          <button class="del" data-del="${it.id}">Remove</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    grid.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click",()=>openModal(b.dataset.edit)));
+    grid.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>deleteItem(b.dataset.del)));
+  }
+
+  /* ---------------- rendering: STUDIO ---------------- */
+  function renderStudio(){
+    const wrap = $("#studio-pick");
+    if(items.length===0){
+      wrap.innerHTML = `<div class="empty"><div class="mark">∅</div><h3>No pieces to style yet</h3>
+        <p>Add a few items to your rail first, then come back to compose looks.</p>
+        <button class="btn accent" data-goto="rail">Go to the rail</button></div>`;
+      wrap.querySelector("[data-goto]").addEventListener("click",()=>switchView("rail"));
+      renderBoard(); return;
+    }
+    const blocks = CATEGORIES.map(cat=>{
+      const inCat = items.filter(i=>i.category===cat);
+      if(inCat.length===0) return "";
+      const cards = inCat.map(it=>{
+        const on = look.ids.includes(it.id);
+        const img = it.image ? `<img src="${it.image}" alt=""/>` : "";
+        return `<button class="pick" data-pick="${it.id}" aria-pressed="${on}">
+          <div class="pthumb">${img}</div>
+          <div class="pname">${esc(it.name)||"Untitled"}</div>
+        </button>`;
+      }).join("");
+      return `<div class="cat-block"><h4>${cat} · ${inCat.length}</h4><div class="pickrow">${cards}</div></div>`;
+    }).join("");
+    wrap.innerHTML = blocks;
+    wrap.querySelectorAll("[data-pick]").forEach(b=>b.addEventListener("click",()=>toggleLook(b.dataset.pick)));
+    renderBoard();
+  }
+
+  function renderBoard(){
+    const body = $("#board-body");
+    $("#board-title").textContent = look.name?.trim() ? look.name : "Untitled look";
+    if(look.ids.length===0){
+      body.innerHTML = `<div class="board-empty">Tap pieces on the left to start composing — or hit Shuffle.</div>`;
+      return;
+    }
+    const cells = look.ids.map(id=>{
+      const it = items.find(i=>i.id===id); if(!it) return "";
+      const img = it.image ? `<img src="${it.image}" alt="${esc(it.name)}"/>` : "";
+      return `<div class="laycell">${img}<button class="x" data-rm="${id}" aria-label="Remove">×</button>
+        <span class="clabel">${esc(it.category)}</span></div>`;
+    }).join("");
+    body.innerHTML = `<div class="lay">${cells}</div>`;
+    body.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>toggleLook(b.dataset.rm)));
+  }
+
+  function toggleLook(id){
+    const i = look.ids.indexOf(id);
+    if(i>=0) look.ids.splice(i,1); else look.ids.push(id);
+    renderStudio();
+  }
+
+  function shuffleLook(){
+    if(items.length===0){ toast("Add some pieces first"); return; }
+    const pick = cat => {
+      const pool = items.filter(i=>i.category===cat);
+      return pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null;
+    };
+    const ids = [];
+    [pick("Tops"), pick("Bottoms")].forEach(id=>id&&ids.push(id));
+    [pick("Shoes")].forEach(id=>id&&ids.push(id));
+    if(Math.random()<0.6){ const o=pick("Outerwear"); if(o) ids.push(o); }
+    if(Math.random()<0.55){ const a=pick("Accessories"); if(a) ids.push(a); }
+    if(Math.random()<0.4){ const bag=pick("Bags"); if(bag) ids.push(bag); }
+    if(ids.length===0){ toast("Not enough variety to shuffle yet"); return; }
+    look = { name:"", ids };
+    $("#look-name").value = "";
+    renderStudio();
+    toast("Shuffled a fresh combination");
+  }
+
+  async function saveLook(){
+    if(look.ids.length<2){ toast("Add at least two pieces to save a look"); return; }
+    const name = $("#look-name").value.trim() || "Untitled look";
+    const o = { id:uid(), name, itemIds:[...look.ids], createdAt:Date.now() };
+    outfits.unshift(o);
+    await saveOutfit(o);
+    look = { name:"", ids:[] };
+    $("#look-name").value = "";
+    renderStudio();
+    renderLookbook();
+    markChanged();
+    toast("Saved to your Lookbook");
+  }
+
+  /* ---------------- rendering: LOOKBOOK ---------------- */
+  function renderLookbook(){
+    const grid = $("#looks-grid");
+    $("#cnt-looks").textContent = outfits.length ? outfits.length : "";
+    if(outfits.length===0){
+      grid.className="";
+      grid.innerHTML = `<div class="empty"><div class="mark">✶</div><h3>No looks saved yet</h3>
+        <p>Head to the Studio to compose an outfit, then save it here for quick reference.</p>
+        <button class="btn accent" data-goto>Open the Studio</button></div>`;
+      grid.querySelector("[data-goto]").addEventListener("click",()=>switchView("studio"));
+      return;
+    }
+    grid.className="looks";
+    grid.innerHTML = outfits.map(o=>{
+      const pieceObjs = [
+        ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:it.image,name:it.name,owned:true}:null; }).filter(Boolean),
+        ...((o.wishItems||[]).map(c=>({ category:c.category, name:c.item, color:c.color, owned:false })))
+      ];
+      const count = pieceObjs.length;
+      const hasNew = pieceObjs.some(p=>!p.owned);
+      const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>Own</span><span><span class="lg-new"></span>To try</span></div>` : "";
+      const when = new Date(o.createdAt||Date.now()).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+      return `<div class="look">
+        <div class="lhead">
+          <div><h3>${esc(o.name)}</h3><div class="when">${when}</div></div>
+          <button class="iconbtn" data-del-look="${o.id}" aria-label="Delete look">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          </button>
+        </div>
+        ${bodyMapHTML(pieceObjs)}
+        ${legend}
+        <div class="lfoot"><span class="pieces">${count} piece${count===1?"":"s"}</span>
+          <button class="btn ghost sm" data-restyle="${o.id}">Restyle</button></div>
+      </div>`;
+    }).join("");
+    grid.querySelectorAll("[data-del-look]").forEach(b=>b.addEventListener("click",()=>deleteLook(b.dataset.delLook)));
+    grid.querySelectorAll("[data-restyle]").forEach(b=>b.addEventListener("click",()=>{
+      const o = outfits.find(x=>x.id===b.dataset.restyle);
+      if(!o) return;
+      look = { name:o.name, ids:o.itemIds.filter(id=>items.find(i=>i.id===id)) };
+      $("#look-name").value = o.name;
+      switchView("studio"); renderStudio();
+      toast("Loaded into the Studio");
+    }));
+  }
+
+  async function deleteLook(id){
+    if(!confirm("Delete this look? Your individual pieces stay on the rail.")) return;
+    outfits = outfits.filter(o=>o.id!==id);
+    await removeOutfit(id);
+    renderLookbook();
+    markChanged();
+  }
+
+  /* ---------------- STYLIST (smart outfit creator) ---------------- */
+  const BRIEF_CHIPS = ["Workday","Date night","Weekend casual","Formal event","Travel","Night out","Brunch","Job interview"];
+
+  const NAMED_COLORS = [
+    ["black",[20,20,20]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[200,200,200]],
+    ["white",[245,243,238]],["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],
+    ["tan",[196,164,120]],["camel",[181,140,92]],["brown",[120,82,52]],["chocolate",[74,52,38]],
+    ["navy",[36,48,73]],["blue",[63,111,176]],["sky blue",[140,180,220]],["teal",[40,120,120]],
+    ["green",[79,107,67]],["olive",[110,110,60]],["sage",[150,165,140]],["forest green",[40,70,45]],
+    ["mustard",[200,160,50]],["yellow",[224,181,61]],["gold",[190,150,70]],
+    ["orange",[207,122,46]],["rust",[160,80,40]],["terracotta",[190,110,80]],
+    ["red",[169,50,38]],["burgundy",[110,35,45]],["maroon",[90,30,40]],
+    ["pink",[217,138,166]],["blush",[224,180,180]],["purple",[111,76,142]],["lavender",[190,170,210]]
+  ];
+  const NEUTRALS = new Set(["black","charcoal","grey","silver","white","ivory","cream","beige","tan","camel","brown","chocolate","navy"]);
+  function colorName(hex){
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex||""); if(!m) return (hex||"").toLowerCase();
+    const n=parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+    let best="", bd=Infinity;
+    for(const [name,[R,G,B]] of NAMED_COLORS){
+      const d=(r-R)*(r-R)+(g-G)*(g-G)+(b-B)*(b-B);
+      if(d<bd){ bd=d; best=name; }
+    }
+    return best;
+  }
+
+  function inventoryPayload(){
+    return items.map(it=>({
+      id: it.id,
+      name: it.name,
+      category: it.category,
+      colors: (it.colors||[]).map(colorName),
+      dressCode: it.formality||[],
+      seasons: it.seasons||[],
+      notes: (it.notes||"").slice(0,140)
+    }));
+  }
+
+  /* ----- body map: places each piece on a human figure by body zone ----- */
+  const SILHOUETTE_SVG = `<svg class="bm-figure" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="15" r="9"/><path d="M50 24v7"/><path d="M31 39q19 -8 38 0"/><path d="M31 39l-4 39"/><path d="M69 39l4 39"/><path d="M39 41l-2 37h26l-2 -37"/><path d="M40 78l-3 52h9l4 -38 4 38h9l-3 -52"/><path d="M37 130l-2 8h11"/><path d="M63 130l2 8h-11"/></g></svg>`;
+  const ZONE = {
+    Accessories:{top:17,left:50}, Tops:{top:41,left:50}, Outerwear:{top:40,left:77},
+    Bottoms:{top:67,left:50}, Shoes:{top:92,left:50}, Bags:{top:60,left:21}
+  };
+  function nameToCss(word){
+    const hit = NAMED_COLORS.find(c=>c[0]===(word||"").toLowerCase().trim());
+    if(hit){ const [r,g,b]=hit[1]; return rgbToHex(r,g,b); }
+    return "#b9b2a4";
+  }
+  function bodyMapHTML(pieces){
+    const byZone={};
+    pieces.forEach(p=>{ const z=ZONE[p.category]?p.category:"Accessories"; (byZone[z]=byZone[z]||[]).push(p); });
+    let nodes="";
+    Object.keys(byZone).forEach(z=>{
+      const arr=byZone[z], base=ZONE[z];
+      arr.forEach((p,i)=>{
+        const left = base.left + (i-(arr.length-1)/2)*15;
+        const inner = p.owned
+          ? (p.image?`<img src="${p.image}" alt=""/>`:`<span class="bm-abbr">${esc((p.category||"").slice(0,2))}</span>`)
+          : `<span class="bm-concept" style="background:${nameToCss(p.color)}"></span>`;
+        nodes += `<div class="bm-node${p.owned?"":" bm-new"}" style="left:${left}%;top:${base.top}%" title="${esc(p.name||"")}">${inner}</div>`;
+      });
+    });
+    return `<div class="bodymap">${SILHOUETTE_SVG}${nodes}</div>`;
+  }
+
+  function parseLoose(text){
+    let t = (text||"").trim().replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/```\s*$/,"").trim();
+    try{ return JSON.parse(t); }catch(e){}
+    const s=t.indexOf("{"), e=t.lastIndexOf("}");
+    if(s>=0 && e>s){ try{ return JSON.parse(t.slice(s,e+1)); }catch(e2){} }
+    return null;
+  }
+
+  function stylistSystem(discover){
+    const base = "You are an expert fashion stylist with deep knowledge of color theory, proportion, silhouette, fabric weight, and occasion dressing. The wearer is male, so keep all garments menswear-appropriate. ";
+    const ownRule = 'Each outfit has a "pieces" array. For an item the wearer already owns, use {"owned":true,"id":"<exact inventory id>"}. ';
+    const discRule = discover
+      ? 'You MAY also add aspirational pieces he does NOT own, to broaden his style, as {"owned":false,"item":"concise menswear item name","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=12 words on what it adds"}. Blend owned pieces with 1-3 new pieces per outfit. '
+      : 'Use ONLY pieces he owns; every piece must be {"owned":true,"id":"..."}. ';
+    return base + ownRule + discRule
+      + "Reason like a stylist: balance proportion, coordinate or deliberately contrast color, and match formality and season to the occasion. Push him a little — surface pairings he might not have tried. "
+      + 'Return ONLY valid minified JSON, no markdown or any text outside it, in exactly: {"outfits":[{"name":"short evocative name","pieces":[...],"rationale":"<=24 words","wearTo":["place or occasion"],"tip":"<=12 word styling tweak"}],"gaps":"<=16 words, or empty string"} '
+      + "Rules: up to 3 distinct outfits; each 2-6 pieces; wearTo 2-3 entries; keep it concise; JSON only.";
+  }
+  function stylistUser(brief){
+    return "Occasion / brief: " + (brief || "versatile, well-composed everyday looks")
+      + "\n\nWardrobe inventory (JSON):\n" + JSON.stringify(inventoryPayload());
+  }
+
+  // FREE path: the user's own Google Gemini key (works on the hosted phone app, no proxy).
+  const GEMINI_MODEL = "gemini-2.5-flash";
+  const _thumbCache = {};
+  function thumbFromDataURL(dataURL, maxDim=200, quality=0.6){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w=img.naturalWidth, h=img.naturalHeight;
+        const s = Math.min(1, maxDim/Math.max(w,h));
+        const cw=Math.max(1,Math.round(w*s)), ch=Math.max(1,Math.round(h*s));
+        const cv=document.createElement("canvas"); cv.width=cw; cv.height=ch;
+        cv.getContext("2d").drawImage(img,0,0,cw,ch);
+        resolve(cv.toDataURL("image/jpeg", quality));
+      };
+      img.onerror=()=>resolve(null);
+      img.src=dataURL;
+    });
+  }
+  async function itemThumb(it){
+    if(!it.image) return null;
+    const key = it.id + ":" + it.image.length;
+    if(_thumbCache[key]) return _thumbCache[key];
+    const t = await thumbFromDataURL(it.image);
+    if(t) _thumbCache[key] = t;
+    return t;
+  }
+  async function buildGeminiContents(brief, visual){
+    if(!visual) return [{ role:"user", parts:[{ text: stylistUser(brief) + "\n\nReturn only the JSON object." }] }];
+    const parts = [{ text: stylistUser(brief) + "\n\nPhotos of the owned items follow — use them to judge real color, pattern, texture and cut. Each photo is labeled with its item id.\n\nReturn only the JSON object." }];
+    for(const it of items){
+      const t = await itemThumb(it);
+      if(!t) continue;
+      parts.push({ text: "Item " + it.id + " — " + (it.name||"") + ":" });
+      parts.push({ inlineData:{ mimeType:"image/jpeg", data: t.split(",")[1] } });
+    }
+    return [{ role:"user", parts }];
+  }
+  async function callStylistGemini(brief, discover, key, visual){
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(key), {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        systemInstruction:{ parts:[{ text: stylistSystem(discover) }] },
+        contents: await buildGeminiContents(brief, visual),
+        generationConfig:{
+          temperature:0.9,
+          maxOutputTokens:2048,
+          responseMimeType:"application/json",
+          thinkingConfig:{ thinkingBudget:0 }   // 2.5 Flash thinks by default and that eats the token budget
+        }
+      })
+    });
+    if(!res.ok){
+      let detail = "";
+      try{ const ed = await res.json(); detail = (ed && ed.error && ed.error.message) ? ed.error.message : ""; }catch(e){}
+      throw new Error("HTTP " + res.status + (detail ? " – " + detail : ""));
+    }
+    const data = await res.json();
+    const cand = (data.candidates||[])[0] || {};
+    const parts = (cand.content||{}).parts || [];
+    const text = parts.map(p=>p.text||"").join("");
+    if(!text){
+      if(cand.finishReason === "MAX_TOKENS") throw new Error("ran out of output room");
+      if(cand.finishReason === "SAFETY") throw new Error("a safety filter blocked the reply");
+      throw new Error("empty reply from the AI");
+    }
+    const json = parseLoose(text);
+    if(!json) throw new Error("couldn't read the AI's reply");
+    return sanitizeProposals(json);
+  }
+
+  // In-chat path: Claude through the artifact connection (only works inside Claude).
+  async function callStylist(brief, discover){
+    const user = stylistSystem(discover) + "\n\n" + stylistUser(brief) + "\n\nReturn only the JSON object.";
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{ role:"user", content:user }]
+      })
+    });
+    if(!res.ok) throw new Error("api "+res.status);
+    const data = await res.json();
+    const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+    const json = parseLoose(text);
+    if(!json) throw new Error("parse");
+    return sanitizeProposals(json);
+  }
+
+  function sanitizeProposals(json){
+    const ids = new Set(items.map(i=>i.id));
+    const out = [];
+    for(const o of (json.outfits||[])){
+      const pieces = Array.isArray(o.pieces) ? o.pieces
+        : (Array.isArray(o.itemIds) ? o.itemIds.map(id=>({owned:true,id})) : []);
+      const ownedIds=[], concepts=[];
+      for(const p of pieces){
+        if(p && p.owned!==false && p.id && ids.has(p.id)){ if(!ownedIds.includes(p.id)) ownedIds.push(p.id); }
+        else if(p && p.owned===false && p.item){
+          concepts.push({
+            item: String(p.item).slice(0,40),
+            category: CATEGORIES.includes(p.category) ? p.category : "Accessories",
+            color: String(p.color||"").slice(0,18),
+            why: String(p.why||"").slice(0,70)
+          });
+        }
+      }
+      if(ownedIds.length + concepts.length >= 2){
+        out.push({
+          name:(o.name||"Untitled look").slice(0,60),
+          ids: ownedIds, concepts,
+          rationale:(o.rationale||"").slice(0,220),
+          wearTo:(o.wearTo||[]).slice(0,4).map(w=>String(w).slice(0,40)),
+          tip:(o.tip||"").slice(0,120)
+        });
+      }
+    }
+    return { outfits: out, gaps: (json.gaps||"").slice(0,160) };
+  }
+
+  /* on-device fallback so the Stylist still works without the AI call */
+  const WEAR_MAP = {
+    Casual:["Weekend errands","Coffee with friends","Relaxed daytime"],
+    "Smart casual":["Dinner out","A creative office","Day-to-night plans"],
+    Formal:["Evening events","Formal dinners","Celebrations"],
+    Activewear:["The gym","Morning workouts","Athleisure days"],
+    Loungewear:["Slow mornings at home","Cozy nights in","Working from home"]
+  };
+  function briefFormality(brief){
+    const b=(brief||"").toLowerCase();
+    if(/gym|workout|run|train|athle|yoga/.test(b)) return "Activewear";
+    if(/lounge|home|cozy|pajama|relax|wfh/.test(b)) return "Loungewear";
+    if(/black tie|formal|wedding|gala|ceremony|interview|funeral|cocktail/.test(b)) return "Formal";
+    if(/work|office|meeting|business|dinner|date|night out|drinks|party|event|brunch/.test(b)) return "Smart casual";
+    if(/weekend|casual|errand|coffee|travel|day off/.test(b)) return "Casual";
+    return null;
+  }
+  function buildCombo(pool){
+    const byCat = c => pool.filter(i=>i.category===c);
+    const pick = arr => arr.length ? arr[Math.floor(Math.random()*arr.length)] : null;
+    const chosen = [];
+    const t=pick(byCat("Tops")), b=pick(byCat("Bottoms")); if(t)chosen.push(t); if(b)chosen.push(b);
+    const sh=pick(byCat("Shoes")); if(sh)chosen.push(sh);
+    if(Math.random()<0.55){ const o=pick(byCat("Outerwear")); if(o)chosen.push(o); }
+    if(Math.random()<0.5){ const a=pick(byCat("Accessories")); if(a)chosen.push(a); }
+    if(Math.random()<0.35){ const bg=pick(byCat("Bags")); if(bg)chosen.push(bg); }
+    return chosen.filter(Boolean);
+  }
+  const TIPS = ["Half-tuck the top to define your waist.","Cuff the hem to show a sliver of ankle.","Add a watch or fine chain to finish it.","Roll the sleeves for a more relaxed line.","Keep accessories minimal so the fit stays the hero.","Let one piece be the statement and keep the rest quiet."];
+  const CONCEPT_IDEAS = [
+    {item:"structured overshirt", category:"Outerwear", color:"charcoal", why:"a sharper layer over basics"},
+    {item:"pleated trousers", category:"Bottoms", color:"stone", why:"adds drape and polish"},
+    {item:"leather loafers", category:"Shoes", color:"brown", why:"dresses the look up instantly"},
+    {item:"knit polo", category:"Tops", color:"olive", why:"texture and an elevated collar"},
+    {item:"minimal leather belt", category:"Accessories", color:"tan", why:"ties the palette together"},
+    {item:"suede chelsea boots", category:"Shoes", color:"tan", why:"a refined step up from sneakers"},
+    {item:"crossbody bag", category:"Bags", color:"black", why:"a modern, hands-free finish"}
+  ];
+  function localStylist(brief, discover){
+    const want = briefFormality(brief);
+    const pref = want ? items.filter(i=>(i.formality||[]).includes(want)) : [];
+    const base = pref.length>=2 ? pref : items.slice();
+    const seen = new Set(), outfits = [];
+    for(let a=0; a<60 && outfits.length<3; a++){
+      const combo = buildCombo(base);
+      if(combo.length<2) continue;
+      const key = combo.map(i=>i.id).slice().sort().join(",");
+      if(seen.has(key)) continue; seen.add(key);
+      const bolds = new Set();
+      combo.forEach(it=>(it.colors||[]).map(colorName).forEach(n=>{ if(!NEUTRALS.has(n)) bolds.add(n); }));
+      if(bolds.size>3) continue;
+      const fmls=new Set(); combo.forEach(it=>(it.formality||[]).forEach(f=>fmls.add(f)));
+      const fm = want || [...fmls][0] || "Casual";
+      const hero = combo.find(i=>i.category==="Outerwear") || combo[0];
+      let rationale;
+      if(bolds.size===0) rationale = "An all-neutral palette that reads clean and considered — let texture and fit carry it.";
+      else if(bolds.size===1) rationale = "A neutral base with one deliberate hit of "+[...bolds][0]+" to lift the whole look.";
+      else rationale = "Neutrals ground a couple of richer tones so the colors play together instead of competing.";
+      const concepts = [];
+      if(discover){
+        const have = new Set(combo.map(i=>i.category));
+        const pool = CONCEPT_IDEAS.filter(c=>!have.has(c.category));
+        const src = pool.length ? pool : CONCEPT_IDEAS;
+        concepts.push({ ...src[Math.floor(Math.random()*src.length)] });
+      }
+      outfits.push({
+        name: "Around the " + (hero?hero.name.toLowerCase():"look"),
+        ids: combo.map(i=>i.id), concepts, rationale,
+        wearTo: WEAR_MAP[fm] || WEAR_MAP.Casual,
+        tip: TIPS[Math.floor(Math.random()*TIPS.length)]
+      });
+    }
+    return { outfits, gaps:"" };
+  }
+
+  function renderBriefChips(){
+    const box = $("#brief-chips");
+    if(box.childElementCount) return;
+    box.innerHTML = BRIEF_CHIPS.map(c=>`<button type="button" class="chip" data-brief="${c}">${c}</button>`).join("");
+    box.querySelectorAll("[data-brief]").forEach(b=>b.addEventListener("click",()=>{
+      const ta=$("#brief-input"); ta.value = b.dataset.brief; ta.focus();
+    }));
+  }
+
+  function renderStylist(){
+    renderBriefChips();
+    const res = $("#stylist-results");
+    if(items.length<2){
+      res.innerHTML = `<div class="empty"><div class="mark">✦</div><h3>Add a few pieces first</h3>
+        <p>The Stylist needs at least two pieces on your rail to start composing looks.</p>
+        <button class="btn accent" data-goto>Go to the rail</button></div>`;
+      res.querySelector("[data-goto]").addEventListener("click",()=>switchView("rail"));
+      return;
+    }
+    renderProposals();
+  }
+
+  function renderProposals(){
+    const res = $("#stylist-results");
+    if(proposals.length===0){
+      res.innerHTML = `<div class="prop-placeholder">Your composed looks will appear here. Write a brief above and tap <b>Compose looks</b>.</div>`;
+      return;
+    }
+    const cards = proposals.map((o,idx)=>{
+      const pieceObjs = [
+        ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:it.image,name:it.name,owned:true}:null; }).filter(Boolean),
+        ...(o.concepts||[]).map(c=>({ category:c.category, name:c.item, color:c.color, why:c.why, owned:false }))
+      ];
+      const caption = pieceObjs.map(p=> p.owned
+        ? esc(p.name)
+        : `<span class="concept-name">${esc(p.name)}${p.color?" ("+esc(p.color)+")":""}</span>`).join(" · ");
+      const hasNew = pieceObjs.some(p=>!p.owned);
+      const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>You own</span><span><span class="lg-new"></span>To try</span></div>` : "";
+      const tags = (o.wearTo||[]).map(w=>`<span class="wtag">${esc(w)}</span>`).join("");
+      return `<article class="prop">
+        <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span><h3>${esc(o.name)}</h3></div>
+        ${bodyMapHTML(pieceObjs)}
+        ${legend}
+        <p class="prop-caption">${caption}</p>
+        ${o.rationale?`<div class="prop-row"><span class="plabel">Why it works</span><p>${esc(o.rationale)}</p></div>`:""}
+        ${tags?`<div class="prop-row"><span class="plabel">Wear it to</span><div class="wtags">${tags}</div></div>`:""}
+        ${o.tip?`<div class="prop-row"><span class="plabel">Stylist tip</span><p>${esc(o.tip)}</p></div>`:""}
+        <div class="prop-actions">
+          <button class="btn ghost sm" data-prop-studio="${idx}">Tweak in Studio</button>
+          <button class="btn accent sm" data-prop-save="${idx}">Save to Lookbook</button>
+        </div>
+      </article>`;
+    }).join("");
+    const gaps = (proposalsGaps && !proposalsLocal)
+      ? `<div class="gaps"><span class="plabel">Worth adding</span><p>${esc(proposalsGaps)}</p></div>` : "";
+    let note;
+    if(engineUsed==="gemini") note = `<p class="stylist-note">Styled by Google Gemini using your free key.</p>`;
+    else if(engineUsed==="claude") note = `<p class="stylist-note">Styled by Claude.</p>`;
+    else note = geminiKey
+      ? `<p class="stylist-note">Couldn't reach the AI${lastAIError?` (${esc(lastAIError)})`:""}, so this is the on-device stylist. Tap “Compose again” to retry.</p>`
+      : `<p class="stylist-note">On-device stylist. Want real AI outfits, free? Tap “Connect free AI” above and paste a free Google key.</p>`;
+    res.innerHTML = `<div class="prop-grid">${cards}</div>${gaps}${note}<div class="recompose"><button class="btn ghost" id="recompose-btn">Compose again</button></div>`;
+    res.querySelectorAll("[data-prop-save]").forEach(b=>b.addEventListener("click",()=>saveProposal(+b.dataset.propSave)));
+    res.querySelectorAll("[data-prop-studio]").forEach(b=>b.addEventListener("click",()=>openProposal(+b.dataset.propStudio)));
+    const rc = $("#recompose-btn"); if(rc) rc.addEventListener("click", compose);
+  }
+
+  function showComposing(){
+    const sk = `<div class="prop skel"><div class="sk-line w40"></div><div class="sk-items"><span></span><span></span><span></span></div><div class="sk-line w90"></div><div class="sk-line w70"></div></div>`;
+    $("#stylist-results").innerHTML = `<div class="composing"><span class="dot-pulse"></span>Composing looks — balancing color, proportion and occasion…</div><div class="prop-grid">${sk}${sk}</div>`;
+  }
+
+  async function compose(){
+    if(items.length<2){ toast("Add at least two pieces first"); return; }
+    const brief = $("#brief-input").value.trim();
+    const discover = $("#discover-toggle").checked;
+    const visual = $("#visual-toggle").checked;
+    const btn = $("#compose-btn");
+    btn.disabled = true; btn.classList.add("loading");
+    showComposing();
+    try{
+      let result = null;
+      if(geminiKey){
+        try{ result = await callStylistGemini(brief, discover, geminiKey, visual); engineUsed = "gemini"; lastAIError = ""; }
+        catch(e){ console.error("gemini:", e); lastAIError = String(e.message || e).slice(0,160); result = null; }
+      }
+      if(!result){
+        try{ result = await callStylist(brief, discover); engineUsed = "claude"; }
+        catch(e){ console.error("claude:", e); result = null; }
+      }
+      if(!result || !result.outfits || result.outfits.length===0){
+        result = localStylist(brief, discover); proposalsLocal = true; engineUsed = "on-device";
+      } else {
+        proposalsLocal = false;
+      }
+      proposals = result.outfits;
+      proposalsGaps = result.gaps || "";
+      if(proposals.length===0){
+        $("#stylist-results").innerHTML = `<div class="prop-placeholder">Couldn't assemble a full look from the current pieces. Try adding shoes or a bottom, or loosen the brief.</div>`;
+      } else {
+        renderProposals();
+      }
+    } finally {
+      btn.disabled = false; btn.classList.remove("loading");
+    }
+  }
+
+  async function saveGeminiKey(){
+    const v = $("#ai-key").value.trim();
+    if(!v){ toast("Paste a key first"); return; }
+    geminiKey = v;
+    await store.set("settings:geminiKey", v);
+    updateAIState(); $("#ai-panel").hidden = true;
+    toast("Free AI connected");
+  }
+  async function removeGeminiKey(){
+    geminiKey = null;
+    await store.del("settings:geminiKey");
+    $("#ai-key").value = ""; updateAIState();
+    toast("AI key removed");
+  }
+  function updateAIState(){
+    const el = $("#ai-state"); if(el) el.textContent = geminiKey ? "Stylist engine: Google Gemini (free)" : "Stylist engine: on-device";
+    const btn = $("#ai-settings-btn"); if(btn) btn.textContent = geminiKey ? "Manage AI" : "Connect free AI";
+  }
+
+  async function saveProposal(i){
+    const p = proposals[i]; if(!p) return;
+    const o = {
+      id:uid(), name:p.name||"Untitled look",
+      itemIds:p.ids.slice(),
+      wishItems:(p.concepts||[]).map(c=>({ item:c.item, category:c.category, color:c.color })),
+      createdAt:Date.now()
+    };
+    outfits.unshift(o);
+    await saveOutfit(o);
+    renderLookbook();
+    markChanged();
+    toast("Saved to your Lookbook");
+  }
+  function openProposal(i){
+    const p = proposals[i]; if(!p) return;
+    look = { name:p.name||"", ids:p.ids.filter(id=>items.find(it=>it.id===id)) };
+    $("#look-name").value = p.name||"";
+    switchView("studio"); renderStudio();
+    toast((p.concepts && p.concepts.length) ? "Loaded the pieces you own — concept items stay in the Stylist" : "Loaded into the Studio");
+  }
+
+  /* ---------------- backup: export / import ---------------- */
+  function exportData(){
+    try{
+      const payload = { app:"the-rail", version:1, exportedAt:new Date().toISOString(), items, outfits };
+      const blob = new Blob([JSON.stringify(payload)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "the-rail-backup-" + new Date().toISOString().slice(0,10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      toast("Backup downloaded");
+    }catch(e){ console.error(e); toast("Couldn't export — try again"); }
+  }
+  async function importData(file){
+    try{
+      const data = JSON.parse(await file.text());
+      if(!data || !Array.isArray(data.items)) throw new Error("shape");
+      const inItems = data.items, inOutfits = Array.isArray(data.outfits) ? data.outfits : [];
+      if(!confirm("Import "+inItems.length+" pieces and "+inOutfits.length+" looks? They'll be added to your current wardrobe.")) return;
+      for(const it of inItems){
+        if(!it.id) it.id = uid();
+        if(typeof it.formality==="string") it.formality = it.formality ? [it.formality] : [];
+        if(!Array.isArray(it.formality)) it.formality = [];
+        it.colors = (it.colors||[]).map(c=> (c&&c[0]==="#")?c:(LEGACY[c]||null)).filter(Boolean);
+        if(!items.find(x=>x.id===it.id)) items.unshift(it);
+        await saveItem(it);
+      }
+      for(const o of inOutfits){
+        if(!o.id) o.id = uid();
+        if(!outfits.find(x=>x.id===o.id)){ outfits.unshift(o); await saveOutfit(o); }
+      }
+      renderRail(); renderStudio(); renderLookbook();
+      markChanged();
+      toast("Wardrobe imported");
+    }catch(e){ console.error(e); toast("That file couldn't be imported"); }
+  }
+
+  /* ---------------- cross-device sync (Supabase) ---------------- */
+  function syncConfigured(){ return !!(supaUrl && supaKey && syncCode); }
+  function supaHeaders(prefer){
+    const h = { "apikey":supaKey, "Authorization":"Bearer "+supaKey, "Content-Type":"application/json" };
+    if(prefer) h["Prefer"] = prefer;
+    return h;
+  }
+  function reRenderAll(){ renderRail(); renderStudio(); renderLookbook(); updateBackupStatus(); }
+
+  function markChanged(){
+    localVer = Date.now();
+    store.set("settings:localVer", localVer);
+    if(!syncConfigured()) return;
+    clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(()=>{
+      updateSyncStatus("Syncing…");
+      syncPush().then(()=>updateSyncStatus("Synced")).catch(e=>{ console.error(e); updateSyncStatus("Sync failed"); });
+    }, 1800);
+  }
+
+  async function syncFetchRow(){
+    const res = await fetch(supaUrl + "/rest/v1/vault?code=eq." + encodeURIComponent(syncCode) + "&select=data,updated_at", { headers: supaHeaders() });
+    if(!res.ok) throw new Error("fetch "+res.status);
+    const rows = await res.json();
+    return (rows && rows.length) ? rows[0] : null;
+  }
+  async function syncPush(){
+    const body = { code: syncCode, data: { items, outfits, ver: localVer }, updated_at: new Date().toISOString() };
+    const res = await fetch(supaUrl + "/rest/v1/vault?on_conflict=code", {
+      method:"POST",
+      headers: supaHeaders("resolution=merge-duplicates,return=minimal"),
+      body: JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error("push "+res.status);
+  }
+  async function applyRemoteData(data){
+    const newItems = (data.items||[]).map(normalizeItem);
+    const newOutfits = data.outfits || [];
+    for(const k of await store.listKeys("item:")) await store.del(k);
+    for(const k of await store.listKeys("outfit:")) await store.del(k);
+    items = newItems; outfits = newOutfits;
+    for(const it of items) await store.set("item:"+it.id, it);
+    for(const o of outfits) await store.set("outfit:"+o.id, o);
+    localVer = data.ver || Date.now();
+    await store.set("settings:localVer", localVer);
+  }
+
+  // Ongoing sync on open / on demand: newest version wins.
+  async function syncSmart(){
+    if(!syncConfigured()) return;
+    updateSyncStatus("Syncing…");
+    try{
+      const remote = await syncFetchRow();
+      if(!remote){ await syncPush(); updateSyncStatus("Synced"); return; }
+      const remoteVer = (remote.data && remote.data.ver) || 0;
+      if(remoteVer > localVer){ await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud"); }
+      else if(localVer > remoteVer){ await syncPush(); updateSyncStatus("Synced"); }
+      else updateSyncStatus("Up to date");
+    }catch(e){ console.error("sync:", e); updateSyncStatus("Sync failed — check settings"); }
+  }
+
+  // First connect: decide seed direction, asking only on a genuine conflict.
+  async function syncFirstConnect(){
+    updateSyncStatus("Connecting…");
+    try{
+      const remote = await syncFetchRow();
+      const localHas = items.length || outfits.length;
+      const remoteHas = remote && remote.data && (((remote.data.items||[]).length) || ((remote.data.outfits||[]).length));
+      if(remoteHas && localHas){
+        const useCloud = confirm(
+          "This device has "+items.length+" pieces. The cloud already holds a wardrobe ("+((remote.data.items||[]).length)+" pieces).\n\n" +
+          "OK = replace THIS device with the cloud version.\nCancel = upload this device and overwrite the cloud."
+        );
+        if(useCloud){ await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud"); }
+        else { localVer = Date.now(); await store.set("settings:localVer", localVer); await syncPush(); updateSyncStatus("Synced"); }
+      } else if(remoteHas){
+        await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud");
+      } else {
+        localVer = localVer || Date.now(); await store.set("settings:localVer", localVer); await syncPush(); updateSyncStatus("Synced");
+      }
+    }catch(e){ console.error("connect:", e); updateSyncStatus("Couldn't connect — check the URL, key, and SQL setup"); }
+  }
+
+  const SYNC_SQL = "create table if not exists public.vault (\n  code text primary key,\n  data jsonb,\n  updated_at timestamptz default now()\n);\nalter table public.vault disable row level security;\ngrant select, insert, update on public.vault to anon;";
+
+  async function saveSyncSettings(){
+    const url = $("#sync-url").value.trim().replace(/\/+$/,"");
+    const key = $("#sync-key").value.trim();
+    const code = $("#sync-code").value.trim();
+    if(!url || !key || !code){ toast("Fill in all three fields"); return; }
+    supaUrl = url; supaKey = key; syncCode = code;
+    await store.set("settings:sync", { url, key, code });
+    $("#sync-panel").hidden = true;
+    updateSyncState();
+    await syncFirstConnect();
+  }
+  async function disconnectSync(){
+    supaUrl = supaKey = syncCode = null;
+    await store.del("settings:sync");
+    lastSyncLabel = "";
+    updateSyncState();
+    toast("Sync disconnected (your wardrobe stays on this device)");
+  }
+  function updateSyncStatus(label){ lastSyncLabel = label; updateSyncState(); }
+  function updateSyncState(){
+    const on = syncConfigured();
+    const st = $("#sync-state");
+    if(st) st.textContent = on ? ("Cloud sync: on" + (lastSyncLabel ? " · " + lastSyncLabel : "")) : "Cloud sync: off";
+    const nowBtn = $("#sync-now-btn"); if(nowBtn) nowBtn.hidden = !on;
+    const setBtn = $("#sync-settings-btn"); if(setBtn) setBtn.textContent = on ? "Sync settings" : "Set up sync";
+  }
+
+  /* ---------------- modal: add / edit ---------------- */
+  function fillSelect(sel, opts){ sel.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(""); }
+
+  function buildModalControls(){
+    fillSelect($("#f-cat"), CATEGORIES);
+    $("#f-formality").innerHTML = FORMALITY.map(s=>
+      `<button type="button" class="chip" data-formality="${s}" aria-pressed="false">${s}</button>`).join("");
+    $("#f-seasons").innerHTML = SEASONS.map(s=>
+      `<button type="button" class="chip" data-season="${s}" aria-pressed="false">${s}</button>`).join("");
+    const toggle = b => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")==="true" ? "false":"true");
+    $("#f-formality").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>toggle(b)));
+    $("#f-seasons").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>toggle(b)));
+    $("#cp-input").addEventListener("change", e=> addColor(e.target.value));
+  }
+
+  function setPressed(container, attr, values){
+    container.querySelectorAll(`[data-${attr}]`).forEach(b=>{
+      b.setAttribute("aria-pressed", values.includes(b.dataset[attr]) ? "true":"false");
+    });
+  }
+  function getPressed(container, attr){
+    return [...container.querySelectorAll(`[data-${attr}][aria-pressed="true"]`)].map(b=>b.dataset[attr]);
+  }
+
+  async function openModal(id){
+    editingId = id || null;
+    draftImage = null; draftColors = []; sampleCV = null; expandedColorHexes = new Set();
+    $("#modal-title").textContent = editingId ? "Edit piece" : "Add a piece";
+
+    if(editingId){
+      const it = items.find(i=>i.id===editingId);
+      $("#f-name").value = it.name||"";
+      $("#f-cat").value = it.category||CATEGORIES[0];
+      $("#f-notes").value = it.notes||"";
+      setPressed($("#f-formality"),"formality", it.formality||[]);
+      setPressed($("#f-seasons"),"season", it.seasons||[]);
+      draftColors = (it.colors||[]).slice();
+      draftImage = it.image||null;
+    } else {
+      $("#f-name").value=""; $("#f-cat").value=CATEGORIES[0]; $("#f-notes").value="";
+      setPressed($("#f-formality"),"formality",[]); setPressed($("#f-seasons"),"season",[]);
+    }
+    renderUploader();
+    if(draftImage) await prepareSample(draftImage);
+    renderColorPicker();
+    $("#overlay").classList.add("open");
+    setTimeout(()=>$("#f-name").focus(),60);
+  }
+
+  function renderUploader(){
+    const up = $("#uploader");
+    if(draftImage){
+      up.classList.add("has");
+      up.onclick = null;
+      up.innerHTML = `<img src="${draftImage}" alt="preview" id="preview-img"/>
+        <button type="button" class="reshoot" id="replace-btn">Replace</button>
+        <span class="cp-tip">Tap photo to pick a color</span>`;
+      $("#preview-img").addEventListener("click", samplePhotoColor);
+      $("#replace-btn").addEventListener("click", e=>{ e.stopPropagation(); $("#file-input").click(); });
+    } else {
+      up.classList.remove("has");
+      up.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <div class="hint"><b>Add a photo</b><br>Tap to take or upload one</div>`;
+      up.onclick = ()=> $("#file-input").click();
+    }
+  }
+
+  function closeModal(){ $("#overlay").classList.remove("open"); editingId=null; draftImage=null; draftColors=[]; sampleCV=null; }
+
+  async function saveFromModal(){
+    const name = $("#f-name").value.trim();
+    if(!name){ toast("Give the piece a name"); $("#f-name").focus(); return; }
+    const data = {
+      name,
+      category: $("#f-cat").value,
+      formality: getPressed($("#f-formality"),"formality"),
+      colors: draftColors.slice(),
+      seasons: getPressed($("#f-seasons"),"season"),
+      notes: $("#f-notes").value.trim(),
+      image: draftImage || null
+    };
+    if(editingId){
+      const it = items.find(i=>i.id===editingId);
+      Object.assign(it, data);
+      await saveItem(it);
+      toast("Piece updated");
+    } else {
+      const it = { id:uid(), created:Date.now(), ...data };
+      items.unshift(it);
+      await saveItem(it);
+      toast("Added to your rail");
+    }
+    closeModal();
+    renderRail(); renderStudio();
+    markChanged();
+  }
+
+  async function deleteItem(id){
+    const it = items.find(i=>i.id===id);
+    if(!confirm(`Remove "${it?it.name:"this piece"}" from your rail?`)) return;
+    items = items.filter(i=>i.id!==id);
+    await removeItem(id);
+    look.ids = look.ids.filter(x=>x!==id);
+    renderRail(); renderStudio();
+    markChanged();
+  }
+
+  /* ---------------- view switching ---------------- */
+  function switchView(name){
+    document.querySelectorAll(".nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.view===name?"true":"false"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+name));
+    if(name==="studio") renderStudio();
+    if(name==="stylist") renderStylist();
+    if(name==="lookbook") renderLookbook();
+    if(name==="rail") renderRail();
+  }
+
+  /* ---------------- wiring ---------------- */
+  function wire(){
+    document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
+    $("#add-btn").addEventListener("click",()=>openModal(null));
+    $("#modal-close").addEventListener("click",closeModal);
+    $("#modal-cancel").addEventListener("click",closeModal);
+    $("#modal-save").addEventListener("click",saveFromModal);
+    $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeModal(); });
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#overlay").classList.contains("open")) closeModal(); });
+
+    $("#search").addEventListener("input",e=>{ searchTerm = e.target.value.trim().toLowerCase(); renderRail(); });
+    $("#shuffle-btn").addEventListener("click",shuffleLook);
+    $("#compose-btn").addEventListener("click",compose);
+    $("#clear-look").addEventListener("click",()=>{ look={name:"",ids:[]}; $("#look-name").value=""; renderStudio(); });
+    $("#save-look").addEventListener("click",saveLook);
+    $("#look-name").addEventListener("input",e=>{ look.name=e.target.value; $("#board-title").textContent = e.target.value.trim()||"Untitled look"; });
+    $("#export-btn").addEventListener("click", exportData);
+    $("#import-btn").addEventListener("click", ()=>$("#import-input").click());
+    $("#import-input").addEventListener("change", e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=""; if(f) importData(f); });
+    $("#ai-settings-btn").addEventListener("click", ()=>{ const p=$("#ai-panel"); p.hidden=!p.hidden; if(!p.hidden) $("#ai-key").value = geminiKey||""; });
+    $("#ai-save").addEventListener("click", saveGeminiKey);
+    $("#ai-remove").addEventListener("click", removeGeminiKey);
+    $("#sync-settings-btn").addEventListener("click", ()=>{
+      const p=$("#sync-panel"); p.hidden=!p.hidden;
+      if(!p.hidden){
+        $("#sync-sql").value = SYNC_SQL;
+        $("#sync-url").value = supaUrl||""; $("#sync-key").value = supaKey||""; $("#sync-code").value = syncCode||"";
+      }
+    });
+    $("#copy-sql-btn").addEventListener("click", ()=>{
+      const t=$("#sync-sql"); t.select();
+      try{ navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand("copy"); }
+      toast("SQL copied");
+    });
+    $("#sync-save").addEventListener("click", saveSyncSettings);
+    $("#sync-disconnect").addEventListener("click", disconnectSync);
+    $("#sync-now-btn").addEventListener("click", ()=>syncSmart());
+  }
+
+  /* ---------------- init ---------------- */
+  async function init(){
+    try{
+      const mani = { name:"The Rail", short_name:"The Rail", start_url:".", display:"standalone", background_color:"#EFEBE3", theme_color:"#EFEBE3" };
+      const link = document.createElement("link");
+      link.rel = "manifest";
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(mani)], { type:"application/manifest+json" }));
+      document.head.appendChild(link);
+    }catch(e){}
+    buildCatFilters();
+    buildModalControls();
+    $("#file-input").addEventListener("change", onFilePicked);
+    renderUploader();
+    wire();
+    await loadAll();
+    geminiKey = await store.get("settings:geminiKey");
+    const sc = await store.get("settings:sync");
+    if(sc){ supaUrl = sc.url; supaKey = sc.key; syncCode = sc.code; }
+    localVer = (await store.get("settings:localVer")) || 0;
+    updateAIState();
+    renderRail();
+    renderStudio();
+    renderLookbook();
+    await checkPersistence();
+    updateBackupStatus();
+    updateSyncState();
+    if(syncConfigured()){ await syncSmart(); }
+  }
+
+  init();
+})();
+</script>
