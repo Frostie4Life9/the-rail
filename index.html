@@ -61,6 +61,7 @@
   }
   .wordmark .the{font-style:italic;font-weight:400;font-size:20px;color:var(--ink-soft);margin-right:6px}
   .tagline{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .appver{align-self:center;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
 
   .nav{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px}
   .nav button{
@@ -428,6 +429,7 @@
     <div class="brand">
       <div class="wordmark"><span class="the">the</span>RAIL</div>
       <div class="tagline">Catalog · Compose · Reinvent</div>
+      <span class="appver" id="app-ver"></span>
     </div>
     <nav class="nav" role="tablist">
       <button role="tab" aria-selected="true" data-view="rail">Rail<span class="count" id="cnt-rail"></span></button>
@@ -658,6 +660,9 @@
 <script>
 (function(){
   "use strict";
+
+  /* Bump this on every deploy so you can confirm the new file actually loaded. */
+  const APP_VERSION = "1.3.0";
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
@@ -2019,6 +2024,14 @@
     await checkPersistence();
     updateBackupStatus();
     updateSyncState();
+    // Surface the version so it's easy to confirm a deploy landed.
+    const verEl = $("#app-ver"); if(verEl) verEl.textContent = "v" + APP_VERSION;
+    try{ console.log("The Rail — v" + APP_VERSION); }catch(e){}
+    try{
+      const prevVer = await store.get("settings:appVersion");
+      if(prevVer && prevVer !== APP_VERSION) toast("Updated to v" + APP_VERSION);
+      if(prevVer !== APP_VERSION) await store.set("settings:appVersion", APP_VERSION);
+    }catch(e){}
     if(syncConfigured()){ await syncSmart(); }
   }
 
