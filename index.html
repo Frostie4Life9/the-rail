@@ -257,6 +257,21 @@
   .uploader svg{width:26px;height:26px;color:var(--ink-soft)}
   .reshoot{position:absolute;top:8px;right:8px;border:0;background:rgba(33,31,28,.82);color:#fff;font-size:11px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;z-index:2}
   .cp-tip{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(33,31,28,.78);color:#fff;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:4px 11px;border-radius:999px;pointer-events:none;z-index:2}
+  .active-view-badge{position:absolute;top:8px;left:8px;background:rgba(33,31,28,.82);color:#fff;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px;z-index:2}
+
+  /* multi-photo strip (front / back / detail views) */
+  .photo-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .pstrip-item{width:84px;display:flex;flex-direction:column;gap:6px}
+  .pstrip-thumb{position:relative;aspect-ratio:4/5;border-radius:4px;overflow:hidden;background:var(--line-soft);border:1px solid var(--line);cursor:pointer;transition:box-shadow .14s,border-color .14s}
+  .pstrip-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .pstrip-item.active .pstrip-thumb{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .pstrip-active{position:absolute;bottom:0;left:0;right:0;background:var(--accent);color:#fff;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;text-align:center;padding:3px}
+  .pstrip-x{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(33,31,28,.78);color:#fff;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+  .pstrip-x:hover{background:var(--danger)}
+  .pstrip-label{width:100%;border:1px solid var(--line);border-radius:4px;padding:5px 6px;background:var(--bone);font-size:11px;font-weight:600;color:var(--ink);cursor:pointer}
+  .pstrip-add{width:84px;aspect-ratio:4/5;border:1px dashed var(--line);border-radius:4px;background:var(--bone);color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:border-color .14s,color .14s;align-self:flex-start}
+  .pstrip-add:hover{border-color:var(--ink-soft);color:var(--ink)}
+  .pstrip-add svg{width:18px;height:18px}
 
   .field label .lbl-aux{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink-soft);opacity:.85;font-size:11px}
   .cp-hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 11px}
@@ -539,7 +554,7 @@
       <label class="toggle">
         <input type="checkbox" id="visual-toggle" />
         <span class="tg-track"><span class="tg-thumb"></span></span>
-        <span class="tg-label">Visual mode — let the AI see your clothes' photos (richer, but slower)</span>
+        <span class="tg-label">Visual mode — let the AI see every photo of each piece (front, back &amp; details). Richer, but slower</span>
       </label>
       <button class="btn accent brief-go" id="compose-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.4 6.6L22 12l-6.6 2.4L13 21l-2.4-6.6L4 12l6.6-2.4L13 3Z"/></svg>
@@ -587,6 +602,7 @@
     <div class="modal-body">
       <input type="file" accept="image/*" id="file-input" hidden />
       <div class="uploader" id="uploader"></div>
+      <div class="photo-strip" id="photo-strip"></div>
 
       <div class="field">
         <label for="f-name">Name</label>
@@ -596,6 +612,11 @@
       <div class="field">
         <label for="f-cat">Category</label>
         <select id="f-cat"></select>
+      </div>
+
+      <div class="field">
+        <label for="f-subcat">Type <span class="lbl-aux">— be specific so the Stylist knows the piece</span></label>
+        <select id="f-subcat"></select>
       </div>
 
       <div class="field">
@@ -642,6 +663,17 @@
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
   const FORMALITY  = ["Casual","Smart casual","Formal","Activewear","Loungewear"];
   const SEASONS    = ["Spring","Summer","Fall","Winter","All-season"];
+  const PHOTO_LABELS = ["Front","Back","Side","Detail","Tag","Other"];
+  // Specific garment types within each overarching category, so the Stylist knows
+  // exactly what it's working with (a chelsea boot styles very differently to a sneaker).
+  const SUBCATEGORIES = {
+    Tops: ["T-shirt","Long-sleeve tee","Henley","Polo","Dress shirt","Casual button-up","Oxford shirt","Flannel shirt","Sweater / jumper","Cardigan","Hoodie","Sweatshirt","Turtleneck","Tank top","Jersey","Other top"],
+    Bottoms: ["Jeans","Chinos","Dress trousers","Casual trousers","Shorts","Cargo pants","Joggers / sweatpants","Track pants","Linen trousers","Corduroys","Athletic shorts","Other bottom"],
+    Outerwear: ["Blazer","Sport coat","Suit jacket","Overshirt / shacket","Denim jacket","Leather jacket","Bomber jacket","Trucker jacket","Trench coat","Overcoat / topcoat","Parka","Puffer jacket","Raincoat","Field jacket","Windbreaker","Vest / gilet","Other outerwear"],
+    Shoes: ["Sneakers","Running shoes","Dress shoes / Oxfords","Derbies","Loafers","Monk straps","Chelsea boots","Chukka boots","Boots","Hiking boots","Sandals","Slides","Espadrilles","Driving shoes","Other shoes"],
+    Bags: ["Backpack","Messenger bag","Briefcase","Tote","Duffel / weekender","Crossbody / sling","Laptop bag","Gym bag","Other bag"],
+    Accessories: ["Belt","Watch","Cap / hat","Beanie","Scarf","Sunglasses","Tie","Bow tie","Pocket square","Gloves","Socks","Bracelet","Necklace / chain","Ring","Cufflinks","Suspenders","Other accessory"]
+  };
   // Legacy color names from the first version → hex, for migrating old items.
   const LEGACY = {Black:"#1d1d1d",White:"#f4f1e9",Grey:"#9a958c",Beige:"#d8c7a8",Brown:"#7a5230",
     Navy:"#243049",Blue:"#3f6fb0",Green:"#4f6b43",Red:"#a93226",Pink:"#d98aa6",
@@ -706,6 +738,9 @@
   let look = { name:"", ids:[] };
   let editingId = null;
   let draftImage = null;
+  let draftPhotos = [];          // [{label, image}] photos for the piece being edited
+  let activePhotoIdx = 0;        // which draft photo shows in the big preview / is sampled
+  let pendingPhotoMode = "add";  // "add" or "replace" — how the next picked file is used
   let draftColors = [];   // hex strings sampled/picked for the piece being edited
   let expandedColorHexes = new Set();  // which color chips are showing their hex
   let sampleCV = null;    // offscreen canvas holding the current photo for color sampling
@@ -839,12 +874,19 @@
   async function onFilePicked(e){
     const file = e.target.files && e.target.files[0];
     e.target.value = ""; // let the same file be re-picked later
-    if(!file) return;
+    if(!file){ pendingPhotoMode = "add"; return; }
     try{
       toast("Processing photo…");
-      draftImage = await fileToDataURL(file);
-      await prepareSample(draftImage);
-      renderUploader();
+      const dataURL = await fileToDataURL(file);
+      if(pendingPhotoMode==="replace" && draftPhotos[activePhotoIdx]){
+        draftPhotos[activePhotoIdx].image = dataURL;
+      } else {
+        draftPhotos.push({ label: suggestLabel(draftPhotos.length), image: dataURL });
+        activePhotoIdx = draftPhotos.length - 1;
+      }
+      pendingPhotoMode = "add";
+      await setActivePhoto(activePhotoIdx);
+      renderPhotoStrip();
       renderColorPicker();
     }catch(err){
       console.error(err);
@@ -857,7 +899,25 @@
     if(typeof it.formality === "string") it.formality = it.formality ? [it.formality] : [];
     if(!Array.isArray(it.formality)) it.formality = [];
     it.colors = (it.colors||[]).map(c => (c && c[0]==="#") ? c : (LEGACY[c]||null)).filter(Boolean);
+    it.subcategory = it.subcategory || "";
+    // Migrate the old single `image` field into a labeled photo array.
+    if(!Array.isArray(it.photos) || it.photos.length===0){
+      it.photos = it.image ? [{ label:"Front", image:it.image }] : [];
+    } else {
+      it.photos = it.photos.filter(p=>p && p.image).map(p=>({ label:p.label||"Front", image:p.image }));
+    }
+    delete it.image;
     return it;
+  }
+
+  // The cover photo used everywhere a single thumbnail is shown: the "Front" view if
+  // one is labeled, otherwise the first photo. Falls back to a legacy image field.
+  function primaryImage(it){
+    if(it && Array.isArray(it.photos) && it.photos.length){
+      const front = it.photos.find(p => (p.label||"").toLowerCase()==="front");
+      return (front || it.photos[0]).image;
+    }
+    return (it && it.image) || null;
   }
 
   async function loadAll(){
@@ -927,7 +987,7 @@
     return items.filter(it=>{
       if(filterCat!=="All" && it.category!==filterCat) return false;
       if(searchTerm){
-        const hay = (it.name+" "+it.category+" "+(it.colors||[]).join(" ")+" "+(it.notes||"")).toLowerCase();
+        const hay = (it.name+" "+it.category+" "+(it.subcategory||"")+" "+(it.colors||[]).join(" ")+" "+(it.notes||"")).toLowerCase();
         if(!hay.includes(searchTerm)) return false;
       }
       return true;
@@ -957,14 +1017,15 @@
     }
     grid.className="grid";
     grid.innerHTML = list.map(it=>{
-      const img = it.image
-        ? `<img src="${it.image}" alt="${esc(it.name)}" loading="lazy"/>`
+      const im = primaryImage(it);
+      const img = im
+        ? `<img src="${im}" alt="${esc(it.name)}" loading="lazy"/>`
         : `<span class="ph">no photo</span>`;
       const dots = (it.colors||[]).slice(0,5).map(c=>
         `<span class="dot" style="background:${c}" title="${esc(c)}"></span>`).join("");
       const dress = (it.formality||[]).slice(0,2).join(" · ");
       return `<div class="card">
-        <div class="thumb">${img}<span class="cat-tag">${esc(it.category)}</span></div>
+        <div class="thumb">${img}<span class="cat-tag">${esc(it.subcategory || it.category)}</span></div>
         <div class="meta">
           <div class="name" title="${esc(it.name)}">${esc(it.name)||"Untitled piece"}</div>
           <div class="sub"><span class="dots">${dots}</span><span>${esc(dress)}</span></div>
@@ -995,7 +1056,8 @@
       if(inCat.length===0) return "";
       const cards = inCat.map(it=>{
         const on = look.ids.includes(it.id);
-        const img = it.image ? `<img src="${it.image}" alt=""/>` : "";
+        const pim = primaryImage(it);
+        const img = pim ? `<img src="${pim}" alt=""/>` : "";
         return `<button class="pick" data-pick="${it.id}" aria-pressed="${on}">
           <div class="pthumb">${img}</div>
           <div class="pname">${esc(it.name)||"Untitled"}</div>
@@ -1017,7 +1079,7 @@
     }
     const cells = look.ids.map(id=>{
       const it = items.find(i=>i.id===id); if(!it) return "";
-      const img = it.image ? `<img src="${it.image}" alt="${esc(it.name)}"/>` : "";
+      const img = primaryImage(it) ? `<img src="${primaryImage(it)}" alt="${esc(it.name)}"/>` : "";
       return `<div class="laycell">${img}<button class="x" data-rm="${id}" aria-label="Remove">×</button>
         <span class="clabel">${esc(it.category)}</span></div>`;
     }).join("");
@@ -1079,7 +1141,7 @@
     grid.className="looks";
     grid.innerHTML = outfits.map(o=>{
       const pieceObjs = [
-        ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:it.image,name:it.name,owned:true}:null; }).filter(Boolean),
+        ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:primaryImage(it),name:it.name,owned:true}:null; }).filter(Boolean),
         ...((o.wishItems||[]).map(c=>({ category:c.category, name:c.item, color:c.color, owned:false })))
       ];
       const count = pieceObjs.length;
@@ -1149,6 +1211,7 @@
       id: it.id,
       name: it.name,
       category: it.category,
+      type: it.subcategory || "",
       colors: (it.colors||[]).map(colorName),
       dressCode: it.formality||[],
       seasons: it.seasons||[],
@@ -1193,7 +1256,7 @@
   }
 
   function stylistSystem(discover){
-    const base = "You are an expert fashion stylist with deep knowledge of color theory, proportion, silhouette, fabric weight, and occasion dressing. The wearer is male, so keep all garments menswear-appropriate. ";
+    const base = "You are an expert fashion stylist with deep knowledge of color theory, proportion, silhouette, fabric weight, and occasion dressing. The wearer is male, so keep all garments menswear-appropriate. Each owned piece lists a specific type (e.g. chelsea boots, chinos, oxford shirt) alongside its broad category — pay attention to what each garment actually is when pairing and describing it, not just the category. ";
     const ownRule = 'Each outfit has a "pieces" array. For an item the wearer already owns, use {"owned":true,"id":"<exact inventory id>"}. ';
     const discRule = discover
       ? 'You MAY also add aspirational pieces he does NOT own, to broaden his style, as {"owned":false,"item":"concise menswear item name","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=12 words on what it adds"}. Blend owned pieces with 1-3 new pieces per outfit. '
@@ -1226,22 +1289,25 @@
       img.src=dataURL;
     });
   }
-  async function itemThumb(it){
-    if(!it.image) return null;
-    const key = it.id + ":" + it.image.length;
+  async function photoThumb(dataURL){
+    if(!dataURL) return null;
+    const key = "p:" + dataURL.length + ":" + dataURL.slice(24, 56);
     if(_thumbCache[key]) return _thumbCache[key];
-    const t = await thumbFromDataURL(it.image);
+    const t = await thumbFromDataURL(dataURL);
     if(t) _thumbCache[key] = t;
     return t;
   }
   async function buildGeminiContents(brief, visual){
     if(!visual) return [{ role:"user", parts:[{ text: stylistUser(brief) + "\n\nReturn only the JSON object." }] }];
-    const parts = [{ text: stylistUser(brief) + "\n\nPhotos of the owned items follow — use them to judge real color, pattern, texture and cut. Each photo is labeled with its item id.\n\nReturn only the JSON object." }];
+    const parts = [{ text: stylistUser(brief) + "\n\nPhotos of the owned items follow — use them to judge real color, pattern, texture and cut. Each photo is labeled with its item id and which view it shows (front, back, side, detail), so a piece can have several photos. Treat all photos sharing an item id as the same garment.\n\nReturn only the JSON object." }];
     for(const it of items){
-      const t = await itemThumb(it);
-      if(!t) continue;
-      parts.push({ text: "Item " + it.id + " — " + (it.name||"") + ":" });
-      parts.push({ inlineData:{ mimeType:"image/jpeg", data: t.split(",")[1] } });
+      const photos = (it.photos && it.photos.length) ? it.photos : (it.image ? [{label:"Front", image:it.image}] : []);
+      for(const ph of photos){
+        const t = await photoThumb(ph.image);
+        if(!t) continue;
+        parts.push({ text: "Item " + it.id + " — " + (it.name||"") + " (" + (ph.label||"view") + "):" });
+        parts.push({ inlineData:{ mimeType:"image/jpeg", data: t.split(",")[1] } });
+      }
     }
     return [{ role:"user", parts }];
   }
@@ -1435,7 +1501,7 @@
     }
     const cards = proposals.map((o,idx)=>{
       const pieceObjs = [
-        ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:it.image,name:it.name,owned:true}:null; }).filter(Boolean),
+        ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:primaryImage(it),name:it.name,owned:true}:null; }).filter(Boolean),
         ...(o.concepts||[]).map(c=>({ category:c.category, name:c.item, color:c.color, why:c.why, owned:false }))
       ];
       const caption = pieceObjs.map(p=> p.owned
@@ -1574,9 +1640,7 @@
       if(!confirm("Import "+inItems.length+" pieces and "+inOutfits.length+" looks? They'll be added to your current wardrobe.")) return;
       for(const it of inItems){
         if(!it.id) it.id = uid();
-        if(typeof it.formality==="string") it.formality = it.formality ? [it.formality] : [];
-        if(!Array.isArray(it.formality)) it.formality = [];
-        it.colors = (it.colors||[]).map(c=> (c&&c[0]==="#")?c:(LEGACY[c]||null)).filter(Boolean);
+        normalizeItem(it);
         if(!items.find(x=>x.id===it.id)) items.unshift(it);
         await saveItem(it);
       }
@@ -1705,8 +1769,24 @@
   /* ---------------- modal: add / edit ---------------- */
   function fillSelect(sel, opts){ sel.innerHTML = opts.map(o=>`<option value="${o}">${o}</option>`).join(""); }
 
+  // Populate the Type dropdown for a category, keeping any existing/legacy value selectable.
+  function fillSubcats(cat, selected){
+    const list = SUBCATEGORIES[cat] || [];
+    let opts = '<option value="">Type (optional)…</option>';
+    let found = false;
+    for(const s of list){
+      const sel = (s===selected) ? " selected" : "";
+      if(sel) found = true;
+      opts += `<option value="${esc(s)}"${sel}>${esc(s)}</option>`;
+    }
+    if(selected && !found) opts += `<option value="${esc(selected)}" selected>${esc(selected)}</option>`;
+    $("#f-subcat").innerHTML = opts;
+  }
+
   function buildModalControls(){
     fillSelect($("#f-cat"), CATEGORIES);
+    fillSubcats(CATEGORIES[0], "");
+    $("#f-cat").addEventListener("change", ()=> fillSubcats($("#f-cat").value, ""));
     $("#f-formality").innerHTML = FORMALITY.map(s=>
       `<button type="button" class="chip" data-formality="${s}" aria-pressed="false">${s}</button>`).join("");
     $("#f-seasons").innerHTML = SEASONS.map(s=>
@@ -1729,47 +1809,100 @@
   async function openModal(id){
     editingId = id || null;
     draftImage = null; draftColors = []; sampleCV = null; expandedColorHexes = new Set();
+    draftPhotos = []; activePhotoIdx = 0; pendingPhotoMode = "add";
     $("#modal-title").textContent = editingId ? "Edit piece" : "Add a piece";
 
     if(editingId){
       const it = items.find(i=>i.id===editingId);
       $("#f-name").value = it.name||"";
       $("#f-cat").value = it.category||CATEGORIES[0];
+      fillSubcats(it.category||CATEGORIES[0], it.subcategory||"");
       $("#f-notes").value = it.notes||"";
       setPressed($("#f-formality"),"formality", it.formality||[]);
       setPressed($("#f-seasons"),"season", it.seasons||[]);
       draftColors = (it.colors||[]).slice();
-      draftImage = it.image||null;
+      draftPhotos = (it.photos && it.photos.length)
+        ? it.photos.map(p=>({ label:p.label||"Front", image:p.image }))
+        : (it.image ? [{ label:"Front", image:it.image }] : []);
     } else {
       $("#f-name").value=""; $("#f-cat").value=CATEGORIES[0]; $("#f-notes").value="";
+      fillSubcats(CATEGORIES[0], "");
       setPressed($("#f-formality"),"formality",[]); setPressed($("#f-seasons"),"season",[]);
+      draftPhotos = [];
     }
-    renderUploader();
-    if(draftImage) await prepareSample(draftImage);
+    await setActivePhoto(0);
+    renderPhotoStrip();
     renderColorPicker();
     $("#overlay").classList.add("open");
     setTimeout(()=>$("#f-name").focus(),60);
   }
 
+  function suggestLabel(count){ return PHOTO_LABELS[count] || "Detail"; }
+
+  // Show the chosen photo in the big preview and load it for color sampling.
+  async function setActivePhoto(idx){
+    if(draftPhotos.length===0){ activePhotoIdx = 0; draftImage = null; sampleCV = null; renderUploader(); return; }
+    activePhotoIdx = Math.max(0, Math.min(idx, draftPhotos.length-1));
+    draftImage = draftPhotos[activePhotoIdx].image;
+    await prepareSample(draftImage);
+    renderUploader();
+  }
+
+  function renderPhotoStrip(){
+    const strip = $("#photo-strip"); if(!strip) return;
+    if(draftPhotos.length===0){ strip.innerHTML = ""; return; }
+    const thumbs = draftPhotos.map((p,i)=>{
+      const active = i===activePhotoIdx;
+      const opts = PHOTO_LABELS.map(l=>`<option value="${l}"${l===p.label?" selected":""}>${l}</option>`).join("");
+      return `<div class="pstrip-item${active?" active":""}">
+        <div class="pstrip-thumb" data-photosel="${i}" title="Tap to sample this view's colors">
+          <img src="${p.image}" alt=""/>
+          ${active?'<span class="pstrip-active">Sampling</span>':''}
+          <button type="button" class="pstrip-x" data-rmphoto="${i}" aria-label="Remove photo">×</button>
+        </div>
+        <select class="pstrip-label" data-plabel="${i}" aria-label="What this photo shows">${opts}</select>
+      </div>`;
+    }).join("");
+    const addTile = `<button type="button" class="pstrip-add" id="pstrip-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Add view</span></button>`;
+    strip.innerHTML = thumbs + addTile;
+    strip.querySelectorAll("[data-photosel]").forEach(el=>el.addEventListener("click",()=>{ setActivePhoto(+el.dataset.photosel); renderPhotoStrip(); }));
+    strip.querySelectorAll("[data-rmphoto]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); removePhoto(+b.dataset.rmphoto); }));
+    strip.querySelectorAll("[data-plabel]").forEach(s=>s.addEventListener("change",()=>{ draftPhotos[+s.dataset.plabel].label = s.value; renderPhotoStrip(); }));
+    const add = $("#pstrip-add"); if(add) add.addEventListener("click",()=>{ pendingPhotoMode="add"; $("#file-input").click(); });
+  }
+
+  function removePhoto(i){
+    draftPhotos.splice(i,1);
+    if(activePhotoIdx >= draftPhotos.length) activePhotoIdx = draftPhotos.length-1;
+    if(activePhotoIdx < 0) activePhotoIdx = 0;
+    setActivePhoto(activePhotoIdx);
+    renderPhotoStrip();
+    renderColorPicker();
+  }
+
   function renderUploader(){
     const up = $("#uploader");
     if(draftImage){
+      const activeLabel = (draftPhotos[activePhotoIdx] && draftPhotos[activePhotoIdx].label) || "Front";
       up.classList.add("has");
       up.onclick = null;
       up.innerHTML = `<img src="${draftImage}" alt="preview" id="preview-img"/>
+        <span class="active-view-badge">${esc(activeLabel)} view</span>
         <button type="button" class="reshoot" id="replace-btn">Replace</button>
         <span class="cp-tip">Tap photo to pick a color</span>`;
       $("#preview-img").addEventListener("click", samplePhotoColor);
-      $("#replace-btn").addEventListener("click", e=>{ e.stopPropagation(); $("#file-input").click(); });
+      $("#replace-btn").addEventListener("click", e=>{ e.stopPropagation(); pendingPhotoMode="replace"; $("#file-input").click(); });
     } else {
       up.classList.remove("has");
       up.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.5"/></svg>
         <div class="hint"><b>Add a photo</b><br>Tap to take or upload one</div>`;
-      up.onclick = ()=> $("#file-input").click();
+      up.onclick = ()=>{ pendingPhotoMode="add"; $("#file-input").click(); };
     }
   }
 
-  function closeModal(){ $("#overlay").classList.remove("open"); editingId=null; draftImage=null; draftColors=[]; sampleCV=null; }
+  function closeModal(){ $("#overlay").classList.remove("open"); editingId=null; draftImage=null; draftColors=[]; draftPhotos=[]; activePhotoIdx=0; pendingPhotoMode="add"; sampleCV=null; }
 
   async function saveFromModal(){
     const name = $("#f-name").value.trim();
@@ -1777,15 +1910,17 @@
     const data = {
       name,
       category: $("#f-cat").value,
+      subcategory: $("#f-subcat").value,
       formality: getPressed($("#f-formality"),"formality"),
       colors: draftColors.slice(),
       seasons: getPressed($("#f-seasons"),"season"),
       notes: $("#f-notes").value.trim(),
-      image: draftImage || null
+      photos: draftPhotos.map(p=>({ label:p.label||"Front", image:p.image }))
     };
     if(editingId){
       const it = items.find(i=>i.id===editingId);
       Object.assign(it, data);
+      delete it.image;
       await saveItem(it);
       toast("Piece updated");
     } else {
