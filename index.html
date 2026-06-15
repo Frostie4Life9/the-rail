@@ -61,7 +61,6 @@
   }
   .wordmark .the{font-style:italic;font-weight:400;font-size:20px;color:var(--ink-soft);margin-right:6px}
   .tagline{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
-  .appver{align-self:center;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
 
   .nav{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px}
   .nav button{
@@ -429,7 +428,6 @@
     <div class="brand">
       <div class="wordmark"><span class="the">the</span>RAIL</div>
       <div class="tagline">Catalog · Compose · Reinvent</div>
-      <span class="appver" id="app-ver"></span>
     </div>
     <nav class="nav" role="tablist">
       <button role="tab" aria-selected="true" data-view="rail">Rail<span class="count" id="cnt-rail"></span></button>
@@ -661,9 +659,6 @@
 (function(){
   "use strict";
 
-  /* Bump this on every deploy so you can confirm the new file actually loaded. */
-  const APP_VERSION = "1.3.3";
-
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
   const FORMALITY  = ["Casual","Smart casual","Formal","Activewear","Loungewear"];
@@ -758,7 +753,8 @@
   let engineUsed = "on-device";
   let lastAIError = "";
   let supaUrl = null, supaKey = null, syncCode = null;  // Supabase cross-device sync
-  let localVer = 0;           // version stamp of this device's data
+  let dirty = {};             // records changed locally but not yet pushed
+  let lastPull = null;        // server-time watermark for incremental pulls
   let lastSyncLabel = "";
   let _pushTimer = null;
   let filterCat = "All";
@@ -1127,7 +1123,7 @@
     $("#look-name").value = "";
     renderStudio();
     renderLookbook();
-    markChanged();
+    markChanged("outfit", o.id);
     toast("Saved to your Lookbook");
   }
 
@@ -1182,41 +1178,27 @@
     outfits = outfits.filter(o=>o.id!==id);
     await removeOutfit(id);
     renderLookbook();
-    markChanged();
+    markChanged("outfit", id, true);
   }
 
   /* ---------------- STYLIST (smart outfit creator) ---------------- */
   const BRIEF_CHIPS = ["Workday","Date night","Weekend casual","Formal event","Travel","Night out","Brunch","Job interview"];
 
   const NAMED_COLORS = [
-    ["black",[26,26,28]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[202,202,202]],["white",[245,243,238]],["off-white",[237,233,224]],
-    ["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],["sand",[206,186,151]],["greige",[198,190,178]],["taupe",[142,122,106]],["khaki",[161,140,95]],["tan",[196,164,120]],["camel",[181,140,92]],["caramel",[171,112,60]],["brown",[120,82,52]],["coffee",[96,70,52]],["chocolate",[74,52,38]],["chestnut",[138,74,50]],
-    ["red",[198,40,38]],["scarlet",[222,55,42]],["crimson",[180,35,55]],["brick",[156,62,52]],["rust",[165,78,46]],["burgundy",[110,35,45]],["maroon",[88,30,40]],["wine",[104,38,54]],
-    ["coral",[242,116,98]],["salmon",[240,142,122]],["pink",[226,122,152]],["hot pink",[228,75,140]],["rose",[196,92,112]],["dusty rose",[188,132,138]],["blush",[226,182,182]],["pale pink",[242,212,221]],["magenta",[192,60,158]],
-    ["orange",[226,118,40]],["burnt orange",[188,88,32]],["terracotta",[194,108,78]],["amber",[201,130,42]],["apricot",[238,168,108]],["peach",[245,200,170]],
-    ["yellow",[226,196,56]],["lemon",[238,224,88]],["light yellow",[240,228,168]],["gold",[201,160,62]],["mustard",[198,158,48]],["ochre",[188,148,58]],
-    ["lime",[150,198,72]],["chartreuse",[178,200,84]],["green",[60,128,72]],["kelly green",[52,142,72]],["emerald",[40,150,92]],["forest green",[36,76,46]],["hunter green",[44,78,56]],["olive",[110,110,60]],["olive drab",[98,102,62]],["moss",[112,128,82]],["sage",[150,165,140]],["pistachio",[192,210,150]],["mint",[199,225,205]],["seafoam",[162,212,188]],
-    ["teal",[40,120,120]],["dark teal",[28,88,90]],["turquoise",[58,182,178]],["aqua",[122,210,206]],
-    ["navy",[36,48,73]],["royal blue",[48,82,178]],["cobalt",[40,82,158]],["blue",[54,104,180]],["denim",[70,106,150]],["steel blue",[96,132,166]],["slate blue",[92,106,142]],["sky blue",[136,182,226]],["light blue",[186,213,233]],["baby blue",[176,208,236]],["cornflower",[122,152,222]],["periwinkle",[150,162,226]],["indigo",[76,72,142]],
-    ["purple",[120,76,152]],["violet",[142,92,182]],["plum",[120,72,112]],["eggplant",[82,52,82]],["orchid",[200,112,190]],["mauve",[176,142,166]],["lavender",[196,176,216]],["lilac",[206,192,226]]
+    ["black",[20,20,20]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[200,200,200]],
+    ["white",[245,243,238]],["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],
+    ["tan",[196,164,120]],["camel",[181,140,92]],["brown",[120,82,52]],["chocolate",[74,52,38]],
+    ["navy",[36,48,73]],["blue",[63,111,176]],["sky blue",[140,180,220]],["teal",[40,120,120]],
+    ["green",[79,107,67]],["olive",[110,110,60]],["sage",[150,165,140]],["forest green",[40,70,45]],
+    ["mustard",[200,160,50]],["yellow",[224,181,61]],["gold",[190,150,70]],
+    ["orange",[207,122,46]],["rust",[160,80,40]],["terracotta",[190,110,80]],
+    ["red",[169,50,38]],["burgundy",[110,35,45]],["maroon",[90,30,40]],
+    ["pink",[217,138,166]],["blush",[224,180,180]],["purple",[111,76,142]],["lavender",[190,170,210]]
   ];
-  const NEUTRALS = new Set(["black","charcoal","grey","silver","white","off-white","ivory","cream","beige","sand","greige","taupe","khaki","tan","camel","caramel","brown","coffee","chocolate","chestnut","navy","denim"]);
+  const NEUTRALS = new Set(["black","charcoal","grey","silver","white","ivory","cream","beige","tan","camel","brown","chocolate","navy"]);
   function colorName(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(hex||""); if(!m) return (hex||"").toLowerCase();
     const n=parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b), chroma=max-min, L=(max+min)/2;
-    const denom = 255 - Math.abs(2*L - 255);
-    const sat = (chroma===0 || denom===0) ? 0 : chroma/denom;
-    // Treat a color as a true neutral only when it's genuinely close to gray. Gating on
-    // saturation (not raw chroma) keeps pale tints like mint #D1DFD0 from collapsing to
-    // white, while still catching low-tint grays like #4E5255 and #B0B0B0.
-    if(chroma < 10 || sat < 0.12){
-      if(L < 32)  return "black";
-      if(L < 92)  return "charcoal";
-      if(L < 150) return "grey";
-      if(L < 210) return "silver";
-      return "white";
-    }
     let best="", bd=Infinity;
     for(const [name,[R,G,B]] of NAMED_COLORS){
       const d=(r-R)*(r-R)+(g-G)*(g-G)+(b-B)*(b-B);
@@ -1627,7 +1609,7 @@
     outfits.unshift(o);
     await saveOutfit(o);
     renderLookbook();
-    markChanged();
+    markChanged("outfit", o.id);
     toast("Saved to your Lookbook");
   }
   function openProposal(i){
@@ -1641,13 +1623,20 @@
   /* ---------------- backup: export / import ---------------- */
   function exportData(){
     try{
-      const payload = { app:"the-rail", version:1, exportedAt:new Date().toISOString(), items, outfits };
-      const blob = new Blob([JSON.stringify(payload)], { type:"application/json" });
+      // Stringify one item at a time and let the Blob concatenate the parts, instead
+      // of JSON.stringify-ing the whole wardrobe into one giant contiguous string.
+      // With many base64 photos that single allocation can exhaust the tab's memory
+      // and crash it (the white-screen freeze) — per-item parts stay small.
+      const parts = ['{"app":"the-rail","version":1,"exportedAt":' +
+        JSON.stringify(new Date().toISOString()) + ',"items":['];
+      items.forEach((it, i)=>{ parts.push((i ? "," : "") + JSON.stringify(it)); });
+      parts.push('],"outfits":' + JSON.stringify(outfits) + '}');
+      const blob = new Blob(parts, { type:"application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "the-rail-backup-" + new Date().toISOString().slice(0,10) + ".json";
       document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
       toast("Backup downloaded");
     }catch(e){ console.error(e); toast("Couldn't export — try again"); }
   }
@@ -1682,81 +1671,179 @@
   }
   function reRenderAll(){ renderRail(); renderStudio(); renderLookbook(); updateBackupStatus(); }
 
-  function markChanged(){
-    localVer = Date.now();
-    store.set("settings:localVer", localVer);
+  // ---- per-record dirty tracking ----
+  // Instead of shipping the whole wardrobe in one request (which is what made sync
+  // fail once there were lots of base64 photos), we track exactly which records
+  // changed and push only those, one row per piece/look.
+  async function markAllDirty(){
+    items.forEach(it=>{ dirty["item:"+it.id] = { kind:"item", id:it.id, deleted:false }; });
+    outfits.forEach(o=>{ dirty["outfit:"+o.id] = { kind:"outfit", id:o.id, deleted:false }; });
+    await store.set("settings:dirty", dirty);
+  }
+  // markChanged(kind, id[, deleted]) flags one record; markChanged() with no args
+  // flags everything (used after a bulk import or first-connect seed).
+  function markChanged(kind, id, deleted){
+    if(!kind){ markAllDirty(); }
+    else { dirty[kind+":"+id] = { kind, id, deleted: !!deleted }; store.set("settings:dirty", dirty); }
     if(!syncConfigured()) return;
     clearTimeout(_pushTimer);
     _pushTimer = setTimeout(()=>{
       updateSyncStatus("Syncing…");
       syncPush().then(()=>updateSyncStatus("Synced")).catch(e=>{ console.error(e); updateSyncStatus("Sync failed"); });
-    }, 1800);
+    }, 1500);
   }
 
-  async function syncFetchRow(){
-    const res = await fetch(supaUrl + "/rest/v1/vault?code=eq." + encodeURIComponent(syncCode) + "&select=data,updated_at", { headers: supaHeaders() });
-    if(!res.ok) throw new Error("fetch "+res.status);
-    const rows = await res.json();
-    return (rows && rows.length) ? rows[0] : null;
-  }
-  async function syncPush(){
-    const body = { code: syncCode, data: { items, outfits, ver: localVer }, updated_at: new Date().toISOString() };
-    const res = await fetch(supaUrl + "/rest/v1/vault?on_conflict=code", {
+  const ROW_ID = (kind,id) => kind + ":" + id;   // composite key inside the table
+
+  // Push one record (an upsert, or a tombstone if it was deleted). The server's
+  // trigger stamps updated_at; we read it back so other devices can see the change.
+  async function pushRecord(rec){
+    let row;
+    if(rec.deleted){
+      row = { code:syncCode, item_id:ROW_ID(rec.kind, rec.id), kind:rec.kind, data:null, deleted:true };
+    } else {
+      const data = rec.kind==="item" ? items.find(i=>i.id===rec.id) : outfits.find(o=>o.id===rec.id);
+      if(!data) return null;   // record vanished locally before we got to it
+      row = { code:syncCode, item_id:ROW_ID(rec.kind, rec.id), kind:rec.kind, data, deleted:false };
+    }
+    const res = await fetch(supaUrl + "/rest/v1/vault_items?on_conflict=code,item_id", {
       method:"POST",
-      headers: supaHeaders("resolution=merge-duplicates,return=minimal"),
-      body: JSON.stringify(body)
+      headers: supaHeaders("resolution=merge-duplicates,return=representation"),
+      body: JSON.stringify([row])
     });
     if(!res.ok) throw new Error("push "+res.status);
-  }
-  async function applyRemoteData(data){
-    const newItems = (data.items||[]).map(normalizeItem);
-    const newOutfits = data.outfits || [];
-    for(const k of await store.listKeys("item:")) await store.del(k);
-    for(const k of await store.listKeys("outfit:")) await store.del(k);
-    items = newItems; outfits = newOutfits;
-    for(const it of items) await store.set("item:"+it.id, it);
-    for(const o of outfits) await store.set("outfit:"+o.id, o);
-    localVer = data.ver || Date.now();
-    await store.set("settings:localVer", localVer);
+    const out = await res.json();
+    return (out && out[0] && out[0].updated_at) || null;
   }
 
-  // Ongoing sync on open / on demand: newest version wins.
+  async function syncPush(){
+    if(!syncConfigured()) return 0;
+    const recs = Object.values(dirty);
+    let n = 0;
+    for(const rec of recs){
+      await pushRecord(rec);              // small request — one record at a time
+      delete dirty[ROW_ID(rec.kind, rec.id)];
+      await store.set("settings:dirty", dirty);
+      n++;
+    }
+    return n;
+  }
+
+  // Apply a single row pulled from the cloud to local state + storage.
+  async function applyRemoteRow(row){
+    const realId = String(row.item_id).replace(/^(item|outfit):/, "");
+    if(row.kind==="item"){
+      if(row.deleted){
+        items = items.filter(i=>i.id!==realId);
+        await store.del("item:"+realId);
+      } else if(row.data){
+        const it = normalizeItem(row.data);
+        const i = items.findIndex(x=>x.id===realId);
+        if(i>=0) items[i] = it; else items.unshift(it);
+        await store.set("item:"+realId, it);
+      }
+    } else if(row.kind==="outfit"){
+      if(row.deleted){
+        outfits = outfits.filter(o=>o.id!==realId);
+        await store.del("outfit:"+realId);
+      } else if(row.data){
+        const o = row.data;
+        const i = outfits.findIndex(x=>x.id===realId);
+        if(i>=0) outfits[i] = o; else outfits.unshift(o);
+        await store.set("outfit:"+realId, o);
+      }
+    }
+  }
+
+  // Incremental pull: only rows changed since our watermark, paged so each response
+  // stays small even on a first full sync. Advances lastPull to the newest row seen.
+  async function syncPull(){
+    if(!syncConfigured()) return 0;
+    const base = supaUrl + "/rest/v1/vault_items?code=eq." + encodeURIComponent(syncCode)
+               + "&select=item_id,kind,data,deleted,updated_at&order=updated_at.asc";
+    const filter = lastPull ? "&updated_at=gt." + encodeURIComponent(lastPull) : "";
+    const PAGE = 25;
+    let offset = 0, applied = 0, maxTs = lastPull;
+    while(true){
+      const res = await fetch(base + filter + "&limit=" + PAGE + "&offset=" + offset, { headers: supaHeaders() });
+      if(!res.ok) throw new Error("pull "+res.status);
+      const rows = await res.json();
+      for(const row of rows){
+        await applyRemoteRow(row);
+        applied++;
+        if(row.updated_at && (!maxTs || row.updated_at > maxTs)) maxTs = row.updated_at;
+      }
+      if(rows.length < PAGE) break;
+      offset += PAGE;
+    }
+    if(maxTs && maxTs !== lastPull){ lastPull = maxTs; await store.set("settings:lastPull", lastPull); }
+    return applied;
+  }
+
+  // Ongoing sync on open / on demand: pull remote changes, then push local ones.
   async function syncSmart(){
     if(!syncConfigured()) return;
     updateSyncStatus("Syncing…");
     try{
-      const remote = await syncFetchRow();
-      if(!remote){ await syncPush(); updateSyncStatus("Synced"); return; }
-      const remoteVer = (remote.data && remote.data.ver) || 0;
-      if(remoteVer > localVer){ await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud"); }
-      else if(localVer > remoteVer){ await syncPush(); updateSyncStatus("Synced"); }
-      else updateSyncStatus("Up to date");
+      const pulled = await syncPull();
+      const pushed = await syncPush();
+      if(pulled>0) reRenderAll();
+      updateSyncStatus(pulled>0 ? "Updated from cloud" : (pushed>0 ? "Synced" : "Up to date"));
     }catch(e){ console.error("sync:", e); updateSyncStatus("Sync failed — check settings"); }
   }
 
-  // First connect: decide seed direction, asking only on a genuine conflict.
+  // First connect on a device: decide seed direction, asking only on a real conflict.
   async function syncFirstConnect(){
     updateSyncStatus("Connecting…");
     try{
-      const remote = await syncFetchRow();
+      const probe = await fetch(supaUrl + "/rest/v1/vault_items?code=eq." + encodeURIComponent(syncCode) + "&select=item_id&limit=1", { headers: supaHeaders() });
+      if(!probe.ok) throw new Error("probe "+probe.status);
+      const remoteHas = (await probe.json()).length > 0;
       const localHas = items.length || outfits.length;
-      const remoteHas = remote && remote.data && (((remote.data.items||[]).length) || ((remote.data.outfits||[]).length));
       if(remoteHas && localHas){
         const useCloud = confirm(
-          "This device has "+items.length+" pieces. The cloud already holds a wardrobe ("+((remote.data.items||[]).length)+" pieces).\n\n" +
-          "OK = replace THIS device with the cloud version.\nCancel = upload this device and overwrite the cloud."
+          "This device has "+items.length+" pieces. The cloud already holds a wardrobe under this sync code.\n\n" +
+          "OK = replace THIS device with the cloud version.\nCancel = upload this device, merging with the cloud."
         );
-        if(useCloud){ await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud"); }
-        else { localVer = Date.now(); await store.set("settings:localVer", localVer); await syncPush(); updateSyncStatus("Synced"); }
+        if(useCloud){
+          for(const k of await store.listKeys("item:")) await store.del(k);
+          for(const k of await store.listKeys("outfit:")) await store.del(k);
+          items = []; outfits = []; dirty = {}; lastPull = null;
+          await store.set("settings:dirty", dirty);
+          await store.del("settings:lastPull");
+          await syncPull(); reRenderAll(); updateSyncStatus("Updated from cloud");
+        } else {
+          await markAllDirty();
+          await syncPull();   // bring down anything we don't have
+          await syncPush();   // upload local
+          reRenderAll(); updateSyncStatus("Synced");
+        }
       } else if(remoteHas){
-        await applyRemoteData(remote.data); reRenderAll(); updateSyncStatus("Updated from cloud");
+        await syncPull(); reRenderAll(); updateSyncStatus("Updated from cloud");
       } else {
-        localVer = localVer || Date.now(); await store.set("settings:localVer", localVer); await syncPush(); updateSyncStatus("Synced");
+        await markAllDirty(); await syncPush(); updateSyncStatus("Synced");
       }
     }catch(e){ console.error("connect:", e); updateSyncStatus("Couldn't connect — check the URL, key, and SQL setup"); }
   }
 
-  const SYNC_SQL = "create table if not exists public.vault (\n  code text primary key,\n  data jsonb,\n  updated_at timestamptz default now()\n);\nalter table public.vault disable row level security;\ngrant select, insert, update on public.vault to anon;";
+  const SYNC_SQL =
+"create table if not exists public.vault_items (\n" +
+"  code text not null,\n" +
+"  item_id text not null,\n" +
+"  kind text,\n" +
+"  data jsonb,\n" +
+"  deleted boolean default false,\n" +
+"  updated_at timestamptz default now(),\n" +
+"  primary key (code, item_id)\n" +
+");\n" +
+"alter table public.vault_items disable row level security;\n" +
+"grant select, insert, update, delete on public.vault_items to anon;\n" +
+"create or replace function public.touch_updated_at()\n" +
+"  returns trigger language plpgsql as $$\n" +
+"  begin new.updated_at = now(); return new; end; $$;\n" +
+"drop trigger if exists vault_items_touch on public.vault_items;\n" +
+"create trigger vault_items_touch before insert or update on public.vault_items\n" +
+"  for each row execute function public.touch_updated_at();";
 
   async function saveSyncSettings(){
     const url = $("#sync-url").value.trim().replace(/\/+$/,"");
@@ -1765,6 +1852,7 @@
     if(!url || !key || !code){ toast("Fill in all three fields"); return; }
     supaUrl = url; supaKey = key; syncCode = code;
     await store.set("settings:sync", { url, key, code });
+    lastPull = null; await store.del("settings:lastPull");
     $("#sync-panel").hidden = true;
     updateSyncState();
     await syncFirstConnect();
@@ -1772,6 +1860,7 @@
   async function disconnectSync(){
     supaUrl = supaKey = syncCode = null;
     await store.del("settings:sync");
+    lastPull = null; await store.del("settings:lastPull");
     lastSyncLabel = "";
     updateSyncState();
     toast("Sync disconnected (your wardrobe stays on this device)");
@@ -1936,6 +2025,7 @@
       notes: $("#f-notes").value.trim(),
       photos: draftPhotos.map(p=>({ label:p.label||"Front", image:p.image }))
     };
+    let savedId = editingId;
     if(editingId){
       const it = items.find(i=>i.id===editingId);
       Object.assign(it, data);
@@ -1944,13 +2034,14 @@
       toast("Piece updated");
     } else {
       const it = { id:uid(), created:Date.now(), ...data };
+      savedId = it.id;
       items.unshift(it);
       await saveItem(it);
       toast("Added to your rail");
     }
     closeModal();
     renderRail(); renderStudio();
-    markChanged();
+    markChanged("item", savedId);
   }
 
   async function deleteItem(id){
@@ -1960,7 +2051,7 @@
     await removeItem(id);
     look.ids = look.ids.filter(x=>x!==id);
     renderRail(); renderStudio();
-    markChanged();
+    markChanged("item", id, true);
   }
 
   /* ---------------- view switching ---------------- */
@@ -2030,7 +2121,8 @@
     geminiKey = await store.get("settings:geminiKey");
     const sc = await store.get("settings:sync");
     if(sc){ supaUrl = sc.url; supaKey = sc.key; syncCode = sc.code; }
-    localVer = (await store.get("settings:localVer")) || 0;
+    lastPull = (await store.get("settings:lastPull")) || null;
+    dirty = (await store.get("settings:dirty")) || {};
     updateAIState();
     renderRail();
     renderStudio();
@@ -2038,15 +2130,7 @@
     await checkPersistence();
     updateBackupStatus();
     updateSyncState();
-    // Surface the version so it's easy to confirm a deploy landed.
-    const verEl = $("#app-ver"); if(verEl) verEl.textContent = "v" + APP_VERSION;
-    try{ console.log("The Rail — v" + APP_VERSION); }catch(e){}
-    try{
-      const prevVer = await store.get("settings:appVersion");
-      if(prevVer && prevVer !== APP_VERSION) toast("Updated to v" + APP_VERSION);
-      if(prevVer !== APP_VERSION) await store.set("settings:appVersion", APP_VERSION);
-    }catch(e){}
-    if(syncConfigured()){ await syncSmart(); }
+    if(syncConfigured()){ if(lastPull) await syncSmart(); else await syncFirstConnect(); }
   }
 
   init();
