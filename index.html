@@ -662,7 +662,7 @@
   "use strict";
 
   /* Bump this on every deploy so you can confirm the new file actually loaded. */
-  const APP_VERSION = "1.3.1";
+  const APP_VERSION = "1.3.3";
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
@@ -1189,26 +1189,28 @@
   const BRIEF_CHIPS = ["Workday","Date night","Weekend casual","Formal event","Travel","Night out","Brunch","Job interview"];
 
   const NAMED_COLORS = [
-    ["black",[20,20,20]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[200,200,200]],
-    ["white",[245,243,238]],["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],
-    ["tan",[196,164,120]],["camel",[181,140,92]],["brown",[120,82,52]],["chocolate",[74,52,38]],
-    ["navy",[36,48,73]],["blue",[63,111,176]],["sky blue",[140,180,220]],["teal",[40,120,120]],
-    ["green",[79,107,67]],["olive",[110,110,60]],["sage",[150,165,140]],["forest green",[40,70,45]],
-    ["mustard",[200,160,50]],["yellow",[224,181,61]],["gold",[190,150,70]],
-    ["orange",[207,122,46]],["rust",[160,80,40]],["terracotta",[190,110,80]],
-    ["red",[169,50,38]],["burgundy",[110,35,45]],["maroon",[90,30,40]],
-    ["pink",[217,138,166]],["blush",[224,180,180]],["purple",[111,76,142]],["lavender",[190,170,210]]
+    ["black",[26,26,28]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[202,202,202]],["white",[245,243,238]],["off-white",[237,233,224]],
+    ["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],["sand",[206,186,151]],["greige",[198,190,178]],["taupe",[142,122,106]],["khaki",[161,140,95]],["tan",[196,164,120]],["camel",[181,140,92]],["caramel",[171,112,60]],["brown",[120,82,52]],["coffee",[96,70,52]],["chocolate",[74,52,38]],["chestnut",[138,74,50]],
+    ["red",[198,40,38]],["scarlet",[222,55,42]],["crimson",[180,35,55]],["brick",[156,62,52]],["rust",[165,78,46]],["burgundy",[110,35,45]],["maroon",[88,30,40]],["wine",[104,38,54]],
+    ["coral",[242,116,98]],["salmon",[240,142,122]],["pink",[226,122,152]],["hot pink",[228,75,140]],["rose",[196,92,112]],["dusty rose",[188,132,138]],["blush",[226,182,182]],["pale pink",[242,212,221]],["magenta",[192,60,158]],
+    ["orange",[226,118,40]],["burnt orange",[188,88,32]],["terracotta",[194,108,78]],["amber",[201,130,42]],["apricot",[238,168,108]],["peach",[245,200,170]],
+    ["yellow",[226,196,56]],["lemon",[238,224,88]],["light yellow",[240,228,168]],["gold",[201,160,62]],["mustard",[198,158,48]],["ochre",[188,148,58]],
+    ["lime",[150,198,72]],["chartreuse",[178,200,84]],["green",[60,128,72]],["kelly green",[52,142,72]],["emerald",[40,150,92]],["forest green",[36,76,46]],["hunter green",[44,78,56]],["olive",[110,110,60]],["olive drab",[98,102,62]],["moss",[112,128,82]],["sage",[150,165,140]],["pistachio",[192,210,150]],["mint",[199,225,205]],["seafoam",[162,212,188]],
+    ["teal",[40,120,120]],["dark teal",[28,88,90]],["turquoise",[58,182,178]],["aqua",[122,210,206]],
+    ["navy",[36,48,73]],["royal blue",[48,82,178]],["cobalt",[40,82,158]],["blue",[54,104,180]],["denim",[70,106,150]],["steel blue",[96,132,166]],["slate blue",[92,106,142]],["sky blue",[136,182,226]],["light blue",[186,213,233]],["baby blue",[176,208,236]],["cornflower",[122,152,222]],["periwinkle",[150,162,226]],["indigo",[76,72,142]],
+    ["purple",[120,76,152]],["violet",[142,92,182]],["plum",[120,72,112]],["eggplant",[82,52,82]],["orchid",[200,112,190]],["mauve",[176,142,166]],["lavender",[196,176,216]],["lilac",[206,192,226]]
   ];
-  const NEUTRALS = new Set(["black","charcoal","grey","silver","white","ivory","cream","beige","tan","camel","brown","chocolate","navy"]);
+  const NEUTRALS = new Set(["black","charcoal","grey","silver","white","off-white","ivory","cream","beige","sand","greige","taupe","khaki","tan","camel","caramel","brown","coffee","chocolate","chestnut","navy","denim"]);
   function colorName(hex){
     const m = /^#?([0-9a-f]{6})$/i.exec(hex||""); if(!m) return (hex||"").toLowerCase();
     const n=parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b), chroma=max-min;
-    // Near-neutral colors (very low chroma) read as grayscale regardless of a faint
-    // tint. Without this gate, a dark gray like #4E5255 gets pulled to "green" — and a
-    // light gray like #B0B0B0 to "lavender" — by plain nearest-neighbour in RGB.
-    if(chroma <= 16){
-      const L=(max+min)/2;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), chroma=max-min, L=(max+min)/2;
+    const denom = 255 - Math.abs(2*L - 255);
+    const sat = (chroma===0 || denom===0) ? 0 : chroma/denom;
+    // Treat a color as a true neutral only when it's genuinely close to gray. Gating on
+    // saturation (not raw chroma) keeps pale tints like mint #D1DFD0 from collapsing to
+    // white, while still catching low-tint grays like #4E5255 and #B0B0B0.
+    if(chroma < 10 || sat < 0.12){
       if(L < 32)  return "black";
       if(L < 92)  return "charcoal";
       if(L < 150) return "grey";
