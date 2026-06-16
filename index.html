@@ -387,17 +387,38 @@
   .toggle input:focus-visible ~ .tg-track{outline:2px solid var(--accent);outline-offset:2px}
   .tg-label{flex:1;min-width:0;line-height:1.35;padding-top:1px}
 
-  /* body map figure */
-  .bodymap{position:relative;width:154px;height:248px;margin:6px auto 4px;color:var(--line)}
-  .bm-figure{position:absolute;inset:0;width:100%;height:100%}
-  .bm-node{position:absolute;width:36px;height:36px;transform:translate(-50%,-50%);border-radius:8px;overflow:hidden;background:var(--paper);border:1px solid var(--ink);box-shadow:0 2px 7px rgba(33,31,28,.2);display:flex;align-items:center;justify-content:center}
-  .bm-node img{width:100%;height:100%;object-fit:cover}
-  .bm-node.bm-new{border:1.5px dashed var(--accent);background:var(--bone)}
-  .bm-concept{width:18px;height:18px;border-radius:50%;border:1px solid rgba(33,31,28,.25)}
-  .bm-abbr{font-size:10px;font-weight:700;color:var(--ink-soft)}
-  .prop-caption{font-size:12px;color:var(--ink-soft);line-height:1.55;text-align:center;margin:2px 0 0}
+  /* ---------- outfit diagram: annotated figure + piece rail ---------- */
+  .odiagram{margin:6px 0 2px}
+  .fig{position:relative;width:100%;max-width:232px;margin:2px auto 0;aspect-ratio:23/35}
+  .fig-svg{position:absolute;inset:0;width:100%;height:100%;color:var(--line)}
+  .fig-node{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--paper);border:1px solid var(--ink);box-shadow:0 2px 9px rgba(33,31,28,.2);display:flex;align-items:center;justify-content:center}
+  .fig-node img{width:100%;height:100%;object-fit:cover;display:block}
+  .fig-node.concept{border:1.5px dashed var(--accent);background:var(--bone)}
+  .fig-node .fn-swatch{width:20px;height:20px;border-radius:50%;border:1px solid rgba(33,31,28,.25)}
+  .fig-node .fn-abbr{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--ink-soft)}
+
+  .look-rail{display:flex;gap:9px;overflow-x:auto;padding:14px 2px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .look-rail::-webkit-scrollbar{display:none}
+  .lr-card{flex:0 0 auto;width:98px;background:var(--bone);border:1px solid var(--line-soft);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+  .lr-card.concept{border:1.5px dashed var(--accent);background:var(--paper)}
+  .lr-thumb{aspect-ratio:4/5;background:var(--line-soft);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
+  .lr-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .lr-thumb .lr-swatch{width:36px;height:36px;border-radius:50%;border:1px solid rgba(33,31,28,.22)}
+  .lr-thumb .lr-flag{position:absolute;top:5px;left:5px;background:var(--accent);color:#fff;font-size:8px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:2px 6px;border-radius:999px}
+  .lr-text{padding:7px 8px 9px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .lr-name{font-size:11.5px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lr-type{font-size:10px;letter-spacing:.02em;color:var(--ink-soft);text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lr-dots{display:flex;gap:3px;margin-top:2px}
+  .lr-dots .d{width:9px;height:9px;border-radius:50%;border:1px solid rgba(33,31,28,.2)}
+
+  .aesthetic-tag{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--accent);margin:1px 0 0}
   .concept-name{color:var(--accent);font-weight:600}
-  .prop-legend{display:flex;justify-content:center;gap:16px;font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);margin-top:4px}
+  .moves{margin:0;padding-left:17px;display:flex;flex-direction:column;gap:4px}
+  .moves li{font-size:13px;line-height:1.45}
+  .palette-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .palette-swatches{display:flex;gap:4px}
+  .palette-swatches .ps{width:14px;height:14px;border-radius:4px;border:1px solid rgba(33,31,28,.2)}
+  .prop-legend{display:flex;justify-content:center;gap:16px;font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);margin-top:6px}
   .prop-legend span{display:inline-flex;align-items:center;gap:5px}
   .lg-own{width:11px;height:11px;border-radius:3px;border:1px solid var(--ink);background:var(--paper)}
   .lg-new{width:11px;height:11px;border-radius:3px;border:1.5px dashed var(--accent);background:var(--bone)}
@@ -688,8 +709,14 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.2.0";
+  const APP_VERSION = "1.3.0";
   const CHANGELOG = [
+    { v:"1.3.0", date:"Jun 2026", notes:[
+      "Stylist looks now render on an annotated figure: each piece sits on its real body zone (hat on the head, sunglasses on the face, scarf at the neck, watch at the wrist, belt at the waist, bag at the side), with outerwear layered over tops.",
+      "Below each figure, every piece also shows as a clear card with its photo, type and colors — nothing hides behind the silhouette.",
+      "The AI stylist now reasons like a real editor: it names the color scheme, calls the proportion/silhouette play, gives a style descriptor and concrete styling moves, and pins each look to a season.",
+      "Saved looks in the Lookbook keep the new styling notes."
+    ]},
     { v:"1.2.0", date:"Jun 2026", notes:[
       "Backup export now uses your device's share sheet on mobile, so saving works on iPhone instead of freezing on a blank screen.",
       "Sync now shows the real error when it fails, so problems are easier to pin down.",
@@ -1196,22 +1223,25 @@
     grid.className="looks";
     grid.innerHTML = outfits.map(o=>{
       const pieceObjs = [
-        ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:primaryImage(it),name:it.name,owned:true}:null; }).filter(Boolean),
-        ...((o.wishItems||[]).map(c=>({ category:c.category, name:c.item, color:c.color, owned:false })))
+        ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{owned:true,category:it.category,type:it.subcategory||"",name:it.name,image:primaryImage(it),colors:(it.colors||[]).slice(0,4)}:null; }).filter(Boolean),
+        ...((o.wishItems||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color })))
       ];
       const count = pieceObjs.length;
       const hasNew = pieceObjs.some(p=>!p.owned);
       const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>Own</span><span><span class="lg-new"></span>To try</span></div>` : "";
       const when = new Date(o.createdAt||Date.now()).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+      const aes = o.aesthetic ? `<div class="aesthetic-tag">${esc(o.aesthetic)}</div>` : "";
+      const palette = o.palette ? `<div class="prop-row" style="padding:0 16px 10px"><p style="font-size:12.5px;color:var(--ink-soft);margin:0">${esc(o.palette)}</p></div>` : "";
       return `<div class="look">
         <div class="lhead">
-          <div><h3>${esc(o.name)}</h3><div class="when">${when}</div></div>
+          <div>${aes}<h3>${esc(o.name)}</h3><div class="when">${when}</div></div>
           <button class="iconbtn" data-del-look="${o.id}" aria-label="Delete look">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
           </button>
         </div>
-        ${bodyMapHTML(pieceObjs)}
+        ${outfitDiagram(pieceObjs)}
         ${legend}
+        ${palette}
         <div class="lfoot"><span class="pieces">${count} piece${count===1?"":"s"}</span>
           <button class="btn ghost sm" data-restyle="${o.id}">Restyle</button></div>
       </div>`;
@@ -1274,32 +1304,103 @@
     }));
   }
 
-  /* ----- body map: places each piece on a human figure by body zone ----- */
-  const SILHOUETTE_SVG = `<svg class="bm-figure" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="15" r="9"/><path d="M50 24v7"/><path d="M31 39q19 -8 38 0"/><path d="M31 39l-4 39"/><path d="M69 39l4 39"/><path d="M39 41l-2 37h26l-2 -37"/><path d="M40 78l-3 52h9l4 -38 4 38h9l-3 -52"/><path d="M37 130l-2 8h11"/><path d="M63 130l2 8h-11"/></g></svg>`;
-  const ZONE = {
-    Accessories:{top:17,left:50}, Tops:{top:41,left:50}, Outerwear:{top:40,left:77},
-    Bottoms:{top:67,left:50}, Shoes:{top:92,left:50}, Bags:{top:60,left:21}
-  };
+  /* ----- outfit diagram: an annotated croquis + a head-to-toe piece rail -----
+     Pieces are placed on the figure by precise body zone (resolved from the garment
+     TYPE, not just its broad category — a beanie sits on the head, sunglasses on the
+     face, a scarf at the neck, a watch at the wrist, a belt at the waist, a bag at the
+     side). Layers stack: outerwear sits over the top. Below the figure, every piece is
+     also shown as a clear card so nothing is lost behind the silhouette. */
   function nameToCss(word){
-    const hit = NAMED_COLORS.find(c=>c[0]===(word||"").toLowerCase().trim());
+    const w=(word||"").toLowerCase().trim();
+    const hit = NAMED_COLORS.find(c=>c[0]===w);
     if(hit){ const [r,g,b]=hit[1]; return rgbToHex(r,g,b); }
-    return "#b9b2a4";
+    // a couple of words the AI uses that aren't in the swatch list
+    const extra={stone:"#cabfa8",khaki:"#b5a173",denim:"#5a749b",wine:"#6e2335",mint:"#bfe0cf"};
+    return extra[w] || "#b9b2a4";
   }
-  function bodyMapHTML(pieces){
-    const byZone={};
-    pieces.forEach(p=>{ const z=ZONE[p.category]?p.category:"Accessories"; (byZone[z]=byZone[z]||[]).push(p); });
-    let nodes="";
+
+  // A spare, editorial menswear croquis sitting behind the item tiles.
+  const FIGURE_SVG = `<svg class="fig-svg" viewBox="0 0 120 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="60" cy="24" r="13"/><path d="M60 37v7"/><path d="M41 54q19 -9 38 0"/><path d="M41 54 31 116"/><path d="M79 54 89 116"/><path d="M45 53 41 122"/><path d="M75 53 79 122"/><path d="M41 122q19 8 38 0"/><path d="M47 124 41 214"/><path d="M73 124 79 214"/><path d="M60 126 57 214"/><path d="M60 126 63 214"/><path d="M37 215h13"/><path d="M70 215h13"/></g></svg>`;
+
+  // Body anchors as % of the figure box {t:top, l:left}.
+  const ANCHOR = {
+    head:{t:9,l:50}, face:{t:13.5,l:50}, neck:{t:21,l:50},
+    chest:{t:33,l:50}, outer:{t:34,l:71}, pocket:{t:40,l:38},
+    waist:{t:50,l:50}, hand:{t:55,l:78}, wrist:{t:50,l:23},
+    legs:{t:65,l:50}, carry:{t:64,l:82}, feet:{t:92,l:50}
+  };
+  // Head-to-toe ordering for the rail + layering (higher = drawn on top).
+  const ZONE_RANK = { head:0, face:1, neck:2, chest:3, outer:3.4, pocket:3.6, waist:4, wrist:4.4, hand:4.6, legs:5, carry:5.4, feet:6 };
+  const ZONE_LAYER = { chest:3, pocket:4, outer:6, neck:7, head:8, face:8 };
+
+  // Resolve the precise body zone for a piece from its specific type, then category.
+  function zoneFor(p){
+    const t = ((p.type||"") + " " + (p.name||"")).toLowerCase();
+    const cat = p.category;
+    if(cat==="Accessories"){
+      if(/sunglass|glasses|eyewear/.test(t)) return "face";
+      if(/beanie|cap|hat|bucket/.test(t)) return "head";
+      if(/scarf|tie|bow tie|necklace|chain|collar/.test(t)) return "neck";
+      if(/pocket square|lapel/.test(t)) return "pocket";
+      if(/watch|bracelet|cuff/.test(t)) return "wrist";
+      if(/ring|glove|cufflink/.test(t)) return "hand";
+      if(/belt|suspender|sock/.test(t)) return (/sock/.test(t) ? "feet" : "waist");
+      return "head";
+    }
+    if(cat==="Tops") return "chest";
+    if(cat==="Outerwear") return "outer";
+    if(cat==="Bottoms") return "legs";
+    if(cat==="Shoes") return "feet";
+    if(cat==="Bags") return "carry";
+    return "chest";
+  }
+
+  function figureNode(p){
+    const inner = p.owned
+      ? (p.image ? `<img src="${p.image}" alt=""/>` : `<span class="fn-abbr">${esc((p.type||p.category||"").slice(0,3))}</span>`)
+      : `<span class="fn-swatch" style="background:${nameToCss(p.color)}"></span>`;
+    return { owned:p.owned, inner, title:p.name||p.type||"" };
+  }
+
+  function figureHTML(pieces){
+    const byZone = {};
+    pieces.forEach(p=>{ const z = zoneFor(p); (byZone[z]=byZone[z]||[]).push(p); });
+    let nodes = "";
     Object.keys(byZone).forEach(z=>{
-      const arr=byZone[z], base=ZONE[z];
+      const arr = byZone[z], base = ANCHOR[z] || ANCHOR.chest, layer = ZONE_LAYER[z] || 5;
       arr.forEach((p,i)=>{
-        const left = base.left + (i-(arr.length-1)/2)*15;
-        const inner = p.owned
-          ? (p.image?`<img src="${p.image}" alt=""/>`:`<span class="bm-abbr">${esc((p.category||"").slice(0,2))}</span>`)
-          : `<span class="bm-concept" style="background:${nameToCss(p.color)}"></span>`;
-        nodes += `<div class="bm-node${p.owned?"":" bm-new"}" style="left:${left}%;top:${base.top}%" title="${esc(p.name||"")}">${inner}</div>`;
+        const spread = (z==="chest"||z==="outer"||z==="neck") ? 11 : 13;
+        const left = base.l + (i-(arr.length-1)/2)*spread;
+        const top  = base.t + (i-(arr.length-1)/2)*2;
+        const n = figureNode(p);
+        nodes += `<div class="fig-node${n.owned?"":" concept"}" style="left:${left}%;top:${top}%;z-index:${layer+i}" title="${esc(n.title)}">${n.inner}</div>`;
       });
     });
-    return `<div class="bodymap">${SILHOUETTE_SVG}${nodes}</div>`;
+    return `<div class="fig">${FIGURE_SVG}${nodes}</div>`;
+  }
+
+  function railCardHTML(p){
+    const thumb = p.owned
+      ? (p.image ? `<img src="${p.image}" alt=""/>` : `<span class="lr-swatch" style="background:#cabfa8"></span>`)
+      : `<span class="lr-swatch" style="background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
+    const dots = p.owned
+      ? `<div class="lr-dots">${(p.colors||[]).slice(0,4).map(c=>`<span class="d" style="background:${c}"></span>`).join("")}</div>`
+      : "";
+    const sub = p.owned
+      ? esc(p.type || p.category || "")
+      : esc((p.category||"") + (p.color?" · "+p.color:""));
+    return `<div class="lr-card${p.owned?"":" concept"}" title="${esc(p.name||"")}">
+      <div class="lr-thumb">${thumb}</div>
+      <div class="lr-text"><span class="lr-name">${esc(p.name||"")}</span><span class="lr-type">${sub}</span>${dots}</div>
+    </div>`;
+  }
+
+  // The full diagram: figure on top, then every piece as a card in head-to-toe order.
+  function outfitDiagram(pieces){
+    if(!pieces.length) return "";
+    const sorted = pieces.slice().sort((a,b)=>(ZONE_RANK[zoneFor(a)]??9)-(ZONE_RANK[zoneFor(b)]??9));
+    const rail = sorted.map(railCardHTML).join("");
+    return `<div class="odiagram">${figureHTML(pieces)}<div class="look-rail">${rail}</div></div>`;
   }
 
   function parseLoose(text){
@@ -1311,15 +1412,33 @@
   }
 
   function stylistSystem(discover){
-    const base = "You are an expert fashion stylist with deep knowledge of color theory, proportion, silhouette, fabric weight, and occasion dressing. The wearer is male, so keep all garments menswear-appropriate. Each owned piece lists a specific type (e.g. chelsea boots, chinos, oxford shirt) alongside its broad category — pay attention to what each garment actually is when pairing and describing it, not just the category. ";
-    const ownRule = 'Each outfit has a "pieces" array. For an item the wearer already owns, use {"owned":true,"id":"<exact inventory id>"}. ';
+    const base =
+      "You are a senior menswear stylist and fashion editor. You dress a man with a considered, slightly elevated streetwear-leaning sensibility. Think like a stylist on a real shoot, not a checklist. "
+      + "Apply these frameworks deliberately on every look:\n"
+      + "• COLOR: choose an intentional scheme — monochrome, tonal, analogous, neutral-anchored with one accent, earth-tone, or a controlled complementary pop. Never let three loud colors fight; anchor with neutrals and let one piece lead.\n"
+      + "• PROPORTION & SILHOUETTE: balance volume top-to-bottom (e.g. relaxed top over slimmer leg, or vice versa), mind the waist break and where the hem hits, and use the rule of thirds rather than cutting the body in half.\n"
+      + "• TEXTURE & FABRIC: mix surfaces and weights so a tonal or neutral fit still has depth (knit vs woven, matte vs sheen, heavy vs light), and keep fabric weight seasonally honest.\n"
+      + "• FORMALITY & OCCASION: read the brief, calibrate every piece to one coherent dress code, and respect season.\n"
+      + "• STYLING MOVES: finish the look with concrete moves — tuck or half-tuck, cuff or roll, layering order, collar/closure choices, deliberate accessory restraint.\n"
+      + "The wearer is male; keep every garment menswear-appropriate. Each owned piece lists a SPECIFIC type (e.g. chelsea boots, oxford shirt, overshirt) alongside its broad category — style and describe it as the exact garment it is, not just the category. Reference real garments and colors from the inventory by name in your reasoning. Push him: surface at least one pairing or proportion he likely hasn't tried, while keeping it genuinely wearable. ";
+    const ownRule = 'Each outfit has a "pieces" array. For a piece he owns, use {"owned":true,"id":"<exact inventory id>"}. ';
     const discRule = discover
-      ? 'You MAY also add aspirational pieces he does NOT own, to broaden his style, as {"owned":false,"item":"concise menswear item name","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=12 words on what it adds"}. Blend owned pieces with 1-3 new pieces per outfit. '
+      ? 'You MAY also add 1-3 aspirational pieces he does NOT own, to broaden his style, as {"owned":false,"item":"specific menswear item","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=10 words on what it adds"}. Blend owned and new pieces. '
       : 'Use ONLY pieces he owns; every piece must be {"owned":true,"id":"..."}. ';
     return base + ownRule + discRule
-      + "Reason like a stylist: balance proportion, coordinate or deliberately contrast color, and match formality and season to the occasion. Push him a little — surface pairings he might not have tried. "
-      + 'Return ONLY valid minified JSON, no markdown or any text outside it, in exactly: {"outfits":[{"name":"short evocative name","pieces":[...],"rationale":"<=24 words","wearTo":["place or occasion"],"tip":"<=12 word styling tweak"}],"gaps":"<=16 words, or empty string"} '
-      + "Rules: up to 3 distinct outfits; each 2-6 pieces; wearTo 2-3 entries; keep it concise; JSON only.";
+      + 'Return ONLY valid minified JSON — no markdown, no text outside it — in EXACTLY this shape: '
+      + '{"outfits":[{'
+      + '"name":"short evocative name",'
+      + '"aesthetic":"2-4 word style descriptor (e.g. \\"rugged minimalism\\")",'
+      + '"pieces":[...],'
+      + '"palette":"the color scheme in <=12 words (e.g. \\"Tonal earth — camel over cream, grounded in brown\\")",'
+      + '"proportion":"<=18 words on silhouette and how the volumes balance",'
+      + '"rationale":"<=26 words on why the look works",'
+      + '"wearTo":["place or occasion"],'
+      + '"moves":["concrete styling move <=8 words"],'
+      + '"season":"Spring|Summer|Fall|Winter|All-season"'
+      + '}],"gaps":"<=18 words on what would most expand his options, or empty string"} '
+      + "Rules: up to 3 distinct, genuinely different outfits; each 2-7 pieces; wearTo 2-3 entries; moves 1-3 entries; obey every length cap; JSON only.";
   }
   function stylistUser(brief){
     return "Occasion / brief: " + (brief || "versatile, well-composed everyday looks")
@@ -1374,8 +1493,8 @@
         systemInstruction:{ parts:[{ text: stylistSystem(discover) }] },
         contents: await buildGeminiContents(brief, visual),
         generationConfig:{
-          temperature:0.9,
-          maxOutputTokens:2048,
+          temperature:0.92,
+          maxOutputTokens:4096,
           responseMimeType:"application/json",
           thinkingConfig:{ thinkingBudget:0 }   // 2.5 Flash thinks by default and that eats the token budget
         }
@@ -1438,17 +1557,24 @@
           });
         }
       }
+      // moves: accept an array, or fall back to a legacy single "tip"
+      let moves = Array.isArray(o.moves) ? o.moves : (o.tip ? [o.tip] : []);
+      moves = moves.map(m=>String(m).slice(0,90)).filter(Boolean).slice(0,3);
+      const season = SEASONS.includes(o.season) ? o.season : "";
       if(ownedIds.length + concepts.length >= 2){
         out.push({
           name:(o.name||"Untitled look").slice(0,60),
+          aesthetic:(o.aesthetic||"").slice(0,40),
           ids: ownedIds, concepts,
-          rationale:(o.rationale||"").slice(0,220),
+          palette:(o.palette||"").slice(0,140),
+          proportion:(o.proportion||"").slice(0,170),
+          rationale:(o.rationale||"").slice(0,240),
           wearTo:(o.wearTo||[]).slice(0,4).map(w=>String(w).slice(0,40)),
-          tip:(o.tip||"").slice(0,120)
+          moves, season
         });
       }
     }
-    return { outfits: out, gaps: (json.gaps||"").slice(0,160) };
+    return { outfits: out, gaps: (json.gaps||"").slice(0,170) };
   }
 
   /* on-device fallback so the Stylist still works without the AI call */
@@ -1489,6 +1615,28 @@
     {item:"suede chelsea boots", category:"Shoes", color:"tan", why:"a refined step up from sneakers"},
     {item:"crossbody bag", category:"Bags", color:"black", why:"a modern, hands-free finish"}
   ];
+  const AESTHETIC_BY_FM = {
+    Casual:["Easy casual","Off-duty","Weekend ease"],
+    "Smart casual":["Refined casual","Elevated everyday","Quiet polish"],
+    Formal:["Sharp tailoring","Evening formal","Considered classic"],
+    Activewear:["Athletic","Sport-ready","Technical ease"],
+    Loungewear:["Relaxed","Soft layers","Stay-in comfort"]
+  };
+  const PROPORTION_LINES = [
+    "Keep the top a touch relaxed over a cleaner leg so the silhouette tapers.",
+    "Let the layers add structure up top; balance them with a trimmer bottom.",
+    "Mind where the hem breaks — a slight crop or cuff keeps the line sharp.",
+    "One fitted layer against one relaxed piece reads intentional, not baggy.",
+    "Anchor the volume at the shoulders and let everything below run leaner."
+  ];
+  function paletteLine(combo){
+    const bolds=new Set(), neutrals=new Set();
+    combo.forEach(it=>(it.colors||[]).map(colorName).forEach(n=>{ (NEUTRALS.has(n)?neutrals:bolds).add(n); }));
+    const b=[...bolds], n=[...neutrals];
+    if(b.length===0) return "Tonal neutrals — " + (n.slice(0,3).join(", ") || "clean and quiet") + ", carried by texture.";
+    if(b.length===1) return "Neutral base lifted by one hit of " + b[0] + ".";
+    return "Neutrals ground " + b.slice(0,2).join(" and ") + " so the colors play together.";
+  }
   function localStylist(brief, discover){
     const want = briefFormality(brief);
     const pref = want ? items.filter(i=>(i.formality||[]).includes(want)) : [];
@@ -1516,11 +1664,19 @@
         const src = pool.length ? pool : CONCEPT_IDEAS;
         concepts.push({ ...src[Math.floor(Math.random()*src.length)] });
       }
+      const seasons=new Set(); combo.forEach(it=>(it.seasons||[]).forEach(s=>seasons.add(s)));
+      const aes = AESTHETIC_BY_FM[fm] || AESTHETIC_BY_FM.Casual;
+      const moves = [...TIPS].sort(()=>Math.random()-0.5).slice(0, 1 + (Math.random()<0.5?1:0));
       outfits.push({
         name: "Around the " + (hero?hero.name.toLowerCase():"look"),
-        ids: combo.map(i=>i.id), concepts, rationale,
+        aesthetic: aes[Math.floor(Math.random()*aes.length)],
+        ids: combo.map(i=>i.id), concepts,
+        palette: paletteLine(combo),
+        proportion: PROPORTION_LINES[Math.floor(Math.random()*PROPORTION_LINES.length)],
+        rationale,
         wearTo: WEAR_MAP[fm] || WEAR_MAP.Casual,
-        tip: TIPS[Math.floor(Math.random()*TIPS.length)]
+        moves,
+        season: seasons.has("All-season") || seasons.size!==1 ? "All-season" : [...seasons][0]
       });
     }
     return { outfits, gaps:"" };
@@ -1556,23 +1712,24 @@
     }
     const cards = proposals.map((o,idx)=>{
       const pieceObjs = [
-        ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{category:it.category,image:primaryImage(it),name:it.name,owned:true}:null; }).filter(Boolean),
-        ...(o.concepts||[]).map(c=>({ category:c.category, name:c.item, color:c.color, why:c.why, owned:false }))
+        ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{owned:true,category:it.category,type:it.subcategory||"",name:it.name,image:primaryImage(it),colors:(it.colors||[]).slice(0,4)}:null; }).filter(Boolean),
+        ...(o.concepts||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color,why:c.why }))
       ];
-      const caption = pieceObjs.map(p=> p.owned
-        ? esc(p.name)
-        : `<span class="concept-name">${esc(p.name)}${p.color?" ("+esc(p.color)+")":""}</span>`).join(" · ");
       const hasNew = pieceObjs.some(p=>!p.owned);
       const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>You own</span><span><span class="lg-new"></span>To try</span></div>` : "";
       const tags = (o.wearTo||[]).map(w=>`<span class="wtag">${esc(w)}</span>`).join("");
+      const moves = (o.moves && o.moves.length) ? o.moves : (o.tip ? [o.tip] : []);
+      const movesHTML = moves.length ? `<div class="prop-row"><span class="plabel">Styling moves</span><ul class="moves">${moves.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>` : "";
+      const seasonTag = o.season ? `<span class="wtag">${esc(o.season)}</span>` : "";
       return `<article class="prop">
-        <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span><h3>${esc(o.name)}</h3></div>
-        ${bodyMapHTML(pieceObjs)}
+        <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span>${o.aesthetic?`<span class="aesthetic-tag">${esc(o.aesthetic)}</span>`:""}<h3>${esc(o.name)}</h3></div>
+        ${outfitDiagram(pieceObjs)}
         ${legend}
-        <p class="prop-caption">${caption}</p>
+        ${o.palette?`<div class="prop-row"><span class="plabel">Palette</span><p>${esc(o.palette)}</p></div>`:""}
+        ${o.proportion?`<div class="prop-row"><span class="plabel">Proportion</span><p>${esc(o.proportion)}</p></div>`:""}
         ${o.rationale?`<div class="prop-row"><span class="plabel">Why it works</span><p>${esc(o.rationale)}</p></div>`:""}
-        ${tags?`<div class="prop-row"><span class="plabel">Wear it to</span><div class="wtags">${tags}</div></div>`:""}
-        ${o.tip?`<div class="prop-row"><span class="plabel">Stylist tip</span><p>${esc(o.tip)}</p></div>`:""}
+        ${(tags||seasonTag)?`<div class="prop-row"><span class="plabel">Wear it to</span><div class="wtags">${tags}${seasonTag}</div></div>`:""}
+        ${movesHTML}
         <div class="prop-actions">
           <button class="btn ghost sm" data-prop-studio="${idx}">Tweak in Studio</button>
           <button class="btn accent sm" data-prop-save="${idx}">Save to Lookbook</button>
@@ -1658,6 +1815,9 @@
       id:uid(), name:p.name||"Untitled look",
       itemIds:p.ids.slice(),
       wishItems:(p.concepts||[]).map(c=>({ item:c.item, category:c.category, color:c.color })),
+      aesthetic:p.aesthetic||"", palette:p.palette||"", proportion:p.proportion||"",
+      rationale:p.rationale||"", moves:(p.moves||[]).slice(), wearTo:(p.wearTo||[]).slice(),
+      season:p.season||"",
       createdAt:Date.now()
     };
     outfits.unshift(o);
