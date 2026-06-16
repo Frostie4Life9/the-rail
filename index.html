@@ -61,6 +61,20 @@
   }
   .wordmark .the{font-style:italic;font-weight:400;font-size:20px;color:var(--ink-soft);margin-right:6px}
   .tagline{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .ver-badge{
+    border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);
+    font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.1em;
+    padding:2px 8px;border-radius:999px;margin-left:4px;vertical-align:middle;
+    transition:color .14s,border-color .14s;
+  }
+  .ver-badge:hover{color:var(--ink);border-color:var(--ink-soft)}
+  .changelog .cl-entry{padding:0 0 16px;border-bottom:1px solid var(--line-soft);margin-bottom:16px}
+  .changelog .cl-entry:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+  .changelog .cl-ver{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+  .changelog .cl-ver b{font-family:var(--display);font-weight:600;font-size:18px}
+  .changelog .cl-ver .cl-date{font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
+  .changelog ul{margin:0;padding-left:18px}
+  .changelog li{font-size:13.5px;line-height:1.55;margin-bottom:4px}
 
   .nav{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px}
   .nav button{
@@ -427,7 +441,7 @@
   <div class="topbar-inner">
     <div class="brand">
       <div class="wordmark"><span class="the">the</span>RAIL</div>
-      <div class="tagline">Catalog · Compose · Reinvent</div>
+      <div class="tagline">Catalog · Compose · Reinvent <button type="button" class="ver-badge" id="ver-badge" aria-haspopup="dialog">v–</button></div>
     </div>
     <nav class="nav" role="tablist">
       <button role="tab" aria-selected="true" data-view="rail">Rail<span class="count" id="cnt-rail"></span></button>
@@ -655,12 +669,42 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- CHANGELOG -->
+<div class="overlay" id="changelog-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
+    <div class="modal-head">
+      <h2 id="changelog-title">What's new</h2>
+      <button class="close" id="changelog-close" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="changelog-body" class="changelog"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
+  const APP_VERSION = "1.2.0";
+  const CHANGELOG = [
+    { v:"1.2.0", date:"Jun 2026", notes:[
+      "Backup export now uses your device's share sheet on mobile, so saving works on iPhone instead of freezing on a blank screen.",
+      "Sync now shows the real error when it fails, so problems are easier to pin down.",
+      "Added this version badge and changelog — tap the version in the header anytime."
+    ]},
+    { v:"1.1.0", date:"Jun 2026", notes:[
+      "Cloud sync rebuilt to send one piece at a time instead of the whole wardrobe at once (fixes failures once you had lots of photos).",
+      "Only changed pieces upload now, so syncing is fast and light.",
+      "Backup export rewritten to avoid the memory crash on large wardrobes."
+    ]},
+    { v:"1.0.0", date:"2026", notes:[
+      "The Rail: catalog your pieces, compose looks in the Studio, get AI outfits from the Stylist, save to the Lookbook.",
+      "On-device storage with optional cross-device cloud sync and JSON backups."
+    ]}
+  ];
   const FORMALITY  = ["Casual","Smart casual","Formal","Activewear","Loungewear"];
   const SEASONS    = ["Spring","Summer","Fall","Winter","All-season"];
   const PHOTO_LABELS = ["Front","Back","Side","Detail","Tag","Other"];
@@ -769,6 +813,16 @@
     const t = $("#toast"); t.textContent = msg; t.classList.add("show");
     clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("show"), 2200);
   }
+
+  function renderChangelog(){
+    const body = $("#changelog-body");
+    body.innerHTML = CHANGELOG.map(e=>{
+      const lis = e.notes.map(n=>`<li>${esc(n)}</li>`).join("");
+      return `<div class="cl-entry"><div class="cl-ver"><b>v${esc(e.v)}</b><span class="cl-date">${esc(e.date)}</span></div><ul>${lis}</ul></div>`;
+    }).join("");
+  }
+  function openChangelog(){ renderChangelog(); $("#changelog-overlay").classList.add("open"); }
+  function closeChangelog(){ $("#changelog-overlay").classList.remove("open"); }
 
   // Robust decode: createImageBitmap handles EXIF orientation + large mobile photos
   // efficiently; falls back to FileReader+Image where unsupported.
@@ -1621,20 +1675,38 @@
   }
 
   /* ---------------- backup: export / import ---------------- */
-  function exportData(){
+  async function exportData(){
+    let blob, fname;
     try{
       // Stringify one item at a time and let the Blob concatenate the parts, instead
       // of JSON.stringify-ing the whole wardrobe into one giant contiguous string.
-      // With many base64 photos that single allocation can exhaust the tab's memory
-      // and crash it (the white-screen freeze) — per-item parts stay small.
       const parts = ['{"app":"the-rail","version":1,"exportedAt":' +
         JSON.stringify(new Date().toISOString()) + ',"items":['];
       items.forEach((it, i)=>{ parts.push((i ? "," : "") + JSON.stringify(it)); });
       parts.push('],"outfits":' + JSON.stringify(outfits) + '}');
-      const blob = new Blob(parts, { type:"application/json" });
+      blob = new Blob(parts, { type:"application/json" });
+      fname = "the-rail-backup-" + new Date().toISOString().slice(0,10) + ".json";
+    }catch(e){ console.error(e); toast("Couldn't build the backup — try again"); return; }
+
+    // On mobile, an <a download> of a big blob often just opens the JSON inline and
+    // hangs the tab on a blank screen. The share sheet hands the file to Files / Mail
+    // / wherever instead, which is what actually works on iOS and Android.
+    try{
+      const file = new File([blob], fname, { type:"application/json" });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:"The Rail backup" });
+        toast("Backup ready to save");
+        return;
+      }
+    }catch(e){
+      if(e && e.name === "AbortError"){ return; }   // user dismissed the share sheet
+      console.error("share:", e);                    // fall through to download
+    }
+
+    try{
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = "the-rail-backup-" + new Date().toISOString().slice(0,10) + ".json";
+      a.href = url; a.download = fname;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url), 4000);
       toast("Backup downloaded");
@@ -1671,6 +1743,20 @@
   }
   function reRenderAll(){ renderRail(); renderStudio(); renderLookbook(); updateBackupStatus(); }
 
+  // Pull a human-readable reason out of a failed Supabase response so sync failures
+  // tell us *why* (e.g. table missing, permission denied) instead of just "failed".
+  async function syncFail(stage, res){
+    let detail = "";
+    try{
+      const txt = await res.text();
+      try{ const j = JSON.parse(txt); detail = j.message || j.hint || j.error || txt; }
+      catch(_){ detail = txt; }
+    }catch(_){}
+    if(res.status === 404) detail = detail || "table not found — run the setup SQL";
+    if(res.status === 401 || res.status === 403) detail = detail || "permission denied — check the grant in the SQL";
+    return new Error(stage + " " + res.status + (detail ? " · " + String(detail).slice(0,120) : ""));
+  }
+
   // ---- per-record dirty tracking ----
   // Instead of shipping the whole wardrobe in one request (which is what made sync
   // fail once there were lots of base64 photos), we track exactly which records
@@ -1689,7 +1775,7 @@
     clearTimeout(_pushTimer);
     _pushTimer = setTimeout(()=>{
       updateSyncStatus("Syncing…");
-      syncPush().then(()=>updateSyncStatus("Synced")).catch(e=>{ console.error(e); updateSyncStatus("Sync failed"); });
+      syncPush().then(()=>updateSyncStatus("Synced")).catch(e=>{ console.error(e); updateSyncStatus("Sync failed: " + (e.message||e)); });
     }, 1500);
   }
 
@@ -1711,7 +1797,7 @@
       headers: supaHeaders("resolution=merge-duplicates,return=representation"),
       body: JSON.stringify([row])
     });
-    if(!res.ok) throw new Error("push "+res.status);
+    if(!res.ok) throw await syncFail("push", res);
     const out = await res.json();
     return (out && out[0] && out[0].updated_at) || null;
   }
@@ -1766,7 +1852,7 @@
     let offset = 0, applied = 0, maxTs = lastPull;
     while(true){
       const res = await fetch(base + filter + "&limit=" + PAGE + "&offset=" + offset, { headers: supaHeaders() });
-      if(!res.ok) throw new Error("pull "+res.status);
+      if(!res.ok) throw await syncFail("pull", res);
       const rows = await res.json();
       for(const row of rows){
         await applyRemoteRow(row);
@@ -1789,7 +1875,7 @@
       const pushed = await syncPush();
       if(pulled>0) reRenderAll();
       updateSyncStatus(pulled>0 ? "Updated from cloud" : (pushed>0 ? "Synced" : "Up to date"));
-    }catch(e){ console.error("sync:", e); updateSyncStatus("Sync failed — check settings"); }
+    }catch(e){ console.error("sync:", e); updateSyncStatus("Sync failed: " + (e.message||e)); }
   }
 
   // First connect on a device: decide seed direction, asking only on a real conflict.
@@ -1797,7 +1883,7 @@
     updateSyncStatus("Connecting…");
     try{
       const probe = await fetch(supaUrl + "/rest/v1/vault_items?code=eq." + encodeURIComponent(syncCode) + "&select=item_id&limit=1", { headers: supaHeaders() });
-      if(!probe.ok) throw new Error("probe "+probe.status);
+      if(!probe.ok) throw await syncFail("probe", probe);
       const remoteHas = (await probe.json()).length > 0;
       const localHas = items.length || outfits.length;
       if(remoteHas && localHas){
@@ -1823,7 +1909,7 @@
       } else {
         await markAllDirty(); await syncPush(); updateSyncStatus("Synced");
       }
-    }catch(e){ console.error("connect:", e); updateSyncStatus("Couldn't connect — check the URL, key, and SQL setup"); }
+    }catch(e){ console.error("connect:", e); updateSyncStatus("Connect failed: " + (e.message||e)); }
   }
 
   const SYNC_SQL =
@@ -2101,6 +2187,10 @@
     $("#sync-save").addEventListener("click", saveSyncSettings);
     $("#sync-disconnect").addEventListener("click", disconnectSync);
     $("#sync-now-btn").addEventListener("click", ()=>syncSmart());
+    $("#ver-badge").addEventListener("click", openChangelog);
+    $("#changelog-close").addEventListener("click", closeChangelog);
+    $("#changelog-overlay").addEventListener("click", e=>{ if(e.target===$("#changelog-overlay")) closeChangelog(); });
+    document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("#changelog-overlay").classList.contains("open")) closeChangelog(); });
   }
 
   /* ---------------- init ---------------- */
@@ -2114,6 +2204,8 @@
     }catch(e){}
     buildCatFilters();
     buildModalControls();
+    const vb = $("#ver-badge"); if(vb) vb.textContent = "v" + APP_VERSION;
+    document.title = "The Rail";
     $("#file-input").addEventListener("change", onFilePicked);
     renderUploader();
     wire();
