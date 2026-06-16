@@ -387,15 +387,33 @@
   .toggle input:focus-visible ~ .tg-track{outline:2px solid var(--accent);outline-offset:2px}
   .tg-label{flex:1;min-width:0;line-height:1.35;padding-top:1px}
 
-  /* ---------- outfit diagram: annotated figure + piece rail ---------- */
+  /* ---------- outfit diagram: editorial flat-lay board + piece rail ---------- */
   .odiagram{margin:6px 0 2px}
-  .fig{position:relative;width:100%;max-width:232px;margin:2px auto 0;aspect-ratio:23/35}
-  .fig-svg{position:absolute;inset:0;width:100%;height:100%;color:var(--line)}
-  .fig-node{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--paper);border:1px solid var(--ink);box-shadow:0 2px 9px rgba(33,31,28,.2);display:flex;align-items:center;justify-content:center}
-  .fig-node img{width:100%;height:100%;object-fit:cover;display:block}
-  .fig-node.concept{border:1.5px dashed var(--accent);background:var(--bone)}
-  .fig-node .fn-swatch{width:20px;height:20px;border-radius:50%;border:1px solid rgba(33,31,28,.25)}
-  .fig-node .fn-abbr{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--ink-soft)}
+  .lookboard{position:relative;width:100%;max-width:340px;margin:2px auto 0}
+  .lb-canvas{position:relative;width:100%;aspect-ratio:4/5;border-radius:12px;overflow:hidden;
+    background:radial-gradient(125% 90% at 50% 6%, #fdfcf8 0%, #f3eee3 64%, #e9e2d4 100%);
+    border:1px solid var(--line);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7), inset 0 -30px 60px rgba(33,31,28,.05), var(--shadow);
+  }
+  .lb-canvas::before{content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg, rgba(33,31,28,.018) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(33,31,28,.018) 0 1px, transparent 1px 22px);pointer-events:none}
+  .lb-canvas::after{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:inset 0 0 60px rgba(33,31,28,.06);pointer-events:none}
+  .flat-tile{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));
+    aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:var(--paper);
+    border:3px solid #fff;
+    box-shadow:0 7px 18px rgba(33,31,28,.18), 0 2px 5px rgba(33,31,28,.14);
+    transition:transform .2s cubic-bezier(.2,.9,.3,1.1), box-shadow .2s;}
+  .flat-tile img{width:100%;height:100%;object-fit:cover;display:block}
+  .flat-tile.concept{border:2px dashed var(--accent);background:var(--bone)}
+  .flat-tile:hover{transform:translate(-50%,-50%) rotate(0deg) scale(1.07);
+    box-shadow:0 14px 30px rgba(33,31,28,.26);z-index:40!important}
+  .ft-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+    font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--ink-soft);text-transform:uppercase;text-align:center;padding:6px;background:var(--line-soft)}
+  .ft-concept{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:9px;text-align:center}
+  .ft-swatch{width:46%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(33,31,28,.22)}
+  .ft-clabel{font-size:9.5px;font-weight:600;color:var(--ink);line-height:1.2;text-transform:capitalize}
+  .ft-flag{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font-size:8px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:2px 6px;border-radius:999px}
 
   .look-rail{display:flex;gap:9px;overflow-x:auto;padding:14px 2px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .look-rail::-webkit-scrollbar{display:none}
@@ -411,7 +429,11 @@
   .lr-dots{display:flex;gap:3px;margin-top:2px}
   .lr-dots .d{width:9px;height:9px;border-radius:50%;border:1px solid rgba(33,31,28,.2)}
 
-  .aesthetic-tag{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--accent);margin:1px 0 0}
+  .genre-badge{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;background:var(--ink);color:var(--paper);
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;padding:6px 13px;border-radius:999px;margin:1px 0 2px}
+  .genre-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .genre-badge.sm{padding:4px 10px;font-size:9px;letter-spacing:.14em}
+  .genre-note{font-size:12px;color:var(--ink-soft);line-height:1.45;margin:0 0 2px;font-style:italic;font-family:var(--display)}
   .concept-name{color:var(--accent);font-weight:600}
   .moves{margin:0;padding-left:17px;display:flex;flex-direction:column;gap:4px}
   .moves li{font-size:13px;line-height:1.45}
@@ -709,8 +731,15 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.3.0";
+  const APP_VERSION = "1.4.0";
   const CHANGELOG = [
+    { v:"1.4.0", date:"Jun 2026", notes:[
+      "Looks now render as an editorial flat-lay board — your actual garment photos staged on a paper canvas with layering and shadow, the way a real styling app presents an outfit. The stick figure is gone.",
+      "Every look is labeled with its fashion genre (Minimalist, Streetwear, Workwear, Ivy Prep, Techwear, Gorpcore, Sartorial, Avant-Garde and more).",
+      "The Stylist now deliberately spans different genres each run and remembers what it already showed you, so it stops repeating similar or identical outfits.",
+      "More adventurous output overall — it reinterprets your pieces through genres you haven't tried, and Discovery mode adds pieces to reach genres your wardrobe can't yet.",
+      "Saved looks keep their genre label."
+    ]},
     { v:"1.3.0", date:"Jun 2026", notes:[
       "Stylist looks now render on an annotated figure: each piece sits on its real body zone (hat on the head, sunglasses on the face, scarf at the neck, watch at the wrist, belt at the waist, bag at the side), with outerwear layered over tops.",
       "Below each figure, every piece also shows as a clear card with its photo, type and colors — nothing hides behind the silhouette.",
@@ -818,6 +847,8 @@
   let proposals = [];     // current stylist outfit proposals
   let proposalsLocal = false;
   let proposalsGaps = "";
+  let recentGenres = [];      // genres shown recently, to rotate variety + avoid repeats
+  let recentSignatures = [];  // [{genre, sig, label}] recent looks, fed back as "avoid these"
   let persistConfirmed = false;  // becomes true once data is seen surviving a prior session
   let lastSavedAt = null;
   let geminiKey = null;       // user's free Google Gemini key, stored on-device only
@@ -1230,7 +1261,7 @@
       const hasNew = pieceObjs.some(p=>!p.owned);
       const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>Own</span><span><span class="lg-new"></span>To try</span></div>` : "";
       const when = new Date(o.createdAt||Date.now()).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
-      const aes = o.aesthetic ? `<div class="aesthetic-tag">${esc(o.aesthetic)}</div>` : "";
+      const aes = o.genre ? `<div style="margin-bottom:4px"><span class="genre-badge sm">${esc(o.genre)}</span></div>` : "";
       const palette = o.palette ? `<div class="prop-row" style="padding:0 16px 10px"><p style="font-size:12.5px;color:var(--ink-soft);margin:0">${esc(o.palette)}</p></div>` : "";
       return `<div class="look">
         <div class="lhead">
@@ -1268,6 +1299,117 @@
   /* ---------------- STYLIST (smart outfit creator) ---------------- */
   const BRIEF_CHIPS = ["Workday","Date night","Weekend casual","Formal event","Travel","Night out","Brunch","Job interview"];
 
+  /* ----- fashion genres: the lenses the Stylist styles a wardrobe through -----
+     `kw` biases the on-device picker toward fitting pieces; `concepts` seed Discovery
+     mode; `palette`/`move` flavor the on-device rationale. The AI gets name + ethos. */
+  const GENRES = [
+    { name:"Minimalist", ethos:"pared-back, tonal, clean lines, nothing extra",
+      kw:/tee|crew|knit|trouser|chino|sneaker|merino|turtleneck/i, palette:"tight tonal neutrals",
+      move:"Let cut and fabric carry it — skip the extras.",
+      concepts:[{item:"fine-gauge crew knit",category:"Tops",color:"grey"},{item:"tapered trousers",category:"Bottoms",color:"black"},{item:"minimal leather sneakers",category:"Shoes",color:"white"}] },
+    { name:"Streetwear", ethos:"relaxed, graphic, sneaker-led, expressive layering",
+      kw:/hoodie|sweat|tee|jogger|cargo|sneaker|cap|bomber|track/i, palette:"neutral base, one loud accent",
+      move:"Cuff the hem over chunky sneakers.",
+      concepts:[{item:"boxy graphic tee",category:"Tops",color:"white"},{item:"cargo pants",category:"Bottoms",color:"olive"},{item:"statement sneakers",category:"Shoes",color:"white"},{item:"6-panel cap",category:"Accessories",color:"black"}] },
+    { name:"Workwear", ethos:"rugged utility, sturdy fabrics, earthy and honest",
+      kw:/overshirt|shacket|chore|denim|carpenter|duck|boot|flannel/i, palette:"earth tones, worn-in",
+      move:"Chore jacket over a tee, sleeves pushed up.",
+      concepts:[{item:"chore jacket",category:"Outerwear",color:"navy"},{item:"carpenter pants",category:"Bottoms",color:"tan"},{item:"work boots",category:"Shoes",color:"brown"}] },
+    { name:"Ivy Prep", ethos:"collegiate, tailored-casual, classic American",
+      kw:/oxford|polo|chino|loafer|sweater|cardigan|button-up|derby/i, palette:"navy, cream, a clean stripe",
+      move:"Half-tuck the oxford; sweater over the shoulders.",
+      concepts:[{item:"oxford shirt",category:"Tops",color:"blue"},{item:"chinos",category:"Bottoms",color:"beige"},{item:"penny loafers",category:"Shoes",color:"brown"}] },
+    { name:"Techwear", ethos:"technical, monochrome, functional hardware, sharp taper",
+      kw:/shell|technical|nylon|zip|jogger|tech|windbreaker|black/i, palette:"all-black with cold grey",
+      move:"Taper everything; let the shell be the hero.",
+      concepts:[{item:"technical shell jacket",category:"Outerwear",color:"black"},{item:"tapered tech pants",category:"Bottoms",color:"black"},{item:"technical sneakers",category:"Shoes",color:"black"}] },
+    { name:"Gorpcore", ethos:"outdoor performance worn in the city",
+      kw:/fleece|puffer|nylon|cargo|trail|anorak|hiking|windbreaker/i, palette:"muted outdoor tones, one pop",
+      move:"Fleece under a shell; trail shoes finish it.",
+      concepts:[{item:"fleece pullover",category:"Outerwear",color:"green"},{item:"nylon cargo pants",category:"Bottoms",color:"tan"},{item:"trail runners",category:"Shoes",color:"grey"}] },
+    { name:"Sartorial", ethos:"tailored, sharp, considered proportion",
+      kw:/blazer|sport coat|suit|dress shirt|trouser|derby|oxford shoe|loafer/i, palette:"navy and grey, crisp",
+      move:"Keep the break clean; the jacket sets the shoulder.",
+      concepts:[{item:"unstructured blazer",category:"Outerwear",color:"navy"},{item:"wool trousers",category:"Bottoms",color:"grey"},{item:"leather derbies",category:"Shoes",color:"brown"}] },
+    { name:"Military Field", ethos:"field-inspired, utilitarian, olive and khaki",
+      kw:/field|fatigue|cargo|parka|boot|combat|m-?65|utility/i, palette:"olive, khaki, black",
+      move:"Layer the field jacket over a neutral base.",
+      concepts:[{item:"field jacket",category:"Outerwear",color:"olive"},{item:"fatigue pants",category:"Bottoms",color:"khaki"},{item:"combat boots",category:"Shoes",color:"black"}] },
+    { name:"Heritage Rugged", ethos:"vintage Americana — denim, flannel, leather",
+      kw:/flannel|denim|trucker|raw|boot|waxed|henley|chambray/i, palette:"indigo and rust",
+      move:"Roll the denim cuff over leather boots.",
+      concepts:[{item:"flannel shirt",category:"Tops",color:"red"},{item:"raw denim",category:"Bottoms",color:"blue"},{item:"leather boots",category:"Shoes",color:"brown"}] },
+    { name:"Athleisure", ethos:"sporty comfort, performance pieces styled clean",
+      kw:/track|hoodie|tee|jogger|sweat|runner|sneaker|zip/i, palette:"tonal sport greys",
+      move:"Match the track set; clean white sneaker.",
+      concepts:[{item:"track jacket",category:"Outerwear",color:"navy"},{item:"track pants",category:"Bottoms",color:"black"},{item:"retro runners",category:"Shoes",color:"white"}] },
+    { name:"Retro 90s", ethos:"throwback, relaxed fits, nostalgic color",
+      kw:/denim|trucker|baggy|relaxed|retro|windbreaker|crew|cap/i, palette:"washed primaries",
+      move:"Go baggier up top; let it slouch.",
+      concepts:[{item:"denim trucker jacket",category:"Outerwear",color:"blue"},{item:"baggy jeans",category:"Bottoms",color:"blue"},{item:"retro court sneakers",category:"Shoes",color:"white"}] },
+    { name:"Monochrome", ethos:"one color head to toe, depth through texture",
+      kw:/knit|tee|trouser|overshirt|sweater|chino/i, palette:"single hue, mixed fabric",
+      move:"Stay in one color family; vary the texture.",
+      concepts:[{item:"tonal knit",category:"Tops",color:"beige"},{item:"matching trousers",category:"Bottoms",color:"beige"}] },
+    { name:"Coastal", ethos:"light, breezy, warm-weather ease",
+      kw:/linen|camp|short|polo|espadrille|loafer|tee|chino/i, palette:"cream, sky, sand",
+      move:"Open a camp collar over a tee; bare the ankle.",
+      concepts:[{item:"linen camp shirt",category:"Tops",color:"white"},{item:"linen shorts",category:"Bottoms",color:"beige"},{item:"espadrilles",category:"Shoes",color:"tan"}] },
+    { name:"Avant-Garde", ethos:"experimental proportion, dark, sculptural",
+      kw:/oversized|long|drape|wide|black|overcoat|boot|asymmetric/i, palette:"black on black, asymmetry",
+      move:"Play long-over-short; exaggerate one proportion.",
+      concepts:[{item:"long-line overcoat",category:"Outerwear",color:"black"},{item:"wide trousers",category:"Bottoms",color:"black"},{item:"chunky boots",category:"Shoes",color:"black"}] },
+    { name:"Normcore", ethos:"deliberately plain, anti-fashion, well-fitted",
+      kw:/tee|jean|sneaker|crew|chino|cap/i, palette:"unremarkable neutrals",
+      move:"Keep it plain and well-fitted; nothing flashy.",
+      concepts:[{item:"plain tee",category:"Tops",color:"grey"},{item:"straight jeans",category:"Bottoms",color:"blue"},{item:"simple sneakers",category:"Shoes",color:"white"}] },
+    { name:"All-Black", ethos:"every piece black; mood and texture do the work",
+      kw:/black|overshirt|denim|boot|tee|knit|cargo/i, palette:"all black, matte vs sheen",
+      move:"Mix matte and sheen blacks for depth.",
+      concepts:[{item:"black overshirt",category:"Outerwear",color:"black"},{item:"black denim",category:"Bottoms",color:"black"},{item:"black boots",category:"Shoes",color:"black"}] }
+  ];
+  const GENRE_BY_NAME = Object.fromEntries(GENRES.map(g=>[g.name.toLowerCase(), g]));
+  function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  // Pick target genres for this run: rotate so consecutive composes feel different.
+  function pickTargetGenres(n){
+    const recent = recentGenres.slice(-6);
+    let pool = GENRES.map(g=>g.name).filter(g=>!recent.includes(g));
+    if(pool.length < n) pool = pool.concat(shuffle(recent));
+    return shuffle(pool).slice(0, n);
+  }
+  function outfitSignature(o){
+    const parts = [...(o.ids||[]), ...((o.concepts||[]).map(c=>c.item))];
+    return parts.map(s=>String(s).toLowerCase()).sort().join(",");
+  }
+  function rememberProposals(list){
+    list.forEach(o=>{
+      if(o.genre) recentGenres.push(o.genre);
+      const ids = o.ids||[];
+      const label = [...ids.map(id=>{ const it=items.find(i=>i.id===id); return it?it.name:""; }),
+                     ...((o.concepts||[]).map(c=>c.item))].filter(Boolean).slice(0,4).join(", ");
+      recentSignatures.push({ genre:o.genre||"", sig:outfitSignature(o), label });
+    });
+    recentGenres = recentGenres.slice(-10);
+    recentSignatures = recentSignatures.slice(-12);
+    store.set("settings:stylistHistory", { genres:recentGenres, sigs:recentSignatures });
+  }
+  // Build the per-run directive: which genres to hit, and which looks to avoid repeating.
+  function varietyDirective(){
+    const targets = pickTargetGenres(3);
+    const lines = targets.map(t=>{ const g=GENRE_BY_NAME[t.toLowerCase()]; return "• " + t + (g?" — "+g.ethos:""); }).join("\n");
+    let d = "VARIETY DIRECTIVE (important): The three looks must each be a DIFFERENT, clearly recognizable fashion genre — not three takes on one idea. Build one look for each of these genres, reading his wardrobe through that lens and committing to it:\n"
+      + lines + "\n"
+      + "If a genre genuinely can't be expressed from the wardrobe, swap it for the closest genre you CAN express and label it honestly. Each look must use a visibly different piece combination, silhouette and color logic. Set each look's \"genre\" field to its genre name.";
+    const avoid = recentSignatures.slice(-8).filter(s=>s.label);
+    if(avoid.length){
+      d += "\n\nDo NOT repeat these looks you already proposed — change the genre AND the pieces:\n"
+        + avoid.map(s=>"• " + (s.genre?s.genre+": ":"") + s.label).join("\n");
+    }
+    d += "\n\nBe adventurous: show him forms of fashion he hasn't tried.";
+    return { directive:d, targets };
+  }
+
   const NAMED_COLORS = [
     ["black",[20,20,20]],["charcoal",[55,55,58]],["grey",[140,140,140]],["silver",[200,200,200]],
     ["white",[245,243,238]],["ivory",[238,232,216]],["cream",[235,224,200]],["beige",[214,199,168]],
@@ -1304,36 +1446,20 @@
     }));
   }
 
-  /* ----- outfit diagram: an annotated croquis + a head-to-toe piece rail -----
-     Pieces are placed on the figure by precise body zone (resolved from the garment
-     TYPE, not just its broad category — a beanie sits on the head, sunglasses on the
-     face, a scarf at the neck, a watch at the wrist, a belt at the waist, a bag at the
-     side). Layers stack: outerwear sits over the top. Below the figure, every piece is
-     also shown as a clear card so nothing is lost behind the silhouette. */
+  /* ----- outfit diagram: an editorial flat-lay "look board" + a piece rail -----
+     Each piece is laid out as a framed flat-lay tile on a paper canvas, composed
+     head-to-toe with layering and gentle rotation — the way a styling app stages an
+     outfit. Below the board, every piece is also a clean labeled card. */
   function nameToCss(word){
     const w=(word||"").toLowerCase().trim();
     const hit = NAMED_COLORS.find(c=>c[0]===w);
     if(hit){ const [r,g,b]=hit[1]; return rgbToHex(r,g,b); }
-    // a couple of words the AI uses that aren't in the swatch list
-    const extra={stone:"#cabfa8",khaki:"#b5a173",denim:"#5a749b",wine:"#6e2335",mint:"#bfe0cf"};
+    const extra={stone:"#cabfa8",khaki:"#b5a173",denim:"#5a749b",wine:"#6e2335",mint:"#bfe0cf",
+      cognac:"#9a5b2e",sand:"#d8c7a0",ecru:"#e6ddc8",slate:"#5b6470",indigo:"#36456b"};
     return extra[w] || "#b9b2a4";
   }
 
-  // A spare, editorial menswear croquis sitting behind the item tiles.
-  const FIGURE_SVG = `<svg class="fig-svg" viewBox="0 0 120 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="60" cy="24" r="13"/><path d="M60 37v7"/><path d="M41 54q19 -9 38 0"/><path d="M41 54 31 116"/><path d="M79 54 89 116"/><path d="M45 53 41 122"/><path d="M75 53 79 122"/><path d="M41 122q19 8 38 0"/><path d="M47 124 41 214"/><path d="M73 124 79 214"/><path d="M60 126 57 214"/><path d="M60 126 63 214"/><path d="M37 215h13"/><path d="M70 215h13"/></g></svg>`;
-
-  // Body anchors as % of the figure box {t:top, l:left}.
-  const ANCHOR = {
-    head:{t:9,l:50}, face:{t:13.5,l:50}, neck:{t:21,l:50},
-    chest:{t:33,l:50}, outer:{t:34,l:71}, pocket:{t:40,l:38},
-    waist:{t:50,l:50}, hand:{t:55,l:78}, wrist:{t:50,l:23},
-    legs:{t:65,l:50}, carry:{t:64,l:82}, feet:{t:92,l:50}
-  };
-  // Head-to-toe ordering for the rail + layering (higher = drawn on top).
-  const ZONE_RANK = { head:0, face:1, neck:2, chest:3, outer:3.4, pocket:3.6, waist:4, wrist:4.4, hand:4.6, legs:5, carry:5.4, feet:6 };
-  const ZONE_LAYER = { chest:3, pocket:4, outer:6, neck:7, head:8, face:8 };
-
-  // Resolve the precise body zone for a piece from its specific type, then category.
+  // Resolve a piece's body zone from its specific type, then category.
   function zoneFor(p){
     const t = ((p.type||"") + " " + (p.name||"")).toLowerCase();
     const cat = p.category;
@@ -1344,7 +1470,8 @@
       if(/pocket square|lapel/.test(t)) return "pocket";
       if(/watch|bracelet|cuff/.test(t)) return "wrist";
       if(/ring|glove|cufflink/.test(t)) return "hand";
-      if(/belt|suspender|sock/.test(t)) return (/sock/.test(t) ? "feet" : "waist");
+      if(/sock/.test(t)) return "feet";
+      if(/belt|suspender/.test(t)) return "waist";
       return "head";
     }
     if(cat==="Tops") return "chest";
@@ -1354,29 +1481,40 @@
     if(cat==="Bags") return "carry";
     return "chest";
   }
+  // Head-to-toe order for the rail.
+  const ZONE_RANK = { head:0, face:1, neck:2, chest:3, outer:3.4, pocket:3.6, waist:4, wrist:4.4, hand:4.6, legs:5, carry:5.4, feet:6 };
 
-  function figureNode(p){
-    const inner = p.owned
-      ? (p.image ? `<img src="${p.image}" alt=""/>` : `<span class="fn-abbr">${esc((p.type||p.category||"").slice(0,3))}</span>`)
-      : `<span class="fn-swatch" style="background:${nameToCss(p.color)}"></span>`;
-    return { owned:p.owned, inner, title:p.name||p.type||"" };
+  // Flat-lay placement: center {x,y} as %, tile width as % of canvas, base rotation, z.
+  const FLAT = {
+    head:{x:21,y:13,w:23,rot:-7,z:6}, face:{x:74,y:12,w:19,rot:8,z:6},
+    neck:{x:30,y:15,w:20,rot:-5,z:6}, outer:{x:64,y:33,w:45,rot:5,z:2},
+    chest:{x:39,y:29,w:43,rot:-4,z:3}, pocket:{x:80,y:23,w:15,rot:9,z:6},
+    waist:{x:21,y:52,w:23,rot:-6,z:4}, wrist:{x:80,y:52,w:17,rot:11,z:6},
+    hand:{x:84,y:42,w:15,rot:-9,z:6}, legs:{x:45,y:60,w:44,rot:4,z:1},
+    carry:{x:80,y:71,w:29,rot:7,z:3}, feet:{x:45,y:84,w:33,rot:-3,z:2}
+  };
+
+  function flatInner(p){
+    if(p.owned){
+      return p.image ? `<img src="${p.image}" alt=""/>`
+                     : `<div class="ft-fallback">${esc(p.type||p.category||"")}</div>`;
+    }
+    return `<div class="ft-concept"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
+      + `<span class="ft-clabel">${esc(p.name||"")}</span><span class="ft-flag">Try</span></div>`;
   }
-
-  function figureHTML(pieces){
+  function lookboardHTML(pieces){
     const byZone = {};
-    pieces.forEach(p=>{ const z = zoneFor(p); (byZone[z]=byZone[z]||[]).push(p); });
-    let nodes = "";
+    pieces.forEach(p=>{ const z=zoneFor(p); (byZone[z]=byZone[z]||[]).push(p); });
+    let tiles = "";
     Object.keys(byZone).forEach(z=>{
-      const arr = byZone[z], base = ANCHOR[z] || ANCHOR.chest, layer = ZONE_LAYER[z] || 5;
+      const arr = byZone[z], base = FLAT[z] || FLAT.chest;
       arr.forEach((p,i)=>{
-        const spread = (z==="chest"||z==="outer"||z==="neck") ? 11 : 13;
-        const left = base.l + (i-(arr.length-1)/2)*spread;
-        const top  = base.t + (i-(arr.length-1)/2)*2;
-        const n = figureNode(p);
-        nodes += `<div class="fig-node${n.owned?"":" concept"}" style="left:${left}%;top:${top}%;z-index:${layer+i}" title="${esc(n.title)}">${n.inner}</div>`;
+        const off = i - (arr.length-1)/2;
+        const x = base.x + off*9, y = base.y + off*5, rot = base.rot + off*4;
+        tiles += `<div class="flat-tile${p.owned?"":" concept"}" style="left:${x}%;top:${y}%;width:${base.w}%;z-index:${base.z + (arr.length-i)};--rot:${rot}deg" title="${esc(p.name||"")}">${flatInner(p)}</div>`;
       });
     });
-    return `<div class="fig">${FIGURE_SVG}${nodes}</div>`;
+    return `<div class="lookboard"><div class="lb-canvas">${tiles}</div></div>`;
   }
 
   function railCardHTML(p){
@@ -1395,12 +1533,12 @@
     </div>`;
   }
 
-  // The full diagram: figure on top, then every piece as a card in head-to-toe order.
+  // The full diagram: flat-lay board on top, then every piece as a card head-to-toe.
   function outfitDiagram(pieces){
     if(!pieces.length) return "";
     const sorted = pieces.slice().sort((a,b)=>(ZONE_RANK[zoneFor(a)]??9)-(ZONE_RANK[zoneFor(b)]??9));
     const rail = sorted.map(railCardHTML).join("");
-    return `<div class="odiagram">${figureHTML(pieces)}<div class="look-rail">${rail}</div></div>`;
+    return `<div class="odiagram">${lookboardHTML(pieces)}<div class="look-rail">${rail}</div></div>`;
   }
 
   function parseLoose(text){
@@ -1412,36 +1550,41 @@
   }
 
   function stylistSystem(discover){
+    const genreList = GENRES.map(g=>g.name + " (" + g.ethos + ")").join("; ");
     const base =
-      "You are a senior menswear stylist and fashion editor. You dress a man with a considered, slightly elevated streetwear-leaning sensibility. Think like a stylist on a real shoot, not a checklist. "
+      "You are a senior menswear stylist and fashion editor with a wide range — you can dress a man in any genre and switch fluently between them. "
+      + "You know the recognized menswear genres and their codes: " + genreList + ". "
       + "Apply these frameworks deliberately on every look:\n"
-      + "• COLOR: choose an intentional scheme — monochrome, tonal, analogous, neutral-anchored with one accent, earth-tone, or a controlled complementary pop. Never let three loud colors fight; anchor with neutrals and let one piece lead.\n"
-      + "• PROPORTION & SILHOUETTE: balance volume top-to-bottom (e.g. relaxed top over slimmer leg, or vice versa), mind the waist break and where the hem hits, and use the rule of thirds rather than cutting the body in half.\n"
-      + "• TEXTURE & FABRIC: mix surfaces and weights so a tonal or neutral fit still has depth (knit vs woven, matte vs sheen, heavy vs light), and keep fabric weight seasonally honest.\n"
-      + "• FORMALITY & OCCASION: read the brief, calibrate every piece to one coherent dress code, and respect season.\n"
-      + "• STYLING MOVES: finish the look with concrete moves — tuck or half-tuck, cuff or roll, layering order, collar/closure choices, deliberate accessory restraint.\n"
-      + "The wearer is male; keep every garment menswear-appropriate. Each owned piece lists a SPECIFIC type (e.g. chelsea boots, oxford shirt, overshirt) alongside its broad category — style and describe it as the exact garment it is, not just the category. Reference real garments and colors from the inventory by name in your reasoning. Push him: surface at least one pairing or proportion he likely hasn't tried, while keeping it genuinely wearable. ";
+      + "• COLOR: choose an intentional scheme — monochrome, tonal, analogous, neutral-anchored with one accent, earth-tone, or a controlled complementary pop. Never let three loud colors fight.\n"
+      + "• PROPORTION & SILHOUETTE: balance volume top-to-bottom, mind the waist break and hem, use the rule of thirds.\n"
+      + "• TEXTURE & FABRIC: mix surfaces and weights for depth; keep fabric weight seasonally honest.\n"
+      + "• FORMALITY & OCCASION: calibrate every piece to one coherent dress code and respect season.\n"
+      + "• STYLING MOVES: finish with concrete moves — tuck/half-tuck, cuff/roll, layering order, collar/closure choices, accessory restraint.\n"
+      + "The wearer is male; keep every garment menswear-appropriate. Each owned piece lists a SPECIFIC type (e.g. chelsea boots, oxford shirt, overshirt) — style it as the exact garment it is. Reference real garments and colors from the inventory by name. "
+      + "RANGE IS THE POINT: genuinely commit to a distinct genre per look, vary silhouette and palette across them, and push him toward forms of fashion he likely hasn't tried — while keeping each look wearable and true to its genre. ";
     const ownRule = 'Each outfit has a "pieces" array. For a piece he owns, use {"owned":true,"id":"<exact inventory id>"}. ';
     const discRule = discover
-      ? 'You MAY also add 1-3 aspirational pieces he does NOT own, to broaden his style, as {"owned":false,"item":"specific menswear item","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=10 words on what it adds"}. Blend owned and new pieces. '
-      : 'Use ONLY pieces he owns; every piece must be {"owned":true,"id":"..."}. ';
+      ? 'You MAY add 1-3 aspirational pieces he does NOT own to fully realize a genre, as {"owned":false,"item":"specific menswear item","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=10 words"}. Lean on this to reach genres his current pieces can\'t. '
+      : 'Use ONLY pieces he owns; every piece must be {"owned":true,"id":"..."}. Reinterpret the same pieces through each genre rather than reusing identical combinations. ';
     return base + ownRule + discRule
       + 'Return ONLY valid minified JSON — no markdown, no text outside it — in EXACTLY this shape: '
       + '{"outfits":[{'
       + '"name":"short evocative name",'
-      + '"aesthetic":"2-4 word style descriptor (e.g. \\"rugged minimalism\\")",'
+      + '"genre":"the fashion genre this look belongs to",'
+      + '"genreNote":"<=12 words on how this genre is expressed here",'
       + '"pieces":[...],'
-      + '"palette":"the color scheme in <=12 words (e.g. \\"Tonal earth — camel over cream, grounded in brown\\")",'
-      + '"proportion":"<=18 words on silhouette and how the volumes balance",'
-      + '"rationale":"<=26 words on why the look works",'
+      + '"palette":"the color scheme in <=12 words",'
+      + '"proportion":"<=18 words on silhouette and how volumes balance",'
+      + '"rationale":"<=26 words on why it works",'
       + '"wearTo":["place or occasion"],'
       + '"moves":["concrete styling move <=8 words"],'
       + '"season":"Spring|Summer|Fall|Winter|All-season"'
-      + '}],"gaps":"<=18 words on what would most expand his options, or empty string"} '
-      + "Rules: up to 3 distinct, genuinely different outfits; each 2-7 pieces; wearTo 2-3 entries; moves 1-3 entries; obey every length cap; JSON only.";
+      + '}],"gaps":"<=18 words on what would most expand his range, or empty string"} '
+      + "Rules: exactly up to 3 outfits, each a DIFFERENT genre and visibly different pieces; each 2-7 pieces; wearTo 2-3; moves 1-3; obey every length cap; JSON only.";
   }
-  function stylistUser(brief){
+  function stylistUser(brief, directive){
     return "Occasion / brief: " + (brief || "versatile, well-composed everyday looks")
+      + (directive ? "\n\n" + directive : "")
       + "\n\nWardrobe inventory (JSON):\n" + JSON.stringify(inventoryPayload());
   }
 
@@ -1471,9 +1614,9 @@
     if(t) _thumbCache[key] = t;
     return t;
   }
-  async function buildGeminiContents(brief, visual){
-    if(!visual) return [{ role:"user", parts:[{ text: stylistUser(brief) + "\n\nReturn only the JSON object." }] }];
-    const parts = [{ text: stylistUser(brief) + "\n\nPhotos of the owned items follow — use them to judge real color, pattern, texture and cut. Each photo is labeled with its item id and which view it shows (front, back, side, detail), so a piece can have several photos. Treat all photos sharing an item id as the same garment.\n\nReturn only the JSON object." }];
+  async function buildGeminiContents(brief, visual, directive){
+    if(!visual) return [{ role:"user", parts:[{ text: stylistUser(brief, directive) + "\n\nReturn only the JSON object." }] }];
+    const parts = [{ text: stylistUser(brief, directive) + "\n\nPhotos of the owned items follow — use them to judge real color, pattern, texture and cut. Each photo is labeled with its item id and which view it shows (front, back, side, detail), so a piece can have several photos. Treat all photos sharing an item id as the same garment.\n\nReturn only the JSON object." }];
     for(const it of items){
       const photos = (it.photos && it.photos.length) ? it.photos : (it.image ? [{label:"Front", image:it.image}] : []);
       for(const ph of photos){
@@ -1485,15 +1628,16 @@
     }
     return [{ role:"user", parts }];
   }
-  async function callStylistGemini(brief, discover, key, visual){
+  async function callStylistGemini(brief, discover, key, visual, directive){
     const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(key), {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         systemInstruction:{ parts:[{ text: stylistSystem(discover) }] },
-        contents: await buildGeminiContents(brief, visual),
+        contents: await buildGeminiContents(brief, visual, directive),
         generationConfig:{
-          temperature:0.92,
+          temperature:1.05,
+          topP:0.97,
           maxOutputTokens:4096,
           responseMimeType:"application/json",
           thinkingConfig:{ thinkingBudget:0 }   // 2.5 Flash thinks by default and that eats the token budget
@@ -1520,8 +1664,8 @@
   }
 
   // In-chat path: Claude through the artifact connection (only works inside Claude).
-  async function callStylist(brief, discover){
-    const user = stylistSystem(discover) + "\n\n" + stylistUser(brief) + "\n\nReturn only the JSON object.";
+  async function callStylist(brief, discover, directive){
+    const user = stylistSystem(discover) + "\n\n" + stylistUser(brief, directive) + "\n\nReturn only the JSON object.";
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -1564,7 +1708,8 @@
       if(ownedIds.length + concepts.length >= 2){
         out.push({
           name:(o.name||"Untitled look").slice(0,60),
-          aesthetic:(o.aesthetic||"").slice(0,40),
+          genre:(o.genre||"").slice(0,28),
+          genreNote:(o.genreNote||"").slice(0,90),
           ids: ownedIds, concepts,
           palette:(o.palette||"").slice(0,140),
           proportion:(o.proportion||"").slice(0,170),
@@ -1594,34 +1739,7 @@
     if(/weekend|casual|errand|coffee|travel|day off/.test(b)) return "Casual";
     return null;
   }
-  function buildCombo(pool){
-    const byCat = c => pool.filter(i=>i.category===c);
-    const pick = arr => arr.length ? arr[Math.floor(Math.random()*arr.length)] : null;
-    const chosen = [];
-    const t=pick(byCat("Tops")), b=pick(byCat("Bottoms")); if(t)chosen.push(t); if(b)chosen.push(b);
-    const sh=pick(byCat("Shoes")); if(sh)chosen.push(sh);
-    if(Math.random()<0.55){ const o=pick(byCat("Outerwear")); if(o)chosen.push(o); }
-    if(Math.random()<0.5){ const a=pick(byCat("Accessories")); if(a)chosen.push(a); }
-    if(Math.random()<0.35){ const bg=pick(byCat("Bags")); if(bg)chosen.push(bg); }
-    return chosen.filter(Boolean);
-  }
   const TIPS = ["Half-tuck the top to define your waist.","Cuff the hem to show a sliver of ankle.","Add a watch or fine chain to finish it.","Roll the sleeves for a more relaxed line.","Keep accessories minimal so the fit stays the hero.","Let one piece be the statement and keep the rest quiet."];
-  const CONCEPT_IDEAS = [
-    {item:"structured overshirt", category:"Outerwear", color:"charcoal", why:"a sharper layer over basics"},
-    {item:"pleated trousers", category:"Bottoms", color:"stone", why:"adds drape and polish"},
-    {item:"leather loafers", category:"Shoes", color:"brown", why:"dresses the look up instantly"},
-    {item:"knit polo", category:"Tops", color:"olive", why:"texture and an elevated collar"},
-    {item:"minimal leather belt", category:"Accessories", color:"tan", why:"ties the palette together"},
-    {item:"suede chelsea boots", category:"Shoes", color:"tan", why:"a refined step up from sneakers"},
-    {item:"crossbody bag", category:"Bags", color:"black", why:"a modern, hands-free finish"}
-  ];
-  const AESTHETIC_BY_FM = {
-    Casual:["Easy casual","Off-duty","Weekend ease"],
-    "Smart casual":["Refined casual","Elevated everyday","Quiet polish"],
-    Formal:["Sharp tailoring","Evening formal","Considered classic"],
-    Activewear:["Athletic","Sport-ready","Technical ease"],
-    Loungewear:["Relaxed","Soft layers","Stay-in comfort"]
-  };
   const PROPORTION_LINES = [
     "Keep the top a touch relaxed over a cleaner leg so the silhouette tapers.",
     "Let the layers add structure up top; balance them with a trimmer bottom.",
@@ -1637,46 +1755,68 @@
     if(b.length===1) return "Neutral base lifted by one hit of " + b[0] + ".";
     return "Neutrals ground " + b.slice(0,2).join(" and ") + " so the colors play together.";
   }
-  function localStylist(brief, discover){
+  // Score a piece for how well it fits a genre, then pick the best (with a little jitter).
+  function scorePiece(it, g){
+    const hay = ((it.subcategory||"")+" "+(it.name||"")+" "+(it.notes||"")+" "+(it.colors||[]).map(colorName).join(" ")).toLowerCase();
+    let s = Math.random()*0.9;
+    if(g && g.kw && g.kw.test(hay)) s += 3;
+    return s;
+  }
+  function pickBy(arr, g){ let best=null, bs=-1; for(const it of arr){ const s=scorePiece(it,g); if(s>bs){ bs=s; best=it; } } return best; }
+  function buildComboGenre(pool, g){
+    const byCat = c => pool.filter(i=>i.category===c);
+    const chosen = [];
+    const t=pickBy(byCat("Tops"),g), b=pickBy(byCat("Bottoms"),g); if(t)chosen.push(t); if(b)chosen.push(b);
+    const sh=pickBy(byCat("Shoes"),g); if(sh)chosen.push(sh);
+    if(Math.random()<0.6){ const o=pickBy(byCat("Outerwear"),g); if(o)chosen.push(o); }
+    if(Math.random()<0.5){ const a=pickBy(byCat("Accessories"),g); if(a)chosen.push(a); }
+    if(Math.random()<0.3){ const bg=pickBy(byCat("Bags"),g); if(bg)chosen.push(bg); }
+    return chosen.filter(Boolean);
+  }
+  // On-device fallback: one look per target genre, biased toward fitting pieces,
+  // avoiding combos we've recently shown so it stops repeating.
+  function localStylist(brief, discover, targets){
     const want = briefFormality(brief);
     const pref = want ? items.filter(i=>(i.formality||[]).includes(want)) : [];
     const base = pref.length>=2 ? pref : items.slice();
-    const seen = new Set(), outfits = [];
-    for(let a=0; a<60 && outfits.length<3; a++){
-      const combo = buildCombo(base);
-      if(combo.length<2) continue;
-      const key = combo.map(i=>i.id).slice().sort().join(",");
-      if(seen.has(key)) continue; seen.add(key);
-      const bolds = new Set();
-      combo.forEach(it=>(it.colors||[]).map(colorName).forEach(n=>{ if(!NEUTRALS.has(n)) bolds.add(n); }));
-      if(bolds.size>3) continue;
-      const fmls=new Set(); combo.forEach(it=>(it.formality||[]).forEach(f=>fmls.add(f)));
-      const fm = want || [...fmls][0] || "Casual";
-      const hero = combo.find(i=>i.category==="Outerwear") || combo[0];
-      let rationale;
-      if(bolds.size===0) rationale = "An all-neutral palette that reads clean and considered — let texture and fit carry it.";
-      else if(bolds.size===1) rationale = "A neutral base with one deliberate hit of "+[...bolds][0]+" to lift the whole look.";
-      else rationale = "Neutrals ground a couple of richer tones so the colors play together instead of competing.";
-      const concepts = [];
-      if(discover){
-        const have = new Set(combo.map(i=>i.category));
-        const pool = CONCEPT_IDEAS.filter(c=>!have.has(c.category));
-        const src = pool.length ? pool : CONCEPT_IDEAS;
-        concepts.push({ ...src[Math.floor(Math.random()*src.length)] });
+    const genres = (targets && targets.length ? targets : shuffle(GENRES.map(g=>g.name))).slice(0,3);
+    const seen = new Set(recentSignatures.map(s=>s.sig));
+    const outfits = [];
+    for(const gName of genres){
+      if(outfits.length>=3) break;
+      const g = GENRE_BY_NAME[(gName||"").toLowerCase()];
+      let combo = null;
+      for(let a=0; a<24; a++){
+        const c = buildComboGenre(base, g);
+        if(c.length<2) continue;
+        const sig = c.map(i=>i.id).slice().sort().join(",");
+        if(seen.has(sig)) continue;
+        combo = c; seen.add(sig); break;
       }
-      const seasons=new Set(); combo.forEach(it=>(it.seasons||[]).forEach(s=>seasons.add(s)));
-      const aes = AESTHETIC_BY_FM[fm] || AESTHETIC_BY_FM.Casual;
-      const moves = [...TIPS].sort(()=>Math.random()-0.5).slice(0, 1 + (Math.random()<0.5?1:0));
+      if(!combo){ const c = buildComboGenre(base, g); if(c.length>=2) combo = c; }
+      if(!combo) continue;
+      const concepts = [];
+      if(discover && g && g.concepts){
+        const have = new Set(combo.map(i=>i.category));
+        const pool = g.concepts.filter(c=>!have.has(c.category));
+        const src = pool.length ? pool : g.concepts;
+        const c = src[Math.floor(Math.random()*src.length)];
+        concepts.push({ item:c.item, category:c.category, color:c.color, why:(g.ethos||"").slice(0,60) });
+      }
+      const seasons = new Set(); combo.forEach(it=>(it.seasons||[]).forEach(s=>seasons.add(s)));
+      const fm = want || "Casual";
+      const hero = combo.find(i=>i.category==="Outerwear") || combo[0];
       outfits.push({
-        name: "Around the " + (hero?hero.name.toLowerCase():"look"),
-        aesthetic: aes[Math.floor(Math.random()*aes.length)],
+        name: (g?g.name:"Look") + " — " + (hero.name||"look").toLowerCase(),
+        genre: g ? g.name : (gName||""),
+        genreNote: g ? g.ethos : "",
         ids: combo.map(i=>i.id), concepts,
-        palette: paletteLine(combo),
+        palette: g ? ("Lean " + g.palette + ".") : paletteLine(combo),
         proportion: PROPORTION_LINES[Math.floor(Math.random()*PROPORTION_LINES.length)],
-        rationale,
+        rationale: g ? ("Read through a " + g.name.toLowerCase() + " lens — " + g.ethos + ".") : paletteLine(combo),
         wearTo: WEAR_MAP[fm] || WEAR_MAP.Casual,
-        moves,
-        season: seasons.has("All-season") || seasons.size!==1 ? "All-season" : [...seasons][0]
+        moves: (g && g.move) ? [g.move] : [TIPS[Math.floor(Math.random()*TIPS.length)]],
+        season: (seasons.has("All-season") || seasons.size!==1) ? "All-season" : [...seasons][0]
       });
     }
     return { outfits, gaps:"" };
@@ -1722,7 +1862,7 @@
       const movesHTML = moves.length ? `<div class="prop-row"><span class="plabel">Styling moves</span><ul class="moves">${moves.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>` : "";
       const seasonTag = o.season ? `<span class="wtag">${esc(o.season)}</span>` : "";
       return `<article class="prop">
-        <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span>${o.aesthetic?`<span class="aesthetic-tag">${esc(o.aesthetic)}</span>`:""}<h3>${esc(o.name)}</h3></div>
+        <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span>${o.genre?`<span class="genre-badge">${esc(o.genre)}</span>`:""}<h3>${esc(o.name)}</h3>${o.genreNote?`<p class="genre-note">${esc(o.genreNote)}</p>`:""}</div>
         ${outfitDiagram(pieceObjs)}
         ${legend}
         ${o.palette?`<div class="prop-row"><span class="plabel">Palette</span><p>${esc(o.palette)}</p></div>`:""}
@@ -1763,18 +1903,19 @@
     const btn = $("#compose-btn");
     btn.disabled = true; btn.classList.add("loading");
     showComposing();
+    const { directive, targets } = varietyDirective();
     try{
       let result = null;
       if(geminiKey){
-        try{ result = await callStylistGemini(brief, discover, geminiKey, visual); engineUsed = "gemini"; lastAIError = ""; }
+        try{ result = await callStylistGemini(brief, discover, geminiKey, visual, directive); engineUsed = "gemini"; lastAIError = ""; }
         catch(e){ console.error("gemini:", e); lastAIError = String(e.message || e).slice(0,160); result = null; }
       }
       if(!result){
-        try{ result = await callStylist(brief, discover); engineUsed = "claude"; }
+        try{ result = await callStylist(brief, discover, directive); engineUsed = "claude"; }
         catch(e){ console.error("claude:", e); result = null; }
       }
       if(!result || !result.outfits || result.outfits.length===0){
-        result = localStylist(brief, discover); proposalsLocal = true; engineUsed = "on-device";
+        result = localStylist(brief, discover, targets); proposalsLocal = true; engineUsed = "on-device";
       } else {
         proposalsLocal = false;
       }
@@ -1783,6 +1924,7 @@
       if(proposals.length===0){
         $("#stylist-results").innerHTML = `<div class="prop-placeholder">Couldn't assemble a full look from the current pieces. Try adding shoes or a bottom, or loosen the brief.</div>`;
       } else {
+        rememberProposals(proposals);   // so the next compose avoids repeating these
         renderProposals();
       }
     } finally {
@@ -1815,7 +1957,7 @@
       id:uid(), name:p.name||"Untitled look",
       itemIds:p.ids.slice(),
       wishItems:(p.concepts||[]).map(c=>({ item:c.item, category:c.category, color:c.color })),
-      aesthetic:p.aesthetic||"", palette:p.palette||"", proportion:p.proportion||"",
+      genre:p.genre||"", genreNote:p.genreNote||"", palette:p.palette||"", proportion:p.proportion||"",
       rationale:p.rationale||"", moves:(p.moves||[]).slice(), wearTo:(p.wearTo||[]).slice(),
       season:p.season||"",
       createdAt:Date.now()
@@ -2371,6 +2513,8 @@
     wire();
     await loadAll();
     geminiKey = await store.get("settings:geminiKey");
+    const sh = await store.get("settings:stylistHistory");
+    if(sh){ recentGenres = sh.genres || []; recentSignatures = sh.sigs || []; }
     const sc = await store.get("settings:sync");
     if(sc){ supaUrl = sc.url; supaKey = sc.key; syncCode = sc.code; }
     lastPull = (await store.get("settings:lastPull")) || null;
