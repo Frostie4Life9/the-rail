@@ -783,8 +783,12 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.7.0";
+  const APP_VERSION = "1.7.1";
   const CHANGELOG = [
+    { v:"1.7.1", date:"Jun 2026", notes:[
+      "Discovery example photos are now real looked-up photos instead of AI-generated ones — much faster and they actually look like the piece. The color swatch shows instantly and the photo swaps in when found; if none is found it stays as the swatch.",
+      "The blue dashed border still marks suggestions vs. pieces you own."
+    ]},
     { v:"1.7.0", date:"Jun 2026", notes:[
       "Discovery suggestions now show a real example photo of the piece instead of just a color dot — generated to match the item, with the blue dashed border kept so you can still tell suggestions from pieces you own.",
       "If an example image can't load, it quietly falls back to the color swatch.",
@@ -1364,6 +1368,7 @@
       switchView("studio"); renderStudio();
       toast("Loaded into the Studio");
     }));
+    hydrateConceptImages(grid);
   }
 
   async function deleteLook(id){
@@ -1657,33 +1662,51 @@
     carry:{x:80,y:71,w:29,rot:7,z:3}, feet:{x:45,y:84,w:33,rot:-3,z:2}
   };
 
-  // Build a generated example-photo URL for a concept (unowned) piece, plus a backup
-  // host. Keyless. If both fail to load, the tile falls back to a color swatch.
-  function conceptImageURLs(p){
-    let base = (p.search || ((p.color?p.color+" ":"") + (p.name||p.item||p.type||""))).toLowerCase();
-    base = base.replace(/\bmen('?s)?\b/g," ").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
-    const prompt = (base || "menswear garment") + " menswear product photo, plain light background, studio lighting";
-    let h = 2166136261;
-    for(let i=0;i<prompt.length;i++){ h ^= prompt.charCodeAt(i); h = Math.imul(h, 16777619); }
-    const seed = (h>>>0) % 100000;
-    const enc = encodeURIComponent(prompt);
-    const q = "?width=480&height=600&seed=" + seed;
-    return {
-      primary: "https://image.pollinations.ai/prompt/" + enc + q,
-      alt: "https://gen.pollinations.ai/image/" + enc + q
-    };
+  // Build a clean keyword query for looking up a real example photo of a concept piece.
+  function conceptQuery(p){
+    let q = (p.search || ((p.color?p.color+" ":"") + (p.name||p.item||p.type||""))).toLowerCase();
+    q = q.replace(/\bmen('?s)?\b/g," ").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+    return q || (p.category||"clothing").toLowerCase();
   }
-  // onerror: try the backup host once, then reveal the swatch fallback.
-  const IMG_FALLBACK = "if(!this.dataset.r){this.dataset.r=1;this.src=this.dataset.alt;}else{this.style.display='none';this.nextElementSibling.style.display='flex';}";
+  // Look up a real, openly-licensed photo by keyword (keyless). Cached per query.
+  const _photoCache = {};
+  async function lookupPhoto(q){
+    if(q in _photoCache) return _photoCache[q];
+    try{
+      const url = "https://api.openverse.org/v1/images/?q=" + encodeURIComponent(q) + "&page_size=10&mature=false";
+      const res = await fetch(url, { headers:{ "Accept":"application/json" } });
+      if(!res.ok) throw 0;
+      const data = await res.json();
+      const results = (data && data.results) || [];
+      let pick = null;
+      for(const r of results){ if(r && r.thumbnail){ pick = r.thumbnail; break; } if(r && r.url){ pick = r.url; break; } }
+      _photoCache[q] = pick || null;
+      return _photoCache[q];
+    }catch(e){ _photoCache[q] = null; return null; }
+  }
+  // After a render, fill concept tiles with real photos; the swatch stays until one loads.
+  async function hydrateConceptImages(root){
+    if(!root) return;
+    const imgs = [...root.querySelectorAll("img.ex-img[data-imgq]")];
+    const groups = {};
+    imgs.forEach(im=>{ const q = im.dataset.imgq; (groups[q] = groups[q] || []).push(im); });
+    for(const q of Object.keys(groups)){
+      const src = await lookupPhoto(q);
+      if(!src) continue;
+      groups[q].forEach(im=>{
+        im.onload = ()=>{ im.style.display = "block"; const fb = im.nextElementSibling; if(fb) fb.style.display = "none"; };
+        im.src = src;
+      });
+    }
+  }
 
   function flatInner(p){
     if(p.owned){
       return p.image ? `<img src="${p.image}" alt=""/>`
                      : `<div class="ft-fallback">${esc(p.type||p.category||"")}</div>`;
     }
-    const u = conceptImageURLs(p);
-    return `<img class="ft-img" src="${u.primary}" data-alt="${u.alt}" alt="" loading="lazy" onerror="${IMG_FALLBACK}"/>`
-      + `<div class="ft-concept" style="display:none"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
+    return `<img class="ft-img ex-img" data-imgq="${esc(conceptQuery(p))}" alt="" loading="lazy" style="display:none"/>`
+      + `<div class="ft-concept"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
       + `<span class="ft-clabel">${esc(p.name||"")}</span></div>`
       + `<span class="ft-flag">Try</span>`;
   }
@@ -1707,9 +1730,8 @@
     if(p.owned){
       thumb = p.image ? `<img src="${p.image}" alt=""/>` : `<span class="lr-swatch" style="background:#cabfa8"></span>`;
     } else {
-      const u = conceptImageURLs(p);
-      thumb = `<img class="lr-img" src="${u.primary}" data-alt="${u.alt}" alt="" loading="lazy" onerror="${IMG_FALLBACK}"/>`
-        + `<span class="lr-swatch" style="display:none;background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
+      thumb = `<img class="lr-img ex-img" data-imgq="${esc(conceptQuery(p))}" alt="" loading="lazy" style="display:none"/>`
+        + `<span class="lr-swatch" style="background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
     }
     const dots = p.owned
       ? `<div class="lr-dots">${(p.colors||[]).slice(0,4).map(c=>`<span class="d" style="background:${c}"></span>`).join("")}</div>`
@@ -2087,6 +2109,7 @@
     res.querySelectorAll("[data-prop-save]").forEach(b=>b.addEventListener("click",()=>saveProposal(+b.dataset.propSave)));
     res.querySelectorAll("[data-prop-studio]").forEach(b=>b.addEventListener("click",()=>openProposal(+b.dataset.propStudio)));
     const rc = $("#recompose-btn"); if(rc) rc.addEventListener("click", compose);
+    hydrateConceptImages(res);
   }
 
   function showComposing(){
