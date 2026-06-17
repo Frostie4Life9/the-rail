@@ -124,6 +124,10 @@
   .search input{border:0;background:transparent;outline:none;width:100%}
   .search svg{width:15px;height:15px;color:var(--ink-soft);flex:none}
   .chipset{display:flex;gap:6px;flex-wrap:wrap}
+  .sizer{display:flex;align-items:center;gap:8px;margin-left:auto;color:var(--ink-soft)}
+  .sizer svg{width:16px;height:16px;flex:none}
+  .sizer input[type=range]{width:120px;accent-color:var(--accent);cursor:pointer}
+  @media (max-width:560px){ .sizer{display:none} }
   .chip{
     border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);
     padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;
@@ -543,6 +547,10 @@
         <input type="text" id="search" placeholder="Search your pieces…" />
       </div>
       <div class="chipset" id="cat-filters"></div>
+      <div class="sizer" id="sizer" title="Card size">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+        <input type="range" id="card-size" min="120" max="320" step="10" value="170" aria-label="Wardrobe image size" />
+      </div>
     </div>
 
     <div id="rail-grid" class="grid"></div>
@@ -775,8 +783,13 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.6.0";
+  const APP_VERSION = "1.7.0";
   const CHANGELOG = [
+    { v:"1.7.0", date:"Jun 2026", notes:[
+      "Discovery suggestions now show a real example photo of the piece instead of just a color dot — generated to match the item, with the blue dashed border kept so you can still tell suggestions from pieces you own.",
+      "If an example image can't load, it quietly falls back to the color swatch.",
+      "New image-size slider on the Rail (top right) to make your wardrobe photos bigger or smaller on desktop. Your size is remembered."
+    ]},
     { v:"1.6.0", date:"Jun 2026", notes:[
       "Adding a piece now auto-fills its details. As you name it, the app guesses the category and specific type, and suggests dress codes and seasons to match.",
       "New 'Auto-fill details' button reads the actual photo when your free AI key is connected — more accurate category, type, dress code and season — and falls back to the name otherwise.",
@@ -917,6 +930,7 @@
   let _pushTimer = null;
   let filterCat = "All";
   let searchTerm = "";
+  let cardSize = 170;   // wardrobe grid min column width (px), adjustable on desktop
 
   /* ---------------- helpers ---------------- */
   const $ = s => document.querySelector(s);
@@ -1163,6 +1177,11 @@
     });
   }
 
+  function applyCardSize(){
+    const g = $("#rail-grid");
+    if(g && g.classList.contains("grid")) g.style.gridTemplateColumns = "repeat(auto-fill, minmax(" + cardSize + "px, 1fr))";
+  }
+
   function renderRail(){
     const grid = $("#rail-grid");
     $("#cnt-rail").textContent = items.length ? items.length : "";
@@ -1185,6 +1204,7 @@
       return;
     }
     grid.className="grid";
+    applyCardSize();
     grid.innerHTML = list.map(it=>{
       const im = primaryImage(it);
       const img = im
@@ -1311,7 +1331,7 @@
     grid.innerHTML = outfits.map(o=>{
       const pieceObjs = [
         ...o.itemIds.map(id=>{ const it=items.find(i=>i.id===id); return it?{owned:true,category:it.category,type:it.subcategory||"",name:it.name,image:primaryImage(it),colors:(it.colors||[]).slice(0,4)}:null; }).filter(Boolean),
-        ...((o.wishItems||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color })))
+        ...((o.wishItems||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color,search:c.search })))
       ];
       const count = pieceObjs.length;
       const hasNew = pieceObjs.some(p=>!p.owned);
@@ -1637,13 +1657,35 @@
     carry:{x:80,y:71,w:29,rot:7,z:3}, feet:{x:45,y:84,w:33,rot:-3,z:2}
   };
 
+  // Build a generated example-photo URL for a concept (unowned) piece, plus a backup
+  // host. Keyless. If both fail to load, the tile falls back to a color swatch.
+  function conceptImageURLs(p){
+    let base = (p.search || ((p.color?p.color+" ":"") + (p.name||p.item||p.type||""))).toLowerCase();
+    base = base.replace(/\bmen('?s)?\b/g," ").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+    const prompt = (base || "menswear garment") + " menswear product photo, plain light background, studio lighting";
+    let h = 2166136261;
+    for(let i=0;i<prompt.length;i++){ h ^= prompt.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const seed = (h>>>0) % 100000;
+    const enc = encodeURIComponent(prompt);
+    const q = "?width=480&height=600&seed=" + seed;
+    return {
+      primary: "https://image.pollinations.ai/prompt/" + enc + q,
+      alt: "https://gen.pollinations.ai/image/" + enc + q
+    };
+  }
+  // onerror: try the backup host once, then reveal the swatch fallback.
+  const IMG_FALLBACK = "if(!this.dataset.r){this.dataset.r=1;this.src=this.dataset.alt;}else{this.style.display='none';this.nextElementSibling.style.display='flex';}";
+
   function flatInner(p){
     if(p.owned){
       return p.image ? `<img src="${p.image}" alt=""/>`
                      : `<div class="ft-fallback">${esc(p.type||p.category||"")}</div>`;
     }
-    return `<div class="ft-concept"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
-      + `<span class="ft-clabel">${esc(p.name||"")}</span><span class="ft-flag">Try</span></div>`;
+    const u = conceptImageURLs(p);
+    return `<img class="ft-img" src="${u.primary}" data-alt="${u.alt}" alt="" loading="lazy" onerror="${IMG_FALLBACK}"/>`
+      + `<div class="ft-concept" style="display:none"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
+      + `<span class="ft-clabel">${esc(p.name||"")}</span></div>`
+      + `<span class="ft-flag">Try</span>`;
   }
   function lookboardHTML(pieces){
     const byZone = {};
@@ -1661,9 +1703,14 @@
   }
 
   function railCardHTML(p){
-    const thumb = p.owned
-      ? (p.image ? `<img src="${p.image}" alt=""/>` : `<span class="lr-swatch" style="background:#cabfa8"></span>`)
-      : `<span class="lr-swatch" style="background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
+    let thumb;
+    if(p.owned){
+      thumb = p.image ? `<img src="${p.image}" alt=""/>` : `<span class="lr-swatch" style="background:#cabfa8"></span>`;
+    } else {
+      const u = conceptImageURLs(p);
+      thumb = `<img class="lr-img" src="${u.primary}" data-alt="${u.alt}" alt="" loading="lazy" onerror="${IMG_FALLBACK}"/>`
+        + `<span class="lr-swatch" style="display:none;background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
+    }
     const dots = p.owned
       ? `<div class="lr-dots">${(p.colors||[]).slice(0,4).map(c=>`<span class="d" style="background:${c}"></span>`).join("")}</div>`
       : "";
@@ -2003,7 +2050,7 @@
     const cards = proposals.map((o,idx)=>{
       const pieceObjs = [
         ...o.ids.map(id=>{ const it=items.find(i=>i.id===id); return it?{owned:true,category:it.category,type:it.subcategory||"",name:it.name,image:primaryImage(it),colors:(it.colors||[]).slice(0,4)}:null; }).filter(Boolean),
-        ...(o.concepts||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color,why:c.why }))
+        ...(o.concepts||[]).map(c=>({ owned:false,category:c.category,type:c.item,name:c.item,color:c.color,why:c.why,search:c.search }))
       ];
       const hasNew = pieceObjs.some(p=>!p.owned);
       const legend = hasNew ? `<div class="prop-legend"><span><span class="lg-own"></span>You own</span><span><span class="lg-new"></span>To try</span></div>` : "";
@@ -2803,6 +2850,11 @@
     document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#overlay").classList.contains("open")) closeModal(); });
 
     $("#search").addEventListener("input",e=>{ searchTerm = e.target.value.trim().toLowerCase(); renderRail(); });
+    const csz = $("#card-size");
+    if(csz){
+      csz.addEventListener("input", e=>{ cardSize = +e.target.value || 170; applyCardSize(); });
+      csz.addEventListener("change", e=>{ cardSize = +e.target.value || 170; store.set("settings:cardSize", cardSize); });
+    }
     $("#shuffle-btn").addEventListener("click",shuffleLook);
     $("#compose-btn").addEventListener("click",compose);
     const dtog = $("#discover-toggle"), brow = $("#budget-row"), bsel = $("#budget-select");
@@ -2860,6 +2912,8 @@
     if(sh){ recentGenres = sh.genres || []; recentSignatures = sh.sigs || []; }
     const savedBudget = await store.get("settings:budget");
     if(savedBudget && $("#budget-select")) $("#budget-select").value = savedBudget;
+    const savedSize = await store.get("settings:cardSize");
+    if(savedSize){ cardSize = savedSize; const cs=$("#card-size"); if(cs) cs.value = savedSize; }
     const sc = await store.get("settings:sync");
     if(sc){ supaUrl = sc.url; supaKey = sc.key; syncCode = sc.code; }
     lastPull = (await store.get("settings:lastPull")) || null;
