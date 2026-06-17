@@ -307,6 +307,9 @@
   .cp-add input[type=color]::-webkit-color-swatch{border:1px solid rgba(33,31,28,.25);border-radius:50%}
   .cp-add input[type=color]::-moz-color-swatch{border:1px solid rgba(33,31,28,.25);border-radius:50%}
 
+  .autofill-row{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .autofill-btn{flex:none}
+  .autofill-hint{flex:1;min-width:160px;font-size:11.5px;color:var(--ink-soft);line-height:1.4}
   .field{margin-top:16px}
   .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);margin-bottom:7px}
   .field input[type=text], .field select, .field textarea{
@@ -435,6 +438,30 @@
   .genre-badge.sm{padding:4px 10px;font-size:9px;letter-spacing:.14em}
   .genre-note{font-size:12px;color:var(--ink-soft);line-height:1.45;margin:0 0 2px;font-style:italic;font-family:var(--display)}
   .concept-name{color:var(--accent);font-weight:600}
+
+  /* discovery budget control */
+  .budget-row{display:flex;align-items:center;gap:10px;margin:-6px 0 14px;padding-left:51px}
+  .budget-row[hidden]{display:none}
+  .budget-lbl{font-size:12px;color:var(--ink-soft);font-weight:500}
+  .budget-row select{border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--paper);font-size:12.5px;font-weight:600;color:var(--ink);outline:none}
+
+  /* "where to find it" shopping block */
+  .shop-block{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px}
+  .shop-block > .plabel{display:block;margin-bottom:10px}
+  .shop-item{padding:11px 0;border-top:1px solid var(--line-soft)}
+  .shop-item:first-of-type{padding-top:2px;border-top:0}
+  .shop-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .shop-name{font-weight:600;font-size:14px;text-transform:capitalize}
+  .shop-tier{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+  .shop-fit{font-size:12.5px;color:var(--ink-soft);margin:4px 0 0;line-height:1.45}
+  .shop-fit b{color:var(--ink);font-weight:600}
+  .shop-brands{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .brand-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bone);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--ink);text-decoration:none;transition:border-color .14s,background .14s}
+  .brand-chip:hover{border-color:var(--accent);background:var(--paper)}
+  .brand-chip svg{width:12px;height:12px;color:var(--ink-soft)}
+  .shop-all{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;color:var(--accent);text-decoration:none}
+  .shop-all:hover{text-decoration:underline}
+  .shop-note{margin:11px 0 0;font-size:11px;color:var(--ink-soft);line-height:1.5}
   .moves{margin:0;padding-left:17px;display:flex;flex-direction:column;gap:4px}
   .moves li{font-size:13px;line-height:1.45}
   .palette-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -606,8 +633,17 @@
       <label class="toggle">
         <input type="checkbox" id="discover-toggle" />
         <span class="tg-track"><span class="tg-thumb"></span></span>
-        <span class="tg-label">Discovery mode — suggest pieces I don't own yet, to try new styles</span>
+        <span class="tg-label">Discovery mode — suggest pieces I don't own yet, with brands &amp; where to buy</span>
       </label>
+      <div class="budget-row" id="budget-row" hidden>
+        <span class="budget-lbl">Budget for new pieces</span>
+        <select id="budget-select" aria-label="Budget for suggested pieces">
+          <option value="mix">Mix of prices</option>
+          <option value="value">Affordable</option>
+          <option value="mid" selected>Mid-range</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
       <label class="toggle">
         <input type="checkbox" id="visual-toggle" />
         <span class="tg-track"><span class="tg-thumb"></span></span>
@@ -664,6 +700,14 @@
       <div class="field">
         <label for="f-name">Name</label>
         <input type="text" id="f-name" placeholder="e.g. Cream linen overshirt" />
+      </div>
+
+      <div class="autofill-row">
+        <button type="button" class="btn ghost sm autofill-btn" id="autofill-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.4 6.6L22 12l-6.6 2.4L13 21l-2.4-6.6L4 12l6.6-2.4L13 3Z"/></svg>
+          Auto-fill details
+        </button>
+        <span class="autofill-hint">Guesses category, type, dress code &amp; season — from the photo if AI is connected, otherwise the name</span>
       </div>
 
       <div class="field">
@@ -731,8 +775,19 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.4.0";
+  const APP_VERSION = "1.6.0";
   const CHANGELOG = [
+    { v:"1.6.0", date:"Jun 2026", notes:[
+      "Adding a piece now auto-fills its details. As you name it, the app guesses the category and specific type, and suggests dress codes and seasons to match.",
+      "New 'Auto-fill details' button reads the actual photo when your free AI key is connected — more accurate category, type, dress code and season — and falls back to the name otherwise.",
+      "Auto-fill only sets fields you haven't touched, so your own choices are never overwritten."
+    ]},
+    { v:"1.5.0", date:"Jun 2026", notes:[
+      "Discovery mode is far deeper: it suggests more specific pieces and fits to expand your range, and for each one recommends real brands and where to buy it.",
+      "Every suggested piece gets a 'Where to find it' card — a fit/fabric note, real brand picks, and working shopping links (the app builds reliable search links instead of guessing product URLs).",
+      "New budget control for Discovery — Affordable, Mid-range, Premium, or a mix — and brand picks match the level you choose.",
+      "Brand recommendations are curated per genre, so Discovery gives solid picks even without an AI key. Saved looks keep their shopping links."
+    ]},
     { v:"1.4.0", date:"Jun 2026", notes:[
       "Looks now render as an editorial flat-lay board — your actual garment photos staged on a paper canvas with layering and shadow, the way a real styling app presents an outfit. The stick figure is gone.",
       "Every look is labeled with its fashion genre (Minimalist, Streetwear, Workwear, Ivy Prep, Techwear, Gorpcore, Sartorial, Avant-Garde and more).",
@@ -841,6 +896,7 @@
   let draftPhotos = [];          // [{label, image}] photos for the piece being edited
   let activePhotoIdx = 0;        // which draft photo shows in the big preview / is sampled
   let pendingPhotoMode = "add";  // "add" or "replace" — how the next picked file is used
+  let userEdited = { cat:false, formality:false, seasons:false };  // so auto-tagging won't clobber manual choices
   let draftColors = [];   // hex strings sampled/picked for the piece being edited
   let expandedColorHexes = new Set();  // which color chips are showing their hex
   let sampleCV = null;    // offscreen canvas holding the current photo for color sampling
@@ -1263,6 +1319,7 @@
       const when = new Date(o.createdAt||Date.now()).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
       const aes = o.genre ? `<div style="margin-bottom:4px"><span class="genre-badge sm">${esc(o.genre)}</span></div>` : "";
       const palette = o.palette ? `<div class="prop-row" style="padding:0 16px 10px"><p style="font-size:12.5px;color:var(--ink-soft);margin:0">${esc(o.palette)}</p></div>` : "";
+      const shop = (o.wishItems && o.wishItems.length) ? `<div style="padding:0 16px 14px">${shopBlockHTML(o.wishItems)}</div>` : "";
       return `<div class="look">
         <div class="lhead">
           <div>${aes}<h3>${esc(o.name)}</h3><div class="when">${when}</div></div>
@@ -1273,6 +1330,7 @@
         ${outfitDiagram(pieceObjs)}
         ${legend}
         ${palette}
+        ${shop}
         <div class="lfoot"><span class="pieces">${count} piece${count===1?"":"s"}</span>
           <button class="btn ghost sm" data-restyle="${o.id}">Restyle</button></div>
       </div>`;
@@ -1370,6 +1428,91 @@
   ];
   const GENRE_BY_NAME = Object.fromEntries(GENRES.map(g=>[g.name.toLowerCase(), g]));
   function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  /* ----- where-to-buy: real menswear brands per genre and price tier -----
+     The app never trusts AI-invented product URLs (they 404). Instead it pairs the
+     suggested item with real brands + a clean query and builds reliable shopping-
+     search links itself. This map also powers Discovery when there's no AI key. */
+  const GENRE_BRANDS = {
+    "minimalist":{ value:["Uniqlo","COS","Muji"], mid:["Everlane","Arket","A.P.C."], premium:["Lemaire","Jil Sander","Auralee"] },
+    "streetwear":{ value:["Uniqlo U","H&M","ASOS"], mid:["Stüssy","Carhartt WIP","Noah"], premium:["Aimé Leon Dore","Fear of God","Rhude"] },
+    "workwear":{ value:["Dickies","Carhartt"], mid:["Carhartt WIP","Taylor Stitch","Filson"], premium:["RRL","visvim","Iron Heart"] },
+    "ivy prep":{ value:["Uniqlo","Lands' End"], mid:["J.Crew","Spier & Mackay","Brooks Brothers"], premium:["Drake's","Polo Ralph Lauren","Rowing Blazers"] },
+    "techwear":{ value:["Uniqlo","Decathlon"], mid:["Outlier","Arc'teryx","The North Face"], premium:["Acronym","Veilance","Stone Island Shadow Project"] },
+    "gorpcore":{ value:["Decathlon","Uniqlo"], mid:["Patagonia","The North Face","Salomon"], premium:["Arc'teryx Veilance","Snow Peak","And Wander"] },
+    "sartorial":{ value:["Uniqlo","Charles Tyrwhitt"], mid:["Suitsupply","Spier & Mackay","Luca Faloni"], premium:["Drake's","Ring Jacket","Boglioli"] },
+    "military field":{ value:["Alpha Industries","Uniqlo"], mid:["orSlow","Carhartt WIP","Buzz Rickson's"], premium:["visvim","Kapital","RRL"] },
+    "heritage rugged":{ value:["Levi's","L.L.Bean"], mid:["Taylor Stitch","3sixteen","Flint and Tinder"], premium:["RRL","Iron Heart","visvim"] },
+    "athleisure":{ value:["Nike","Adidas","Uniqlo"], mid:["Lululemon","On","Reigning Champ"], premium:["Y-3","Lululemon Lab","Satisfy"] },
+    "retro 90s":{ value:["Adidas Originals","Uniqlo"], mid:["Stüssy","New Balance","Carhartt WIP"], premium:["Aimé Leon Dore","Bode","Wales Bonner"] },
+    "monochrome":{ value:["Uniqlo","COS"], mid:["Arket","A.P.C.","Everlane"], premium:["Lemaire","The Row","Jil Sander"] },
+    "coastal":{ value:["Uniqlo","H&M"], mid:["J.Crew","Percival","Marine Layer"], premium:["Orlebar Brown","Drake's","Sease"] },
+    "avant-garde":{ value:["COS","Uniqlo U"], mid:["Our Legacy","MM6 Maison Margiela","Acne Studios"], premium:["Rick Owens","Yohji Yamamoto","Comme des Garçons"] },
+    "normcore":{ value:["Uniqlo","Gap","Muji"], mid:["Everlane","A.P.C.","New Balance"], premium:["The Row","Margaret Howell","Auralee"] },
+    "all-black":{ value:["Uniqlo","COS"], mid:["AllSaints","Our Legacy","Represent"], premium:["Rick Owens","Yohji Yamamoto","Stone Island Shadow Project"] }
+  };
+  const GENERIC_BRANDS = { value:["Uniqlo","H&M","COS"], mid:["J.Crew","Everlane","A.P.C."], premium:["Drake's","Lemaire","Aimé Leon Dore"] };
+
+  function tierKey(t){
+    t = String(t||"").toLowerCase();
+    if(/value|afford|budget|cheap|entry/.test(t)) return "value";
+    if(/prem|splurge|lux|high|designer/.test(t)) return "premium";
+    if(/mix|any|varied|blend/.test(t)) return "mix";
+    return "mid";
+  }
+  function brandsForGenre(genre, tier){
+    const g = (genre||"").toLowerCase();
+    let lib = GENRE_BRANDS[g];
+    if(!lib){ for(const k in GENRE_BRANDS){ if(g.includes(k) || k.includes(g)){ lib = GENRE_BRANDS[k]; break; } } }
+    if(!lib) lib = GENERIC_BRANDS;
+    const tk = tierKey(tier);
+    if(tk==="mix"){
+      return [ (lib.value||[])[0], (lib.mid||[])[0], (lib.mid||[])[1], (lib.premium||[])[0] ].filter(Boolean);
+    }
+    const list = lib[tk] || lib.mid || lib.value || [];
+    return list.slice(0,4);
+  }
+  const TIER_LABEL = { value:"Affordable", mid:"Mid-range", premium:"Premium", mix:"Mixed prices" };
+  function shopURL(q){ return "https://www.google.com/search?tbm=shop&q=" + encodeURIComponent(q); }
+
+  // Fill in brands / search query / tier for any concept piece that lacks them, so
+  // every Discovery suggestion is shoppable regardless of which engine produced it.
+  function enrichConcepts(outfits, tier){
+    const tk = tierKey(tier);
+    outfits.forEach(o=>{
+      (o.concepts||[]).forEach(c=>{
+        c.brands = (Array.isArray(c.brands) && c.brands.length)
+          ? c.brands.map(b=>String(b).slice(0,40)).filter(Boolean).slice(0,5)
+          : brandsForGenre(o.genre, tk);
+        if(!c.search) c.search = ((c.color?c.color+" ":"") + (c.item||"") + " men").trim();
+        c.search = String(c.search).slice(0,90);
+        c.priceTier = tierKey(c.priceTier || tk);
+        c.fit = String(c.fit||"").slice(0,70);
+      });
+    });
+  }
+
+  const LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>';
+  // Render the "Where to find it" block for a look's concept (unowned) pieces.
+  function shopBlockHTML(concepts){
+    if(!concepts || !concepts.length) return "";
+    const items = concepts.map(c=>{
+      const tierLbl = TIER_LABEL[tierKey(c.priceTier)] || "";
+      const brands = (c.brands||[]).map(b=>
+        `<a class="brand-chip" href="${shopURL(b + " " + (c.color?c.color+" ":"") + (c.item||"") + " men")}" target="_blank" rel="noopener">${esc(b)}${LINK_SVG}</a>`
+      ).join("");
+      const fit = c.fit ? `<p class="shop-fit"><b>Look for:</b> ${esc(c.fit)}</p>` : "";
+      const all = `<a class="shop-all" href="${shopURL(c.search || ((c.color?c.color+" ":"")+(c.item||"")+" men"))}" target="_blank" rel="noopener">Shop this ${LINK_SVG}</a>`;
+      return `<div class="shop-item">
+        <div class="shop-head"><span class="shop-name">${esc(c.item||"")}</span>${tierLbl?`<span class="shop-tier">${esc(tierLbl)}</span>`:""}</div>
+        ${fit}
+        ${brands?`<div class="shop-brands">${brands}</div>`:""}
+        ${all}
+      </div>`;
+    }).join("");
+    return `<div class="shop-block"><span class="plabel">Where to find it</span>${items}
+      <p class="shop-note">Brand picks open a shopping search — links always work, prices and stock vary.</p></div>`;
+  }
 
   // Pick target genres for this run: rotate so consecutive composes feel different.
   function pickTargetGenres(n){
@@ -1549,8 +1692,9 @@
     return null;
   }
 
-  function stylistSystem(discover){
+  function stylistSystem(discover, tier){
     const genreList = GENRES.map(g=>g.name + " (" + g.ethos + ")").join("; ");
+    const tlabel = TIER_LABEL[tierKey(tier)] || "Mid-range";
     const base =
       "You are a senior menswear stylist and fashion editor with a wide range — you can dress a man in any genre and switch fluently between them. "
       + "You know the recognized menswear genres and their codes: " + genreList + ". "
@@ -1564,7 +1708,9 @@
       + "RANGE IS THE POINT: genuinely commit to a distinct genre per look, vary silhouette and palette across them, and push him toward forms of fashion he likely hasn't tried — while keeping each look wearable and true to its genre. ";
     const ownRule = 'Each outfit has a "pieces" array. For a piece he owns, use {"owned":true,"id":"<exact inventory id>"}. ';
     const discRule = discover
-      ? 'You MAY add 1-3 aspirational pieces he does NOT own to fully realize a genre, as {"owned":false,"item":"specific menswear item","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","why":"<=10 words"}. Lean on this to reach genres his current pieces can\'t. '
+      ? 'DISCOVERY MODE IS ON — be expansive and specific. For each look, ADD 1-4 well-chosen pieces he does NOT own that complete the look and stretch his range, especially the pieces that unlock that look\'s genre (the right outerwear, footwear, or statement piece). Be precise about the garment, its cut/fit and fabric. Represent each as '
+        + '{"owned":false,"item":"specific garment (incl. fabric/cut)","category":"Tops|Bottoms|Outerwear|Shoes|Bags|Accessories","color":"single color word","fit":"<=10 words on the cut/fit/fabric to look for","why":"<=10 words on what it adds","priceTier":"' + tierKey(tier) + '","brands":["3-4 REAL, well-known brands that sell this, fitting the genre AND the ' + tlabel + ' price level"],"search":"a clean shopping query, e.g. \'olive relaxed cargo pants men\'"}. '
+        + 'Use only real brands you are confident exist; match them to the genre and to the ' + tlabel + ' budget. Do NOT invent or output any URLs — the app builds the shopping links from your brand names and search query. '
       : 'Use ONLY pieces he owns; every piece must be {"owned":true,"id":"..."}. Reinterpret the same pieces through each genre rather than reusing identical combinations. ';
     return base + ownRule + discRule
       + 'Return ONLY valid minified JSON — no markdown, no text outside it — in EXACTLY this shape: '
@@ -1579,7 +1725,7 @@
       + '"wearTo":["place or occasion"],'
       + '"moves":["concrete styling move <=8 words"],'
       + '"season":"Spring|Summer|Fall|Winter|All-season"'
-      + '}],"gaps":"<=18 words on what would most expand his range, or empty string"} '
+      + '}],"gaps":"<=20 words on the single piece or category that would most expand his range, or empty string"} '
       + "Rules: exactly up to 3 outfits, each a DIFFERENT genre and visibly different pieces; each 2-7 pieces; wearTo 2-3; moves 1-3; obey every length cap; JSON only.";
   }
   function stylistUser(brief, directive){
@@ -1628,17 +1774,17 @@
     }
     return [{ role:"user", parts }];
   }
-  async function callStylistGemini(brief, discover, key, visual, directive){
+  async function callStylistGemini(brief, discover, key, visual, directive, tier){
     const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(key), {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
-        systemInstruction:{ parts:[{ text: stylistSystem(discover) }] },
+        systemInstruction:{ parts:[{ text: stylistSystem(discover, tier) }] },
         contents: await buildGeminiContents(brief, visual, directive),
         generationConfig:{
           temperature:1.05,
           topP:0.97,
-          maxOutputTokens:4096,
+          maxOutputTokens:6144,
           responseMimeType:"application/json",
           thinkingConfig:{ thinkingBudget:0 }   // 2.5 Flash thinks by default and that eats the token budget
         }
@@ -1664,8 +1810,8 @@
   }
 
   // In-chat path: Claude through the artifact connection (only works inside Claude).
-  async function callStylist(brief, discover, directive){
-    const user = stylistSystem(discover) + "\n\n" + stylistUser(brief, directive) + "\n\nReturn only the JSON object.";
+  async function callStylist(brief, discover, directive, tier){
+    const user = stylistSystem(discover, tier) + "\n\n" + stylistUser(brief, directive) + "\n\nReturn only the JSON object.";
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -1694,10 +1840,14 @@
         if(p && p.owned!==false && p.id && ids.has(p.id)){ if(!ownedIds.includes(p.id)) ownedIds.push(p.id); }
         else if(p && p.owned===false && p.item){
           concepts.push({
-            item: String(p.item).slice(0,40),
+            item: String(p.item).slice(0,48),
             category: CATEGORIES.includes(p.category) ? p.category : "Accessories",
             color: String(p.color||"").slice(0,18),
-            why: String(p.why||"").slice(0,70)
+            why: String(p.why||"").slice(0,70),
+            fit: String(p.fit||"").slice(0,70),
+            brands: Array.isArray(p.brands) ? p.brands.map(b=>String(b).slice(0,40)).filter(Boolean).slice(0,5) : [],
+            search: String(p.search||"").slice(0,90),
+            priceTier: String(p.priceTier||"").slice(0,16)
           });
         }
       }
@@ -1861,6 +2011,7 @@
       const moves = (o.moves && o.moves.length) ? o.moves : (o.tip ? [o.tip] : []);
       const movesHTML = moves.length ? `<div class="prop-row"><span class="plabel">Styling moves</span><ul class="moves">${moves.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>` : "";
       const seasonTag = o.season ? `<span class="wtag">${esc(o.season)}</span>` : "";
+      const shop = shopBlockHTML(o.concepts);
       return `<article class="prop">
         <div class="prop-head"><span class="eyebrow">Look ${String(idx+1).padStart(2,"0")}</span>${o.genre?`<span class="genre-badge">${esc(o.genre)}</span>`:""}<h3>${esc(o.name)}</h3>${o.genreNote?`<p class="genre-note">${esc(o.genreNote)}</p>`:""}</div>
         ${outfitDiagram(pieceObjs)}
@@ -1870,6 +2021,7 @@
         ${o.rationale?`<div class="prop-row"><span class="plabel">Why it works</span><p>${esc(o.rationale)}</p></div>`:""}
         ${(tags||seasonTag)?`<div class="prop-row"><span class="plabel">Wear it to</span><div class="wtags">${tags}${seasonTag}</div></div>`:""}
         ${movesHTML}
+        ${shop}
         <div class="prop-actions">
           <button class="btn ghost sm" data-prop-studio="${idx}">Tweak in Studio</button>
           <button class="btn accent sm" data-prop-save="${idx}">Save to Lookbook</button>
@@ -1900,6 +2052,7 @@
     const brief = $("#brief-input").value.trim();
     const discover = $("#discover-toggle").checked;
     const visual = $("#visual-toggle").checked;
+    const tier = ($("#budget-select") && $("#budget-select").value) || "mid";
     const btn = $("#compose-btn");
     btn.disabled = true; btn.classList.add("loading");
     showComposing();
@@ -1907,11 +2060,11 @@
     try{
       let result = null;
       if(geminiKey){
-        try{ result = await callStylistGemini(brief, discover, geminiKey, visual, directive); engineUsed = "gemini"; lastAIError = ""; }
+        try{ result = await callStylistGemini(brief, discover, geminiKey, visual, directive, tier); engineUsed = "gemini"; lastAIError = ""; }
         catch(e){ console.error("gemini:", e); lastAIError = String(e.message || e).slice(0,160); result = null; }
       }
       if(!result){
-        try{ result = await callStylist(brief, discover, directive); engineUsed = "claude"; }
+        try{ result = await callStylist(brief, discover, directive, tier); engineUsed = "claude"; }
         catch(e){ console.error("claude:", e); result = null; }
       }
       if(!result || !result.outfits || result.outfits.length===0){
@@ -1920,6 +2073,7 @@
         proposalsLocal = false;
       }
       proposals = result.outfits;
+      if(discover) enrichConcepts(proposals, tier);   // ensure every suggestion is shoppable
       proposalsGaps = result.gaps || "";
       if(proposals.length===0){
         $("#stylist-results").innerHTML = `<div class="prop-placeholder">Couldn't assemble a full look from the current pieces. Try adding shoes or a bottom, or loosen the brief.</div>`;
@@ -1956,7 +2110,7 @@
     const o = {
       id:uid(), name:p.name||"Untitled look",
       itemIds:p.ids.slice(),
-      wishItems:(p.concepts||[]).map(c=>({ item:c.item, category:c.category, color:c.color })),
+      wishItems:(p.concepts||[]).map(c=>({ item:c.item, category:c.category, color:c.color, fit:c.fit||"", brands:(c.brands||[]).slice(), search:c.search||"", priceTier:c.priceTier||"" })),
       genre:p.genre||"", genreNote:p.genreNote||"", palette:p.palette||"", proportion:p.proportion||"",
       rationale:p.rationale||"", moves:(p.moves||[]).slice(), wearTo:(p.wearTo||[]).slice(),
       season:p.season||"",
@@ -2279,17 +2433,200 @@
     $("#f-subcat").innerHTML = opts;
   }
 
+  /* ---------------- auto-tagging: guess category/type/dress code/season ----------------
+     Two paths: a free, instant name-based heuristic that runs as you add a piece, and a
+     sharper photo-based pass via Gemini when a key is connected. Both only fill fields
+     you haven't set yourself. */
+  // Ordered most-specific → most-generic; subcategory strings must match SUBCATEGORIES exactly.
+  const TYPE_KEYWORDS = [
+    // Tops
+    [/long.?sleeve/, "Tops","Long-sleeve tee"], [/\bhenley\b/, "Tops","Henley"],
+    [/\bpolo\b/, "Tops","Polo"], [/dress shirt/, "Tops","Dress shirt"],
+    [/oxford shirt|\boxford\b(?! shoe)/, "Tops","Oxford shirt"], [/flannel/, "Tops","Flannel shirt"],
+    [/button.?up|button.?down/, "Tops","Casual button-up"], [/turtleneck|roll.?neck/, "Tops","Turtleneck"],
+    [/\bhoodie\b/, "Tops","Hoodie"], [/sweatshirt|crew.?neck/, "Tops","Sweatshirt"],
+    [/cardigan/, "Tops","Cardigan"], [/sweater|jumper|merino|\bknit\b(?!.*\b(?:beanie|hat|cap|scarf|glove|sock))/, "Tops","Sweater / jumper"],
+    [/tank top|\btank\b|singlet/, "Tops","Tank top"], [/jersey/, "Tops","Jersey"],
+    [/t-?shirt|\btee\b/, "Tops","T-shirt"],
+    // Bottoms
+    [/jean|denim pant/, "Bottoms","Jeans"], [/chino/, "Bottoms","Chinos"],
+    [/cargo pant|cargo trouser|cargos/, "Bottoms","Cargo pants"],
+    [/jogger|sweatpant/, "Bottoms","Joggers / sweatpants"], [/track pant/, "Bottoms","Track pants"],
+    [/cord(uroy)?s?\b/, "Bottoms","Corduroys"], [/linen (trouser|pant)/, "Bottoms","Linen trousers"],
+    [/dress (trouser|pant)|suit (trouser|pant)|slack/, "Bottoms","Dress trousers"],
+    [/athletic short|gym short|running short/, "Bottoms","Athletic shorts"], [/short/, "Bottoms","Shorts"],
+    [/trouser|\bpant/, "Bottoms","Casual trousers"],
+    // Outerwear
+    [/blazer/, "Outerwear","Blazer"], [/sport ?coat/, "Outerwear","Sport coat"],
+    [/suit jacket/, "Outerwear","Suit jacket"], [/overshirt|shacket|chore (coat|jacket)/, "Outerwear","Overshirt / shacket"],
+    [/trucker jacket/, "Outerwear","Trucker jacket"], [/denim jacket|jean jacket/, "Outerwear","Denim jacket"],
+    [/leather jacket|biker jacket|moto jacket/, "Outerwear","Leather jacket"], [/bomber/, "Outerwear","Bomber jacket"],
+    [/trench/, "Outerwear","Trench coat"], [/overcoat|topcoat|wool coat/, "Outerwear","Overcoat / topcoat"],
+    [/parka/, "Outerwear","Parka"], [/puffer|down jacket|quilted/, "Outerwear","Puffer jacket"],
+    [/rain ?coat|rain ?jacket/, "Outerwear","Raincoat"], [/field jacket|m-?65/, "Outerwear","Field jacket"],
+    [/windbreaker|anorak/, "Outerwear","Windbreaker"], [/\bvest\b|gilet/, "Outerwear","Vest / gilet"],
+    [/fleece|\bjacket\b|\bcoat\b/, "Outerwear","Other outerwear"],
+    // Shoes
+    [/running shoe|\brunner/, "Shoes","Running shoes"], [/sneaker|trainer|kicks/, "Shoes","Sneakers"],
+    [/dress shoe|oxford shoe/, "Shoes","Dress shoes / Oxfords"], [/derby/, "Shoes","Derbies"],
+    [/loafer/, "Shoes","Loafers"], [/monk strap/, "Shoes","Monk straps"],
+    [/chelsea boot/, "Shoes","Chelsea boots"], [/chukka/, "Shoes","Chukka boots"],
+    [/hiking boot|hiker/, "Shoes","Hiking boots"], [/\bboot/, "Shoes","Boots"],
+    [/sandal/, "Shoes","Sandals"], [/\bslide/, "Shoes","Slides"], [/espadrille/, "Shoes","Espadrilles"],
+    [/driving shoe/, "Shoes","Driving shoes"],
+    // Bags
+    [/backpack|rucksack/, "Bags","Backpack"], [/messenger/, "Bags","Messenger bag"],
+    [/briefcase/, "Bags","Briefcase"], [/tote/, "Bags","Tote"], [/duffel|weekender|holdall/, "Bags","Duffel / weekender"],
+    [/crossbody|sling/, "Bags","Crossbody / sling"], [/laptop bag/, "Bags","Laptop bag"],
+    [/gym bag/, "Bags","Gym bag"], [/\bbag\b/, "Bags","Other bag"],
+    // Accessories
+    [/belt/, "Accessories","Belt"], [/watch/, "Accessories","Watch"], [/beanie/, "Accessories","Beanie"],
+    [/cap\b|\bhat\b/, "Accessories","Cap / hat"], [/scarf/, "Accessories","Scarf"],
+    [/sunglass|shades/, "Accessories","Sunglasses"], [/bow tie/, "Accessories","Bow tie"], [/\btie\b/, "Accessories","Tie"],
+    [/pocket square/, "Accessories","Pocket square"], [/glove/, "Accessories","Gloves"], [/\bsock/, "Accessories","Socks"],
+    [/bracelet/, "Accessories","Bracelet"], [/necklace|chain/, "Accessories","Necklace / chain"],
+    [/\bring\b/, "Accessories","Ring"], [/cufflink/, "Accessories","Cufflinks"], [/suspender/, "Accessories","Suspenders"]
+  ];
+  // Dress code + season hints per specific type, with a per-category fallback.
+  const TAG_HINTS = {
+    "T-shirt":{f:["Casual","Smart casual"],s:["Spring","Summer"]}, "Long-sleeve tee":{f:["Casual"],s:["Spring","Fall"]},
+    "Henley":{f:["Casual"],s:["Spring","Fall"]}, "Polo":{f:["Smart casual","Casual"],s:["Spring","Summer"]},
+    "Dress shirt":{f:["Smart casual","Formal"],s:["All-season"]}, "Casual button-up":{f:["Casual","Smart casual"],s:["All-season"]},
+    "Oxford shirt":{f:["Smart casual","Casual"],s:["All-season"]}, "Flannel shirt":{f:["Casual"],s:["Fall","Winter"]},
+    "Sweater / jumper":{f:["Smart casual","Casual"],s:["Fall","Winter"]}, "Cardigan":{f:["Smart casual","Casual"],s:["Fall","Winter"]},
+    "Hoodie":{f:["Casual","Loungewear"],s:["Fall","Winter","Spring"]}, "Sweatshirt":{f:["Casual","Loungewear"],s:["Fall","Winter","Spring"]},
+    "Turtleneck":{f:["Smart casual","Casual"],s:["Fall","Winter"]}, "Tank top":{f:["Casual","Activewear"],s:["Summer"]},
+    "Jersey":{f:["Casual","Activewear"],s:["All-season"]},
+    "Jeans":{f:["Casual","Smart casual"],s:["All-season"]}, "Chinos":{f:["Smart casual","Casual"],s:["All-season"]},
+    "Dress trousers":{f:["Smart casual","Formal"],s:["All-season"]}, "Casual trousers":{f:["Casual","Smart casual"],s:["All-season"]},
+    "Shorts":{f:["Casual"],s:["Summer"]}, "Cargo pants":{f:["Casual"],s:["All-season"]},
+    "Joggers / sweatpants":{f:["Casual","Loungewear","Activewear"],s:["All-season"]}, "Track pants":{f:["Activewear","Casual"],s:["All-season"]},
+    "Linen trousers":{f:["Smart casual","Casual"],s:["Spring","Summer"]}, "Corduroys":{f:["Casual","Smart casual"],s:["Fall","Winter"]},
+    "Athletic shorts":{f:["Activewear","Casual"],s:["Summer"]},
+    "Blazer":{f:["Smart casual","Formal"],s:["All-season"]}, "Sport coat":{f:["Smart casual","Formal"],s:["All-season"]},
+    "Suit jacket":{f:["Formal","Smart casual"],s:["All-season"]}, "Overshirt / shacket":{f:["Casual","Smart casual"],s:["Spring","Fall"]},
+    "Denim jacket":{f:["Casual","Smart casual"],s:["Spring","Fall"]}, "Trucker jacket":{f:["Casual","Smart casual"],s:["Spring","Fall"]},
+    "Leather jacket":{f:["Casual","Smart casual"],s:["Spring","Fall"]}, "Bomber jacket":{f:["Casual","Smart casual"],s:["Spring","Fall"]},
+    "Trench coat":{f:["Smart casual","Formal"],s:["Fall","Spring"]}, "Overcoat / topcoat":{f:["Smart casual","Formal"],s:["Fall","Winter"]},
+    "Parka":{f:["Casual"],s:["Winter"]}, "Puffer jacket":{f:["Casual"],s:["Winter"]},
+    "Raincoat":{f:["Casual","Smart casual"],s:["Spring","Fall"]}, "Field jacket":{f:["Casual"],s:["Spring","Fall"]},
+    "Windbreaker":{f:["Casual","Activewear"],s:["Spring","Fall"]}, "Vest / gilet":{f:["Casual","Smart casual"],s:["Fall","Spring"]},
+    "Sneakers":{f:["Casual","Activewear"],s:["All-season"]}, "Running shoes":{f:["Activewear","Casual"],s:["All-season"]},
+    "Dress shoes / Oxfords":{f:["Formal","Smart casual"],s:["All-season"]}, "Derbies":{f:["Smart casual","Formal"],s:["All-season"]},
+    "Loafers":{f:["Smart casual","Casual"],s:["Spring","Summer","Fall"]}, "Monk straps":{f:["Smart casual","Formal"],s:["All-season"]},
+    "Chelsea boots":{f:["Smart casual","Casual"],s:["Fall","Winter","Spring"]}, "Chukka boots":{f:["Smart casual","Casual"],s:["Fall","Spring"]},
+    "Boots":{f:["Casual"],s:["Fall","Winter"]}, "Hiking boots":{f:["Casual"],s:["Fall","Winter"]},
+    "Sandals":{f:["Casual"],s:["Summer"]}, "Slides":{f:["Casual","Loungewear"],s:["Summer"]}, "Espadrilles":{f:["Casual","Smart casual"],s:["Spring","Summer"]},
+    "Driving shoes":{f:["Smart casual","Casual"],s:["Spring","Summer"]},
+    "Briefcase":{f:["Smart casual","Formal"],s:["All-season"]}, "Gym bag":{f:["Activewear","Casual"],s:["All-season"]},
+    "Beanie":{f:["Casual"],s:["Fall","Winter"]}, "Cap / hat":{f:["Casual"],s:["Spring","Summer"]}, "Scarf":{f:["Casual","Smart casual"],s:["Fall","Winter"]},
+    "Sunglasses":{f:["Casual","Smart casual"],s:["Spring","Summer"]}, "Gloves":{f:["Casual"],s:["Fall","Winter"]},
+    "Tie":{f:["Smart casual","Formal"],s:["All-season"]}, "Bow tie":{f:["Formal"],s:["All-season"]},
+    "Pocket square":{f:["Smart casual","Formal"],s:["All-season"]}, "Cufflinks":{f:["Formal"],s:["All-season"]}, "Suspenders":{f:["Smart casual","Formal"],s:["All-season"]}
+  };
+  const CAT_HINTS = {
+    Tops:{f:["Casual"],s:["All-season"]}, Bottoms:{f:["Casual","Smart casual"],s:["All-season"]},
+    Outerwear:{f:["Casual","Smart casual"],s:["Fall","Spring"]}, Shoes:{f:["Casual"],s:["All-season"]},
+    Bags:{f:["Casual","Smart casual"],s:["All-season"]}, Accessories:{f:["Casual"],s:["All-season"]}
+  };
+  function hintsFor(category, sub){
+    const h = TAG_HINTS[sub] || CAT_HINTS[category] || { f:["Casual"], s:["All-season"] };
+    return { formality: h.f.slice(), seasons: h.s.slice() };
+  }
+  function guessFromName(name){
+    const s = (name||"").toLowerCase();
+    if(!s) return null;
+    for(const [re, cat, sub] of TYPE_KEYWORDS){
+      if(re.test(s)){ const h = hintsFor(cat, sub); return { category:cat, subcategory:sub, formality:h.formality, seasons:h.seasons }; }
+    }
+    return null;
+  }
+  // Sharper guess from the actual photo(s) via the user's free Gemini key.
+  async function classifyGemini(name){
+    const sys = "You are a menswear wardrobe cataloging assistant. Look at the garment in the photo(s) and classify it. "
+      + "Return ONLY minified JSON: {\"category\":\"\",\"subcategory\":\"\",\"formality\":[],\"seasons\":[]}. "
+      + "category is exactly one of: " + CATEGORIES.join(", ") + ". "
+      + "subcategory is one of the exact types listed for that category here: " + JSON.stringify(SUBCATEGORIES) + ". "
+      + "formality: any of [" + FORMALITY.join(", ") + "] that genuinely apply (usually 1-2), judged from material, cut and style. "
+      + "seasons: any of [" + SEASONS.join(", ") + "]; use All-season if it works year-round. JSON only, nothing else.";
+    const parts = [{ text: sys + (name ? "\n\nThe owner named it: \"" + name + "\"." : "") + "\n\nClassify the garment shown." }];
+    for(const ph of draftPhotos){
+      const t = await photoThumb(ph.image);
+      if(t){ parts.push({ text:"View — " + (ph.label||"photo") + ":" }); parts.push({ inlineData:{ mimeType:"image/jpeg", data:t.split(",")[1] } }); }
+    }
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(geminiKey), {
+      method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ contents:[{ role:"user", parts }],
+        generationConfig:{ temperature:0.2, maxOutputTokens:256, responseMimeType:"application/json", thinkingConfig:{ thinkingBudget:0 } } })
+    });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const cand = (data.candidates||[])[0] || {};
+    const txt = ((cand.content||{}).parts||[]).map(p=>p.text||"").join("");
+    const j = parseLoose(txt); if(!j) throw new Error("parse");
+    const category = CATEGORIES.includes(j.category) ? j.category : "";
+    if(!category) throw new Error("no category");
+    const subcategory = (SUBCATEGORIES[category]||[]).includes(j.subcategory) ? j.subcategory : "";
+    const formality = Array.isArray(j.formality) ? j.formality.filter(f=>FORMALITY.includes(f)) : [];
+    const seasons = Array.isArray(j.seasons) ? j.seasons.filter(s=>SEASONS.includes(s)) : [];
+    return { category, subcategory, formality, seasons };
+  }
+  // Write guesses into the form. In auto mode, never overwrite fields the user set.
+  function applyTags(tags, auto){
+    if(!tags) return;
+    if(tags.category && CATEGORIES.includes(tags.category) && !(auto && userEdited.cat)){
+      $("#f-cat").value = tags.category;
+      const sc = (tags.subcategory && (SUBCATEGORIES[tags.category]||[]).includes(tags.subcategory)) ? tags.subcategory : "";
+      fillSubcats(tags.category, sc);
+    }
+    const fm = (tags.formality||[]).filter(f=>FORMALITY.includes(f));
+    if(fm.length && !(auto && (userEdited.formality || getPressed($("#f-formality"),"formality").length))){
+      setPressed($("#f-formality"),"formality", fm);
+    }
+    const ss = (tags.seasons||[]).filter(s=>SEASONS.includes(s));
+    if(ss.length && !(auto && (userEdited.seasons || getPressed($("#f-seasons"),"season").length))){
+      setPressed($("#f-seasons"),"season", ss);
+    }
+  }
+  // Automatic pass as the piece is added (name-based, free, fills only untouched fields).
+  function autoTagFromName(){
+    if(editingId) return;
+    applyTags(guessFromName($("#f-name").value.trim()), true);
+  }
+  // Explicit button: use the photo via AI when possible, else the name; overrides fields.
+  async function autoFillDetails(){
+    const name = $("#f-name").value.trim();
+    if(!name && draftPhotos.length===0){ toast("Add a name or a photo first"); return; }
+    const btn = $("#autofill-btn"); const orig = btn.innerHTML;
+    btn.disabled = true; btn.textContent = "Reading…";
+    try{
+      let tags = null, viaPhoto = false;
+      if(geminiKey && draftPhotos.length){
+        try{ tags = await classifyGemini(name); viaPhoto = true; }
+        catch(e){ console.error("classify:", e); tags = null; viaPhoto = false; }
+      }
+      if(!tags) tags = guessFromName(name);
+      if(!tags){ toast("Couldn't tell from that — set it manually"); return; }
+      applyTags(tags, false);
+      userEdited.cat = userEdited.formality = userEdited.seasons = true; // treat as set, so name typing won't undo it
+      toast(viaPhoto ? "Filled from the photo" : "Filled from the name");
+    } finally {
+      btn.disabled = false; btn.innerHTML = orig;
+    }
+  }
+
   function buildModalControls(){
     fillSelect($("#f-cat"), CATEGORIES);
     fillSubcats(CATEGORIES[0], "");
-    $("#f-cat").addEventListener("change", ()=> fillSubcats($("#f-cat").value, ""));
+    $("#f-cat").addEventListener("change", ()=>{ userEdited.cat = true; fillSubcats($("#f-cat").value, ""); });
+    $("#f-subcat").addEventListener("change", ()=>{ userEdited.cat = true; });
     $("#f-formality").innerHTML = FORMALITY.map(s=>
       `<button type="button" class="chip" data-formality="${s}" aria-pressed="false">${s}</button>`).join("");
     $("#f-seasons").innerHTML = SEASONS.map(s=>
       `<button type="button" class="chip" data-season="${s}" aria-pressed="false">${s}</button>`).join("");
     const toggle = b => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")==="true" ? "false":"true");
-    $("#f-formality").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>toggle(b)));
-    $("#f-seasons").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>toggle(b)));
+    $("#f-formality").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{ userEdited.formality = true; toggle(b); }));
+    $("#f-seasons").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{ userEdited.seasons = true; toggle(b); }));
     $("#cp-input").addEventListener("change", e=> addColor(e.target.value));
   }
 
@@ -2306,6 +2643,7 @@
     editingId = id || null;
     draftImage = null; draftColors = []; sampleCV = null; expandedColorHexes = new Set();
     draftPhotos = []; activePhotoIdx = 0; pendingPhotoMode = "add";
+    userEdited = { cat: !!id, formality: !!id, seasons: !!id };  // editing an existing piece counts as already-set
     $("#modal-title").textContent = editingId ? "Edit piece" : "Add a piece";
 
     if(editingId){
@@ -2459,12 +2797,17 @@
     $("#modal-close").addEventListener("click",closeModal);
     $("#modal-cancel").addEventListener("click",closeModal);
     $("#modal-save").addEventListener("click",saveFromModal);
+    $("#autofill-btn").addEventListener("click", autoFillDetails);
+    $("#f-name").addEventListener("change", autoTagFromName);
     $("#overlay").addEventListener("click",e=>{ if(e.target===$("#overlay")) closeModal(); });
     document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("#overlay").classList.contains("open")) closeModal(); });
 
     $("#search").addEventListener("input",e=>{ searchTerm = e.target.value.trim().toLowerCase(); renderRail(); });
     $("#shuffle-btn").addEventListener("click",shuffleLook);
     $("#compose-btn").addEventListener("click",compose);
+    const dtog = $("#discover-toggle"), brow = $("#budget-row"), bsel = $("#budget-select");
+    if(dtog && brow){ dtog.addEventListener("change", ()=>{ brow.hidden = !dtog.checked; }); }
+    if(bsel){ bsel.addEventListener("change", ()=>store.set("settings:budget", bsel.value)); }
     $("#clear-look").addEventListener("click",()=>{ look={name:"",ids:[]}; $("#look-name").value=""; renderStudio(); });
     $("#save-look").addEventListener("click",saveLook);
     $("#look-name").addEventListener("input",e=>{ look.name=e.target.value; $("#board-title").textContent = e.target.value.trim()||"Untitled look"; });
@@ -2515,6 +2858,8 @@
     geminiKey = await store.get("settings:geminiKey");
     const sh = await store.get("settings:stylistHistory");
     if(sh){ recentGenres = sh.genres || []; recentSignatures = sh.sigs || []; }
+    const savedBudget = await store.get("settings:budget");
+    if(savedBudget && $("#budget-select")) $("#budget-select").value = savedBudget;
     const sc = await store.get("settings:sync");
     if(sc){ supaUrl = sc.url; supaKey = sc.key; syncCode = sc.code; }
     lastPull = (await store.get("settings:lastPull")) || null;
