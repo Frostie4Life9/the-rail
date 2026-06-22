@@ -783,8 +783,16 @@
 
   /* ---------------- constants ---------------- */
   const CATEGORIES = ["Tops","Bottoms","Outerwear","Shoes","Bags","Accessories"];
-  const APP_VERSION = "1.7.1";
+  const APP_VERSION = "1.7.3";
   const CHANGELOG = [
+    { v:"1.7.3", date:"Jun 2026", notes:[
+      "When Google's AI is briefly overloaded (HTTP 503) or rate-limited, the Stylist now quietly retries a couple of times with a short pause before giving up — so a momentary hiccup no longer drops you straight to the on-device stylist.",
+      "Real errors like a bad key still fail fast, and the on-device fallback still kicks in if the retries don't succeed."
+    ]},
+    { v:"1.7.2", date:"Jun 2026", notes:[
+      "Fixed discovery photos not showing — the previous lookup was blocked by the browser's cross-origin rules. Photos are now loaded as a direct image by keyword (no blocked request), so they actually appear.",
+      "The color swatch still shows instantly and stays if no photo is found."
+    ]},
     { v:"1.7.1", date:"Jun 2026", notes:[
       "Discovery example photos are now real looked-up photos instead of AI-generated ones — much faster and they actually look like the piece. The color swatch shows instantly and the photo swaps in when found; if none is found it stays as the swatch.",
       "The blue dashed border still marks suggestions vs. pieces you own."
@@ -1368,7 +1376,6 @@
       switchView("studio"); renderStudio();
       toast("Loaded into the Studio");
     }));
-    hydrateConceptImages(grid);
   }
 
   async function deleteLook(id){
@@ -1662,52 +1669,36 @@
     carry:{x:80,y:71,w:29,rot:7,z:3}, feet:{x:45,y:84,w:33,rot:-3,z:2}
   };
 
-  // Build a clean keyword query for looking up a real example photo of a concept piece.
-  function conceptQuery(p){
-    let q = (p.search || ((p.color?p.color+" ":"") + (p.name||p.item||p.type||""))).toLowerCase();
-    q = q.replace(/\bmen('?s)?\b/g," ").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
-    return q || (p.category||"clothing").toLowerCase();
+  // Build keyword tags for a concept piece's example photo. We pair the specific
+  // garment noun with a broad category noun so a real photo is found even for niche
+  // terms (LoremFlickr returns a fallback image only when nothing matches at all).
+  const CONCEPT_NOUN = { Tops:"shirt", Bottoms:"trousers", Outerwear:"jacket", Shoes:"shoes", Bags:"bag", Accessories:"accessory" };
+  function conceptTags(p){
+    const words = ((p.name||p.item||p.type||p.search||"")).toLowerCase()
+      .replace(/\bmen('?s)?\b/g," ").replace(/[^a-z0-9 ]+/g," ").split(/\s+/).filter(Boolean);
+    const noun = words[words.length-1] || "clothing";
+    const broad = CONCEPT_NOUN[p.category] || "clothing";
+    const tags = [noun]; if(broad !== noun) tags.push(broad);
+    return tags.join(",");
   }
-  // Look up a real, openly-licensed photo by keyword (keyless). Cached per query.
-  const _photoCache = {};
-  async function lookupPhoto(q){
-    if(q in _photoCache) return _photoCache[q];
-    try{
-      const url = "https://api.openverse.org/v1/images/?q=" + encodeURIComponent(q) + "&page_size=10&mature=false";
-      const res = await fetch(url, { headers:{ "Accept":"application/json" } });
-      if(!res.ok) throw 0;
-      const data = await res.json();
-      const results = (data && data.results) || [];
-      let pick = null;
-      for(const r of results){ if(r && r.thumbnail){ pick = r.thumbnail; break; } if(r && r.url){ pick = r.url; break; } }
-      _photoCache[q] = pick || null;
-      return _photoCache[q];
-    }catch(e){ _photoCache[q] = null; return null; }
+  // A real, openly-licensed photo by keyword — a plain <img> hotlink, so no API key
+  // and no cross-origin fetch (which is what blocked the previous approach).
+  function conceptPhotoURL(p){
+    const tags = conceptTags(p);
+    let h = 0; for(let i=0;i<tags.length;i++){ h = (h*31 + tags.charCodeAt(i)) >>> 0; }
+    return "https://loremflickr.com/480/600/" + encodeURIComponent(tags) + "?lock=" + (h % 100000);
   }
-  // After a render, fill concept tiles with real photos; the swatch stays until one loads.
-  async function hydrateConceptImages(root){
-    if(!root) return;
-    const imgs = [...root.querySelectorAll("img.ex-img[data-imgq]")];
-    const groups = {};
-    imgs.forEach(im=>{ const q = im.dataset.imgq; (groups[q] = groups[q] || []).push(im); });
-    for(const q of Object.keys(groups)){
-      const src = await lookupPhoto(q);
-      if(!src) continue;
-      groups[q].forEach(im=>{
-        im.onload = ()=>{ im.style.display = "block"; const fb = im.nextElementSibling; if(fb) fb.style.display = "none"; };
-        im.src = src;
-      });
-    }
-  }
+  // Reveal the photo once it loads; if it fails, the swatch placeholder simply stays.
+  const IMG_SWAP = "this.style.display='block';this.previousElementSibling.style.display='none'";
 
   function flatInner(p){
     if(p.owned){
       return p.image ? `<img src="${p.image}" alt=""/>`
                      : `<div class="ft-fallback">${esc(p.type||p.category||"")}</div>`;
     }
-    return `<img class="ft-img ex-img" data-imgq="${esc(conceptQuery(p))}" alt="" loading="lazy" style="display:none"/>`
-      + `<div class="ft-concept"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
+    return `<div class="ft-concept"><span class="ft-swatch" style="background:${nameToCss(p.color)}"></span>`
       + `<span class="ft-clabel">${esc(p.name||"")}</span></div>`
+      + `<img class="ft-img" src="${conceptPhotoURL(p)}" alt="" loading="lazy" style="display:none" onload="${IMG_SWAP}"/>`
       + `<span class="ft-flag">Try</span>`;
   }
   function lookboardHTML(pieces){
@@ -1730,8 +1721,9 @@
     if(p.owned){
       thumb = p.image ? `<img src="${p.image}" alt=""/>` : `<span class="lr-swatch" style="background:#cabfa8"></span>`;
     } else {
-      thumb = `<img class="lr-img ex-img" data-imgq="${esc(conceptQuery(p))}" alt="" loading="lazy" style="display:none"/>`
-        + `<span class="lr-swatch" style="background:${nameToCss(p.color)}"></span><span class="lr-flag">Try</span>`;
+      thumb = `<span class="lr-swatch" style="background:${nameToCss(p.color)}"></span>`
+        + `<img class="lr-img" src="${conceptPhotoURL(p)}" alt="" loading="lazy" style="display:none" onload="${IMG_SWAP}"/>`
+        + `<span class="lr-flag">Try</span>`;
     }
     const dots = p.owned
       ? `<div class="lr-dots">${(p.colors||[]).slice(0,4).map(c=>`<span class="d" style="background:${c}"></span>`).join("")}</div>`
@@ -1843,13 +1835,46 @@
     }
     return [{ role:"user", parts }];
   }
+  // Transient statuses the Gemini endpoint sheds under load — worth a retry.
+  // 4xx (bad key, bad request like a stray `system` field) are NOT here: fail fast to fallback.
+  const GEMINI_RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
+  const sleep = ms => new Promise(r=>setTimeout(r, ms));
+  function backoffDelay(res, attempt, base){
+    const ra = res && res.headers && res.headers.get("Retry-After");  // Google sets this on 429/503
+    if(ra){ const s = parseInt(ra, 10); if(!isNaN(s)) return Math.min(s*1000, 8000); }
+    return base*Math.pow(2, attempt) + Math.random()*250;             // jittered exponential
+  }
+  // POST to Gemini with retry-on-transient. Returns parsed JSON; throws Error("HTTP nnn …") otherwise.
+  async function geminiFetch(url, body, { tries=3, base=900 }={}){
+    let lastErr;
+    for(let attempt=0; attempt<tries; attempt++){
+      let res;
+      try{
+        res = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) });
+      }catch(netErr){                                                  // offline / DNS / dropped — retryable
+        lastErr = new Error("network error");
+        if(attempt < tries-1){ await sleep(backoffDelay(null, attempt, base)); continue; }
+        throw lastErr;
+      }
+      if(res.ok) return res.json();
+      let detail = "";
+      try{ const ed = await res.json(); detail = (ed && ed.error && ed.error.message) ? ed.error.message : ""; }catch(e){}
+      const err = new Error("HTTP " + res.status + (detail ? " – " + detail : ""));
+      if(GEMINI_RETRY_STATUS.has(res.status) && attempt < tries-1){
+        lastErr = err;
+        await sleep(backoffDelay(res, attempt, base));
+        continue;
+      }
+      throw err;                                                       // 4xx or last attempt
+    }
+    throw lastErr;
+  }
   async function callStylistGemini(brief, discover, key, visual, directive, tier){
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(key), {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
+    const data = await geminiFetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(key),
+      {
         systemInstruction:{ parts:[{ text: stylistSystem(discover, tier) }] },
-        contents: await buildGeminiContents(brief, visual, directive),
+        contents: await buildGeminiContents(brief, visual, directive),  // built once, reused across retries
         generationConfig:{
           temperature:1.05,
           topP:0.97,
@@ -1857,14 +1882,8 @@
           responseMimeType:"application/json",
           thinkingConfig:{ thinkingBudget:0 }   // 2.5 Flash thinks by default and that eats the token budget
         }
-      })
-    });
-    if(!res.ok){
-      let detail = "";
-      try{ const ed = await res.json(); detail = (ed && ed.error && ed.error.message) ? ed.error.message : ""; }catch(e){}
-      throw new Error("HTTP " + res.status + (detail ? " – " + detail : ""));
-    }
-    const data = await res.json();
+      }
+    );
     const cand = (data.candidates||[])[0] || {};
     const parts = (cand.content||{}).parts || [];
     const text = parts.map(p=>p.text||"").join("");
@@ -2109,7 +2128,6 @@
     res.querySelectorAll("[data-prop-save]").forEach(b=>b.addEventListener("click",()=>saveProposal(+b.dataset.propSave)));
     res.querySelectorAll("[data-prop-studio]").forEach(b=>b.addEventListener("click",()=>openProposal(+b.dataset.propStudio)));
     const rc = $("#recompose-btn"); if(rc) rc.addEventListener("click", compose);
-    hydrateConceptImages(res);
   }
 
   function showComposing(){
@@ -2624,13 +2642,12 @@
       const t = await photoThumb(ph.image);
       if(t){ parts.push({ text:"View — " + (ph.label||"photo") + ":" }); parts.push({ inlineData:{ mimeType:"image/jpeg", data:t.split(",")[1] } }); }
     }
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(geminiKey), {
-      method:"POST", headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ contents:[{ role:"user", parts }],
-        generationConfig:{ temperature:0.2, maxOutputTokens:256, responseMimeType:"application/json", thinkingConfig:{ thinkingBudget:0 } } })
-    });
-    if(!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    const data = await geminiFetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + encodeURIComponent(geminiKey),
+      { contents:[{ role:"user", parts }],
+        generationConfig:{ temperature:0.2, maxOutputTokens:256, responseMimeType:"application/json", thinkingConfig:{ thinkingBudget:0 } } },
+      { tries:2 }   // classification is best-effort; one retry then fall back to name-based
+    );
     const cand = (data.candidates||[])[0] || {};
     const txt = ((cand.content||{}).parts||[]).map(p=>p.text||"").join("");
     const j = parseLoose(txt); if(!j) throw new Error("parse");
