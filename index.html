@@ -522,7 +522,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2.2.0";
+const VERSION = "2026.10.20-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1092,6 +1092,71 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && co
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 render();
 if (configured()) (queue.length ? flush() : pull().then(() => { online = true; render(); })).catch(e => { online = e.status !== 0; render(); });
+</script>
+<!-- ===== New-version bar (same idea as Kitchen, Grocery, Protocol) =====
+     Shortly after load, whenever you come back to the app, and every 10 min while it's open,
+     the page fetches the live index.html (skipping every cache) and reads its VERSION.
+     If the live one is NEWER than the one running, one bar slides down with a Reload button.
+     Only ever one bar: a single fixed element, one check in flight at a time, newer-only
+     (so a stale CDN copy can't trigger it), and Not now hides that version for this session. -->
+<div class="updbar" id="updbar" hidden role="status">
+  <div class="updin"><span class="upddot" aria-hidden="true"></span><span class="updtxt" id="updtxt">New version ready</span>
+    <button class="updgo" id="updgo" type="button">Reload</button>
+    <button class="updx" id="updx" type="button" aria-label="Not now"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+</div>
+<style>
+  .updbar{position:fixed;left:0;right:0;top:0;z-index:200;padding:calc(10px + var(--safe-t)) 16px 0;pointer-events:none}
+  .updbar[hidden]{display:none}
+  .updin{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;height:50px;padding:0 6px 0 16px;box-sizing:border-box;
+    border-radius:25px;background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.18);pointer-events:auto;
+    transform:translateY(calc(-100% - 40px));transition:transform .4s cubic-bezier(.2,.8,.2,1), scale .2s cubic-bezier(.3,1.35,.5,1)}
+  .updbar.up .updin{transform:none}
+  .upddot{width:8px;height:8px;border-radius:4px;background:var(--sage);flex:0 0 auto;box-shadow:0 0 0 4px color-mix(in srgb,var(--sage) 22%,transparent)}
+  .updtxt{flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .updgo{height:38px;padding:0 18px;border:0;border-radius:19px;background:var(--sage);color:var(--sage-ink);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .updgo:active{scale:.96}
+  .updgo:disabled{opacity:.6}
+  .updx{width:38px;height:38px;border:0;border-radius:19px;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+  .updx svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round}
+  @media (prefers-reduced-motion: reduce){ .updin{transition:none} }
+</style>
+<script>
+(function(){
+  if (window.__railUpd) return; window.__railUpd = true;          // never wire it up twice
+  var U = {last:0, busy:false, dismissed:null, shown:null};
+  var RE = /const\s+VERSION\s*=\s*"(\d{4}\.\d\d\.\d\d-[a-z]+)"/;
+  function newer(a, b){ return a > b; }                          // YYYY.MM.DD-letter sorts as text
+  function check(force){
+    if (!/^https?:$/.test(location.protocol) || !window.fetch || U.busy) return;
+    if (!force && Date.now() - U.last < 5*60e3) return;
+    U.busy = true; U.last = Date.now();
+    fetch(location.pathname + "?_=" + Date.now(), {cache:"no-store"})
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(html){
+        var m = html && html.match(RE);
+        if (!m || !newer(m[1], VERSION) || m[1] === U.dismissed || m[1] === U.shown) return;
+        show(m[1]);
+      }).catch(function(){}).then(function(){ U.busy = false; });
+  }
+  function show(ver){
+    U.shown = ver;
+    document.getElementById("updtxt").textContent = "Rail " + ver + " ready";
+    var b = document.getElementById("updbar"); b.hidden = false;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ b.classList.add("up"); }); });
+  }
+  document.getElementById("updgo").addEventListener("click", function(){
+    this.disabled = true;                                          // one tap, one reload
+    location.replace(location.pathname + "?v=" + Date.now() + location.hash);
+  });
+  document.getElementById("updx").addEventListener("click", function(){
+    U.dismissed = U.shown; var b = document.getElementById("updbar");
+    b.classList.remove("up"); setTimeout(function(){ b.hidden = true; }, 420);
+  });
+  if (/[?&]v=\d+/.test(location.search)) try { history.replaceState(null, "", location.pathname + location.hash); } catch(e) {}
+  setTimeout(function(){ check(true); }, 2500);
+  document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible") check(false); });
+  setInterval(function(){ if (document.visibilityState === "visible") check(false); }, 10*60e3);
+})();
 </script>
 </body>
 </html>
