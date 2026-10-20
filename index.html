@@ -148,6 +148,19 @@ nav.tabs svg{width:24px;height:24px}
   border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:10px 16px calc(20px + var(--safe-b));border:1px solid var(--line);border-bottom:0;box-shadow:0 -12px 40px -18px rgba(0,0,0,.4);
   transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto}
 .sheet.on{transform:none}
+.sheet{overscroll-behavior:contain}
+.grab{touch-action:none}
+.picker .sel img{outline:3px solid var(--sage);outline-offset:-3px}
+.picker .sel::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--sage);color:var(--sage-ink);
+  font-size:13px;font-weight:700;display:grid;place-items:center}
+.picked{display:flex;gap:8px;overflow-x:auto;margin-top:14px;padding-bottom:4px;min-height:84px;align-items:flex-start}
+.picked button{flex:0 0 auto;position:relative;width:60px}
+.picked img{width:60px;height:75px;object-fit:cover;border-radius:6px;background:var(--carpet)}
+.picked button::after{content:"✕";position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--text);color:var(--surface);
+  font-size:10px;display:grid;place-items:center}
+.picked .hint{color:var(--muted);font-size:14px;align-self:center}
+.days{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.days input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:15px;color:var(--text)}
 @media (prefers-reduced-motion:reduce){.sheet,.scrim{transition:none}}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
 .sheet h2{font-size:26px;font-weight:600}
@@ -509,7 +522,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2.1.1";
+const VERSION = "2.2.0";
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -712,6 +725,38 @@ function closeSheet() {
   setTimeout(() => { sh.hidden = sc.hidden = true; sh.innerHTML = ""; }, 250);
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+// swipe a sheet down to close it (from the top of its content, or from the grab bar anywhere)
+(() => {
+  const sh = $("#sheet"), sc = $("#scrim");
+  let y0 = null, x0 = 0, dy = 0, t0 = 0, drag = false;
+  sh.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) { y0 = null; return; }
+    const fromGrab = !!e.target.closest(".grab");
+    if (!fromGrab && sh.scrollTop > 0) { y0 = null; return; }
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0; t0 = Date.now(); drag = false;
+  }, {passive: true});
+  sh.addEventListener("touchmove", e => {
+    if (y0 === null) return;
+    const t = e.touches[0], d = t.clientY - y0, dx = t.clientX - x0;
+    if (!drag) {
+      if (d > 8 && Math.abs(d) > Math.abs(dx) * 1.2) { drag = true; sh.style.transition = "none"; sc.style.transition = "none"; }
+      else if (Math.abs(d) > 8 || Math.abs(dx) > 8) { y0 = null; return; }
+      else return;
+    }
+    dy = Math.max(0, d); e.preventDefault();
+    sh.style.transform = `translateY(${dy}px)`; sc.style.opacity = String(Math.max(0, 1 - dy / 450));
+  }, {passive: false});
+  const end = () => {
+    if (drag) {
+      const fast = dy / Math.max(1, Date.now() - t0) > 0.6;
+      sh.style.transition = sc.style.transition = "";
+      if (dy > 110 || (fast && dy > 40)) closeSheet();
+      sh.style.transform = ""; sc.style.opacity = "";
+    }
+    y0 = null; drag = false;
+  };
+  sh.addEventListener("touchend", end); sh.addEventListener("touchcancel", end);
+})();
 
 function pieceHtml(code, {hook = true, extra = ""} = {}) {
   const it = item(code);
@@ -750,7 +795,7 @@ function viewToday() {
   else if (!plan) {
     const last = (S.log.planned || [])[0];
     out += `<div class="empty"><h3>No sheet for today yet</h3>The morning sheet lands at 6:59am.${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
-      <div class="actions"><button class="btn primary" data-act="log-own">Log what I'm wearing</button></div></div>`;
+      <div class="actions"><button class="btn primary" data-act="log-own">Build my own fit</button></div></div>`;
   } else {
     plan.fits.forEach(f => {
       const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
@@ -761,7 +806,7 @@ function viewToday() {
           : `<button class="btn primary" data-act="wear" data-n="${f.n}">Wore this</button>`}
           <button class="btn ghost" data-act="tweak" data-n="${f.n}">Tweak in Claude</button></div></article>`;
     });
-    out += `<div class="actions" style="margin-top:28px"><button class="btn ghost" data-act="log-own">Wore something else</button></div>`;
+    out += `<div class="actions" style="margin-top:28px"><button class="btn ghost" data-act="log-own">Wore something else? Build it</button></div>`;
   }
   return out;
 }
@@ -784,7 +829,7 @@ function viewWorn() {
   const idle = items().filter(i => !i.avoid && !recent.has(i.code));
   const counts = {}; worn.forEach(x => x.items.forEach(c => counts[c] = (counts[c] || 0) + 1));
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  let out = mast("Worn", "") + `<div class="stats"><div class="stat"><b>${worn.length}</b><span>fits logged</span></div>
+  let out = mast("Worn", "") + `<div class="actions"><button class="btn primary" data-act="log-own">Log a fit</button></div><div class="stats"><div class="stat"><b>${worn.length}</b><span>fits logged</span></div>
     <div class="stat"><b>${idle.length}</b><span>pieces not worn in 30 days</span></div></div>`;
   if (top.length) out += `<h2 class="sect">Most worn</h2><div class="rail">${top.map(([c]) => pieceHtml(c)).join("")}</div>`;
   out += `<h2 class="sect">Every fit</h2>`;
@@ -814,7 +859,7 @@ function wearSheet({date, name, when, items: codes, n}) {
   const existing = wornOn(date).find(w => n ? w.from_plan === `${date}#${n}` : w.name === name);
   const st = {items:[...(existing?.items || codes)], name: existing?.name || name, photo:null, photoUrl: existing?.photo ? photoSrc(existing.photo) : ""};
   const paint = sh => {
-    sh.innerHTML = `<div class="grab"></div><h2>${n ? "Wore this" : "Log a fit"}</h2><p class="lead">Swap anything you changed. It all counts toward the hamper.</p>
+    sh.innerHTML = `<div class="grab"></div><h2>${n ? "Wore this" : "Log a fit"}</h2><p class="lead">${date !== todayStr() ? `For ${dayName(date)}. ` : ""}Swap anything you changed. It all counts toward the hamper.</p>
       ${n ? "" : `<label class="f">Name it<input id="w-name" value="${esc(st.name)}" placeholder="e.g. Gym then class"></label>`}
       <div class="rows">${st.items.map((c, i) => { const it = item(c); return `<div class="prow">${img(it?.photo, it?.name)}
         <div class="t"><b>${esc(it?.name || c)}</b><span class="${isDirty(c) && !existing ? "warn" : ""}">${esc(c)} · ${isDirty(c) && !existing ? "in the hamper" : esc(it?.colour || "")}</span></div>
@@ -873,6 +918,50 @@ function wearSheet({date, name, when, items: codes, n}) {
       }
     };
     bind();
+  });
+}
+
+const SLOT_ORDER = ["layer", "top", "bottom", "socks", "shoes", "cap"];
+const bySlot = codes => [...codes].sort((a, b) => SLOT_ORDER.indexOf(item(a)?.slot) - SLOT_ORDER.indexOf(item(b)?.slot));
+const dayName = d => {
+  const y = new Date(Date.now() - 864e5).toLocaleDateString("en-CA");
+  return d === todayStr() ? "today" : d === y ? "yesterday" : new Date(d + "T12:00").toLocaleDateString("en-US", {weekday:"long", month:"short", day:"numeric"});
+};
+
+// Build a fit from scratch: pick a day, tap pieces across every slot, then name/log it in the wear sheet.
+function buildFit(start = {}) {
+  const yday = new Date(Date.now() - 864e5).toLocaleDateString("en-CA");
+  const st = {date: start.date || todayStr(), sel: [...(start.items || [])], f: "all"};
+  openSheet("", sh => {
+    const paint = () => {
+      const list = items().filter(i => !i.avoid && (st.f === "all" || i.slot === st.f))
+        .sort((a, b) => (SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot)) || (isDirty(a.code) - isDirty(b.code)));
+      const custom = st.date !== todayStr() && st.date !== yday;
+      sh.innerHTML = `<div class="grab"></div><h2>Build a fit</h2><p class="lead">Tap everything you wore. Tap again to drop it.</p>
+        <div class="days" role="group" aria-label="Day">
+          <button class="chip" aria-pressed="${st.date === todayStr()}" data-b="day" data-d="${todayStr()}">Today</button>
+          <button class="chip" aria-pressed="${st.date === yday}" data-b="day" data-d="${yday}">Yesterday</button>
+          <input type="date" id="b-date" max="${todayStr()}" value="${custom ? st.date : ""}" aria-label="Other day"></div>
+        <div class="picked">${st.sel.length ? bySlot(st.sel).map(c => `<button data-b="unpick" data-code="${c}" aria-label="Remove ${esc(item(c)?.name || c)}">${img(item(c)?.photo, "")}</button>`).join("")
+          : `<span class="hint">Nothing picked yet.</span>`}</div>
+        <div class="filters">${[["all", "All"], ...SLOTS].map(([k, l]) => `<button class="chip" aria-pressed="${st.f === k}" data-b="f" data-k="${k}">${l}</button>`).join("")}</div>
+        <div class="picker">${list.map(i => `<button data-b="pick" data-code="${i.code}" aria-pressed="${st.sel.includes(i.code)}" class="${st.sel.includes(i.code) ? "sel" : ""} ${isDirty(i.code) ? "dirty" : ""}">${img(i.photo, "")}<span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
+        <div class="sheet-actions"><button class="btn ghost" data-b="cancel">Cancel</button>
+          <button class="btn primary" data-b="next" ${st.sel.length ? "" : "disabled"}>Next${st.sel.length ? ` · ${st.sel.length}` : ""}</button></div>`;
+    };
+    const keepScroll = fn => { const y = sh.scrollTop, px = $(".picked", sh)?.scrollLeft || 0; fn(); paint(); sh.scrollTop = y; const pk = $(".picked", sh); if (pk) pk.scrollLeft = px; };
+    paint();
+    sh.onchange = e => { if (e.target.id === "b-date" && e.target.value) { st.date = e.target.value > todayStr() ? todayStr() : e.target.value; keepScroll(() => {}); } };
+    sh.onclick = e => {
+      const b = e.target.closest("[data-b]"); if (!b) return;
+      const a = b.dataset.b, c = b.dataset.code;
+      if (a === "cancel") return closeSheet();
+      if (a === "day") return keepScroll(() => st.date = b.dataset.d);
+      if (a === "f") return keepScroll(() => st.f = b.dataset.k);
+      if (a === "pick") return keepScroll(() => st.sel.includes(c) ? st.sel.splice(st.sel.indexOf(c), 1) : st.sel.push(c));
+      if (a === "unpick") return keepScroll(() => st.sel.splice(st.sel.indexOf(c), 1));
+      if (a === "next") { sh.onclick = sh.onchange = null; wearSheet({date: st.date, name: "", when: "", items: bySlot(st.sel)}); }
+    };
   });
 }
 
@@ -972,7 +1061,7 @@ document.addEventListener("click", async e => {
   const plan = todayPlan(), act = a.dataset.act;
   if (act === "wear") { const f = plan.fits.find(x => x.n === +a.dataset.n); return wearSheet({date: plan.date, name: f.name, when: f.when, items: f.items, n: f.n}); }
   if (act === "tweak") return tweak(plan.fits.find(x => x.n === +a.dataset.n), plan);
-  if (act === "log-own") return wearSheet({date: todayStr(), name: "", when: "", items: []});
+  if (act === "log-own") return buildFit();
   if (act === "laundry") {
     if (a.dataset.armed) { run("laundry", {at: nowIso()}); if (window.SX) SX.bump(".hamper"); return toast("Hamper emptied"); }
     a.dataset.armed = 1; a.textContent = "Tap again to empty"; a.classList.add("warn");
