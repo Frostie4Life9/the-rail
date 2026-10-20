@@ -509,12 +509,12 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2.1.0";
-const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["cap","Caps"]];
+const VERSION = "2.1.1";
+const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
-  trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",cap:"cap"};
+  trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
 const TYPE_LABEL = {tee:"Tee",collared:"Collared shirt",crewneck:"Crewneck",hoodie:"Hoodie",knit:"Sweater / knit",
-  outerwear:"Jacket / vest",trousers:"Pants / jeans",joggers:"Joggers",shorts:"Shorts",shoes:"Shoes",cap:"Cap"};
+  outerwear:"Jacket / vest",trousers:"Pants / jeans",joggers:"Joggers",shorts:"Shorts",shoes:"Shoes",socks:"Socks",cap:"Cap"};
 const FILES = ["wardrobe.json","fit-log.json","laundry.json"];
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -571,7 +571,7 @@ const saveQueue = () => ls("rail.queue", queue);
 const DEFAULTS = {
   "wardrobe.json": () => ({next_code:9001, items:[]}),
   "fit-log.json": () => ({planned:[], worn:[]}),
-  "laundry.json": () => ({wash_after:{tee:1,collared:2,knit:3,crewneck:3,hoodie:4,outerwear:10,trousers:4,joggers:3,shorts:2,cap:0,shoes:0}, last_full:null, washed:{}}),
+  "laundry.json": () => ({wash_after:{tee:1,collared:2,knit:3,crewneck:3,hoodie:4,outerwear:10,trousers:4,joggers:3,shorts:2,cap:0,shoes:0,socks:1}, last_full:null, washed:{}}),
 };
 const KEY = {"wardrobe.json":"wardrobe","fit-log.json":"log","laundry.json":"laundry"};
 
