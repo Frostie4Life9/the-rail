@@ -5,10 +5,11 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1d1e1c",
-  "theme_color": "#1d1e1c",
+  "background_color": "#FAF6F0",
+  "theme_color": "#3A2A63",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "icons/rail-192.png?v=1", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/rail-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/rail-maskable-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
