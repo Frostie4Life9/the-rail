@@ -522,7 +522,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2026.10.20-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.10.20-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -764,7 +764,6 @@ function pieceHtml(code, {hook = true, extra = ""} = {}) {
   const dirty = isDirty(code);
   return `<div class="piece${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}">${extra}
     <div class="ph">${img(it.photo, it.name)}</div>
-    <span class="tag${dirty ? " warn" : ""}">${esc(code)}</span>
     <div class="nm">${esc(it.name)}</div><div class="cl">${dirty ? "In the hamper" : esc(it.colour)}${it.uncalibrated && !dirty ? " ⚠" : ""}</div></div>`;
 }
 
