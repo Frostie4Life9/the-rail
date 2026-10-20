@@ -23,7 +23,7 @@
 :root{
   --page:#FAF6F0; --surface:#FFFAF2; --raised:#F1EADF; --carpet:#5c5e57;
   --line:#DDD3C2; --text:#1F1A14; --muted:#7D7262; --sage:#4E3A86; --sage-ink:#FFFAF2;
-  --tag:#e9e4d6; --tag-ink:#2b2a25; --amber:#A86E08; --danger:#A63D40; --rod:#A99E8C;
+  --amber:#A86E08; --danger:#A63D40;
   --shadow:0 1px 2px rgba(31,26,20,.04),0 6px 18px rgba(31,26,20,.06);
   --r-tile:8px; --r-sheet:22px;
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
@@ -32,7 +32,7 @@
 @media (prefers-color-scheme:dark){:root{
   --page:#17140F; --surface:#231F19; --raised:#2C261F;
   --line:#3B342B; --text:#F1EADF; --muted:#A0947F; --sage:#B9A6F2; --sage-ink:#17140F;
-  --amber:#E4BC4A; --danger:#E6735F; --rod:#6E6457;
+  --amber:#E4BC4A; --danger:#E6735F;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
 }}
 h1,h2,.sect,.stat b{font-family:"Fraunces",Georgia,serif;font-style:italic;letter-spacing:-.01em}
@@ -60,31 +60,36 @@ img{display:block;max-width:100%}
 .hamper .grow{flex:1;color:var(--muted)}
 .hamper .grow b{color:var(--text)}
 
-/* a fit = pieces hanging from a rail */
+/* a fit = photo cards floating on a soft glow made from their own photo.
+   The rail scrolls sideways; its gutter is widened so the blur isn't clipped. */
 .fit{margin-top:30px}
 .fit-head{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
 .fit-head h2{font-weight:600;font-size:24px;line-height:1.15}
 .fit-head .n{color:var(--sage);margin-right:8px}
 .when{color:var(--muted);font-size:14px;text-align:right;flex-shrink:0;max-width:45%}
-.rail{position:relative;margin-top:14px;padding-top:16px;display:flex;gap:10px;overflow-x:auto;
-  scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none}
+.rail{position:relative;margin:4px calc(-1 * var(--sx-gut,16px)) 0;padding:12px var(--sx-gut,16px) 14px;
+  display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:var(--sx-gut,16px);scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
-.rail::before{content:"";position:absolute;left:0;right:0;top:4px;height:3px;border-radius:2px;
-  background:var(--rod);min-width:100%}
-.piece{flex:0 0 auto;width:118px;scroll-snap-align:start;position:relative}
-.piece::before{content:"";position:absolute;top:-13px;left:50%;width:10px;height:13px;margin-left:-5px;
-  border:2px solid var(--rod);border-bottom:0;border-radius:6px 6px 0 0}
-.piece .ph{width:118px;height:150px;border-radius:var(--r-tile);overflow:hidden;background:var(--carpet);box-shadow:var(--shadow)}
+.piece{flex:0 0 auto;width:118px;scroll-snap-align:start;position:relative;--glow:.6}
+.piece .stage{position:relative}
+.piece .amb{position:absolute;top:17.3%;left:8.5%;right:8.5%;bottom:-8%;border-radius:20px;overflow:hidden;
+  filter:blur(16px) saturate(1.4);opacity:var(--glow);pointer-events:none}
+.piece .amb img{width:100%;height:100%;object-fit:cover}
+.piece .ph{position:relative;z-index:1;width:118px;height:150px;border-radius:var(--r-tile);overflow:hidden;background:var(--carpet)}
 .piece .ph img{width:100%;height:100%;object-fit:cover}
-.piece .nm{font-size:13px;line-height:1.25;margin-top:7px;font-weight:600;
+.piece .nm{position:relative;z-index:1;font-size:13px;line-height:1.25;margin-top:22px;font-weight:600;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.piece .cl{font-size:12px;color:var(--muted);margin-top:2px}
+.piece .cl{position:relative;z-index:1;font-size:12px;color:var(--muted);margin-top:2px}
+.piece.dirty{--glow:.3}
 .piece.dirty .ph{outline:2px dashed var(--amber);outline-offset:-2px}
 .piece.dirty .ph img{opacity:.55}
-.tag{position:absolute;top:8px;right:-4px;background:var(--tag);color:var(--tag-ink);font-size:11px;font-weight:650;
-  font-variant-numeric:tabular-nums;padding:2px 6px 2px 9px;border-radius:2px 3px 3px 2px;
-  clip-path:polygon(6px 0,100% 0,100% 100%,6px 100%,0 50%);letter-spacing:.02em}
-.tag.warn{background:var(--amber)}
+/* gentle bob (Today and Worn only): .on is set while the card is on screen */
+@keyframes rail-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes rail-breathe{0%,100%{transform:translateY(0) scale(1);opacity:var(--glow)}
+  50%{transform:translateY(2px) scale(.9);opacity:calc(var(--glow) * .7)}}
+.rail.bob .piece.on .ph{animation:rail-bob 4.2s ease-in-out var(--d,0s) infinite}
+.rail.bob .piece.on .amb{animation:rail-breathe 4.2s ease-in-out var(--d,0s) infinite}
+@media (prefers-reduced-motion:reduce){.rail.bob .piece .ph,.rail.bob .piece .amb{animation:none}}
 .note{color:var(--sage);margin-top:12px;font-size:15px;max-width:62ch}
 .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .btn{border-radius:999px;padding:10px 16px;font-weight:600;font-size:15px;line-height:1.1;
@@ -111,10 +116,10 @@ img{display:block;max-width:100%}
 .chip[aria-pressed=true]{background:var(--text);color:var(--page);border-color:var(--text);font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:18px 10px;margin-top:22px}
 .grid .piece{width:auto}
-.grid .piece::before{display:none}
 .grid .piece .ph{width:100%;height:auto;aspect-ratio:4/5}
-.piece button.hit{position:absolute;inset:0;z-index:1}
+.piece button.hit{position:absolute;inset:0;z-index:3}
 .piece.hidden-item .ph img{filter:grayscale(1);opacity:.4}
+.piece.hidden-item .amb{display:none}
 
 /* worn log */
 .stats{display:flex;gap:10px;margin-top:20px}
@@ -522,7 +527,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2026.10.20-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.10.20-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -758,14 +763,33 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet
   sh.addEventListener("touchend", end); sh.addEventListener("touchcancel", end);
 })();
 
-function pieceHtml(code, {hook = true, extra = ""} = {}) {
+// Stagger the bob so cards in a row never move in step (seconds into the 4.2s loop).
+const BOB_DELAYS = [0, -1.1, -2.3, -3.2, -0.6, -1.7, -2.8, -3.7];
+function pieceHtml(code, {extra = "", i = 0} = {}) {
   const it = item(code);
-  if (!it) return `<div class="piece"><div class="ph"></div><div class="nm">Unknown ${esc(code)}</div></div>`;
+  if (!it) return `<div class="piece"><div class="stage"><div class="ph"></div></div><div class="nm">Unknown ${esc(code)}</div></div>`;
   const dirty = isDirty(code);
-  return `<div class="piece${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}">${extra}
-    <div class="ph">${img(it.photo, it.name)}</div>
+  return `<div class="piece${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}" style="--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${extra}
+    <div class="stage"><div class="amb" aria-hidden="true">${img(it.photo, "")}</div><div class="ph">${img(it.photo, it.name)}</div></div>
     <div class="nm">${esc(it.name)}</div><div class="cl">${dirty ? "In the hamper" : esc(it.colour)}${it.uncalibrated && !dirty ? " ⚠" : ""}</div></div>`;
 }
+
+// Only cards on screen bob: an observer toggles .on, so off-screen rails cost nothing.
+// With Reduce Motion on, nothing is observed and nothing moves.
+const bobMotion = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+let bobIO = null;
+function watchBob() {
+  if (bobIO) { bobIO.disconnect(); bobIO = null; }
+  if ((bobMotion && bobMotion.matches) || !("IntersectionObserver" in window)) return;
+  const cards = document.querySelectorAll(".rail.bob .piece");
+  if (!cards.length) return;
+  bobIO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("on", e.isIntersecting)), {rootMargin: "40px"});
+  cards.forEach(c => bobIO.observe(c));
+}
+if (bobMotion && bobMotion.addEventListener) bobMotion.addEventListener("change", () => {
+  if (bobMotion.matches) document.querySelectorAll(".rail.bob .piece.on").forEach(c => c.classList.remove("on"));
+  watchBob();
+});
 
 /* ---------------- views ---------------- */
 function render() {
@@ -773,6 +797,7 @@ function render() {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
   const v = $("#view");
   v.innerHTML = ({today:viewToday, closet:viewCloset, worn:viewWorn, settings:viewSettings}[tab])();
+  watchBob();
   setSync();
 }
 
@@ -799,7 +824,7 @@ function viewToday() {
     plan.fits.forEach(f => {
       const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
       out += `<article class="fit"><div class="fit-head"><h2><span class="n">${f.n}</span>${esc(f.name)}</h2><span class="when">${esc(f.when)}</span></div>
-        <div class="rail">${f.items.map(c => pieceHtml(c)).join("")}</div>
+        <div class="rail bob">${f.items.map((c, i) => pieceHtml(c, {i})).join("")}</div>
         ${f.note ? `<p class="note">${esc(f.note)}</p>` : ""}
         <div class="actions">${isWorn ? `<span class="worn-badge">✓ Wearing this</span><button class="btn small ghost" data-act="wear" data-n="${f.n}">Edit</button>`
           : `<button class="btn primary" data-act="wear" data-n="${f.n}">Wore this</button>`}
@@ -830,7 +855,7 @@ function viewWorn() {
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
   let out = mast("Worn", "") + `<div class="actions"><button class="btn primary" data-act="log-own">Log a fit</button></div><div class="stats"><div class="stat"><b>${worn.length}</b><span>fits logged</span></div>
     <div class="stat"><b>${idle.length}</b><span>pieces not worn in 30 days</span></div></div>`;
-  if (top.length) out += `<h2 class="sect">Most worn</h2><div class="rail">${top.map(([c]) => pieceHtml(c)).join("")}</div>`;
+  if (top.length) out += `<h2 class="sect">Most worn</h2><div class="rail bob">${top.map(([c], i) => pieceHtml(c, {i})).join("")}</div>`;
   out += `<h2 class="sect">Every fit</h2>`;
   if (!worn.length) out += `<div class="empty"><h3>Nothing logged yet</h3>Tap “Wore this” on today's sheet and it shows up here.</div>`;
   out += worn.map(x => `<div class="entry"><div class="top"><h3>${esc(x.name)}</h3><span class="d">${new Date(x.date + "T12:00").toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"})}</span></div>
