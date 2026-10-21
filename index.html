@@ -532,7 +532,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2026.10.21-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.10.21-d";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -686,10 +686,11 @@ const todayPlan = () => (S.log?.planned || []).find(p => p.date === todayStr());
 const wornOn = d => (S.log?.worn || []).filter(x => x.date === d);
 
 /* ---------------- images ---------------- */
+const CUT_V = 2;   // bump when cut/ photos are re-made: the service worker caches them forever by URL
 const imgCache = new Map();
 function photoSrc(path) {
   if (!path) return "";
-  if (path.startsWith("tiles/")) return "cut/" + path.slice(6).replace(/\.jpg$/, ".webp");   // cut-out version, background removed
+  if (path.startsWith("tiles/")) return "cut/" + path.slice(6).replace(/\.jpg$/, ".webp") + "?v=" + CUT_V;   // cut-out version, background removed
   if (path.startsWith("blob:") || path.startsWith("data:")) return path;
   if (imgCache.has(path)) return imgCache.get(path);
   imgCache.set(path, "");
