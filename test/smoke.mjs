@@ -10,7 +10,7 @@ const [seedDir, outDir] = process.argv.slice(2);
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 fs.mkdirSync(outDir, { recursive: true });
 
-const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp" };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
   if (p.endsWith("/")) p += "index.html";

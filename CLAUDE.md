@@ -6,7 +6,9 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   Versions are date-based: `YYYY.MM.DD-a` (then `-b`, `-c`… for more releases the same day). The new-version
   bar at the bottom of index.html reads `VERSION` from the live page and only shows when it's newer; test it
   with `node test/update-bar.mjs`.
-- `sw.js` — offline shell + tile cache. `tiles/` — the 60 original item photos, named by tag code.
+- `sw.js` — offline shell + tile cache. `tiles/` — the original item photos, named by tag code (kept as
+  sources). `cut/` — the same photos with the background removed (transparent WebP); the app shows `cut/`
+  for any `tiles/` path and so does `rail.py sheet`. A new tile needs a matching `cut/<name>.webp`.
 - Data is NOT in this repo (it's public). It lives in the private repo `Frostie4Life9/the-rail-data`
   (wardrobe.json, fit-log.json, laundry.json, photos/, tools/rail.py) and the app reads/writes it
   through the GitHub contents API with a fine-grained token stored on the device.

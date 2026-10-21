@@ -1,5 +1,5 @@
 // The Rail service worker: app shell + tiles offline. GitHub API calls always go to the network.
-const VERSION = "2026.10.21-a";   // keep in step with index.html
+const VERSION = "2026.10.21-b";   // keep in step with index.html
 const SHELL = `rail-shell-${VERSION}`;
 const ASSETS = ["./", "index.html", "manifest.webmanifest", "icons/rail-192.png", "icons/rail-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
@@ -10,7 +10,7 @@ self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
   if (e.request.method !== "GET" || u.hostname === "api.github.com") return;
   if (u.searchParams.has("_")) return;                                          // new-version check: always live, never cached
-  if (u.origin === location.origin && u.pathname.includes("/tiles/")) {           // tiles: cache first, they never change
+  if (u.origin === location.origin && (u.pathname.includes("/tiles/") || u.pathname.includes("/cut/"))) {           // tiles: cache first, they never change
     e.respondWith(caches.open("rail-tiles").then(async c => (await c.match(e.request)) || fetch(e.request).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; })));
     return;
   }
