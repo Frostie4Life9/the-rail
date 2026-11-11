@@ -730,7 +730,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2026.10.24-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.11-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -792,7 +792,7 @@ const saveQueue = () => ls("rail.queue", queue);
 const DEFAULTS = {
   "wardrobe.json": () => ({next_code:9001, items:[]}),
   "fit-log.json": () => ({planned:[], worn:[]}),
-  "laundry.json": () => ({wash_after:{tee:1,collared:2,knit:3,crewneck:3,hoodie:4,outerwear:10,trousers:4,joggers:3,shorts:2,cap:0,shoes:0,socks:1}, last_full:null, washed:{}}),
+  "laundry.json": () => ({wash_after:{tee:1,collared:2,knit:3,crewneck:3,hoodie:4,outerwear:10,trousers:4,joggers:3,shorts:2,cap:0,shoes:0,socks:1}, last_full:null, washed:{}, dirtied:{}}),
 };
 const KEY = {"wardrobe.json":"wardrobe","fit-log.json":"log","laundry.json":"laundry"};
 
@@ -813,6 +813,8 @@ const OPS = {
   unwear: {file:"fit-log.json", apply(log, p) { log.worn = log.worn.filter(x => !(x.date === p.date && x.name === p.name)); }},
   laundry: {file:"laundry.json", apply(l, p) { l.last_full = p.at; l.washed = {}; }},
   washItem: {file:"laundry.json", apply(l, p) { l.washed = l.washed || {}; l.washed[p.code] = p.at; }},
+  // Hand-moved into the hamper. Dirty until a later single wash or full laundry (those stamp a newer time).
+  hamperItem: {file:"laundry.json", apply(l, p) { l.dirtied = l.dirtied || {}; l.dirtied[p.code] = p.at; }},
   addItem: {file:"wardrobe.json", apply(w, p) {
     const used = new Set(w.items.map(i => i.code));
     let code = Math.max(w.next_code || 9001, ...w.items.map(i => +i.code || 0).filter(n => n >= 9001).map(n => n + 1));
@@ -863,19 +865,25 @@ async function flush() {
 function summary(q) {
   const p = q.payload;
   return {wore:() => `${p.rec.date} ${p.rec.name}`, unwear:() => `${p.date} ${p.name}`, laundry:() => "full laundry",
-    washItem:() => p.code, addItem:() => p.item.name, setItem:() => p.code}[q.op]?.() || q.op;
+    washItem:() => p.code, hamperItem:() => p.code, addItem:() => p.item.name, setItem:() => p.code}[q.op]?.() || q.op;
 }
 
 /* ---------------- derived ---------------- */
 const items = () => (S.wardrobe?.items || []).filter(i => !i.retired);
 const item = code => (S.wardrobe?.items || []).find(i => i.code === code);
-function wearsSinceWash(code) {
+function washStamp(code) {   // when this piece was last known clean: last full laundry or its own wash
   const l = S.laundry || DEFAULTS["laundry.json"]();
-  const reset = [l.last_full, (l.washed || {})[code]].filter(Boolean).sort().pop() || "";
+  return [l.last_full, (l.washed || {})[code]].filter(Boolean).sort().pop() || "";
+}
+function wearsSinceWash(code) {
+  const reset = washStamp(code);
   return (S.log?.worn || []).filter(x => x.items.includes(code) && (x.logged_at || x.date + "T12:00:00+00:00") > reset).length;
 }
+// Put in the hamper by hand, and not washed since.
+const manualDirty = code => { const t = (S.laundry?.dirtied || {})[code]; return !!t && t > washStamp(code); };
 function isDirty(code) {
   const it = item(code); if (!it) return false;
+  if (manualDirty(code)) return true;
   const lim = (S.laundry?.wash_after || {})[it.type] || 0;
   return lim > 0 && wearsSinceWash(code) >= lim;
 }
@@ -1219,14 +1227,17 @@ function itemSheet(code) {
   openSheet(`<div style="display:flex;gap:14px">${img(it.photo, it.name)}<div><h2>${esc(it.name)}</h2>
       <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)} · tag ${esc(code)}</p>
       <p class="lead">Worn ${worn.length} time${worn.length === 1 ? "" : "s"}${worn[0] ? `, last ${new Date(worn[0].date + "T12:00").toLocaleDateString("en-US", {month:"short", day:"numeric"})}` : ""}.</p>
-      ${lim ? `<p class="lead">${isDirty(code) ? `In the hamper after ${w} wear${w === 1 ? "" : "s"}.` : `${w} of ${lim} wears before the hamper.`}</p>` : ""}</div></div>
-    <div class="sheet-actions">${lim && w ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
+      ${manualDirty(code) ? `<p class="lead">In the hamper (you put it there).</p>`
+        : lim ? `<p class="lead">${isDirty(code) ? `In the hamper after ${w} wear${w === 1 ? "" : "s"}.` : `${w} of ${lim} wears before the hamper.`}</p>` : ""}</div></div>
+    <div class="sheet-actions">${isDirty(code) || (lim && w) ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
+      ${!isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
       <button class="btn ${it.avoid ? "primary" : "ghost"}" data-i="avoid">${it.avoid ? "Put back in rotation" : "Hide from fits"}</button></div>`,
     sh => {
       sh.querySelector("img").style.cssText = "width:110px;height:138px;object-fit:cover;border-radius:8px;flex:0 0 auto";
       sh.onclick = e => {
         const b = e.target.closest("[data-i]"); if (!b) return;
         if (b.dataset.i === "wash") { run("washItem", {code, at: nowIso()}); toast(`${it.name} washed`); }
+        if (b.dataset.i === "hamper") { run("hamperItem", {code, at: nowIso()}); toast(`${it.name} is in the hamper`); }
         if (b.dataset.i === "avoid") { run("setItem", {code, patch:{avoid: !it.avoid}}); toast(it.avoid ? "Hidden from fits" : "Back in rotation"); }
         closeSheet();
       };
