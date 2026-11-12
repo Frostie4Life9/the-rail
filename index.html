@@ -86,6 +86,13 @@ img[src^="cut/"]{object-fit:contain!important;padding:7%;box-sizing:border-box}
 .piece.dirty{--glow:.3}
 .piece.dirty .ph{outline:2px dashed var(--amber);outline-offset:-2px}
 .piece.dirty .ph img{opacity:.55}
+/* pooled pieces (qty > 1, e.g. the black Nike socks): a pairs-clean count instead of the hamper look */
+.piece .qty{position:absolute;top:8px;right:8px;z-index:2;min-width:26px;padding:3px 8px;border-radius:999px;
+  background:var(--surface);color:var(--text);font-size:12px;font-weight:650;line-height:1.2;text-align:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.18);font-variant-numeric:tabular-nums}
+.piece .qty.low{background:var(--amber);color:#fff}
+.stepper{display:flex;align-items:center;gap:12px;margin-top:10px}
+.stepper b{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
 /* gentle bob (Today and Worn only): .on is set while the card is on screen */
 @keyframes rail-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes rail-breathe{0%,100%{transform:translateY(0) scale(1);opacity:var(--glow)}
@@ -730,7 +737,7 @@ label.f textarea{min-height:64px;resize:vertical}
 
 <script>
 "use strict";
-const VERSION = "2026.11.11-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.12-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -881,13 +888,22 @@ function wearsSinceWash(code) {
 }
 // Put in the hamper by hand, and not washed since.
 const manualDirty = code => { const t = (S.laundry?.dirtied || {})[code]; return !!t && t > washStamp(code); };
+// Pooled pieces: many identical pairs (qty > 1, e.g. the black Nike socks). Each wear uses up one clean pair
+// until the next full laundry, so we show pairs clean / in the hamper instead of flagging the whole piece.
+const poolSize = code => { const q = +(item(code)?.qty || 0); return q > 1 ? q : 0; };
+const pairsUsed = code => Math.min(poolSize(code), wearsSinceWash(code));
+const pairsClean = code => poolSize(code) - pairsUsed(code);
 function isDirty(code) {
   const it = item(code); if (!it) return false;
+  if (poolSize(code)) return pairsClean(code) <= 0;   // only "dirty" once every pair is used
   if (manualDirty(code)) return true;
   const lim = (S.laundry?.wash_after || {})[it.type] || 0;
   return lim > 0 && wearsSinceWash(code) >= lim;
 }
 const hamper = () => items().filter(i => isDirty(i.code));
+// What the hamper strip counts: pieces, except pooled pieces count by pair.
+const hamperCount = () => items().reduce((n, i) => n + (poolSize(i.code) ? pairsUsed(i.code) : isDirty(i.code) ? 1 : 0), 0);
+const inHamperList = () => items().filter(i => poolSize(i.code) ? pairsUsed(i.code) > 0 : isDirty(i.code));
 const todayPlan = () => (S.log?.planned || []).find(p => p.date === todayStr());
 const wornOn = d => (S.log?.worn || []).filter(x => x.date === d);
 
@@ -981,10 +997,11 @@ const BOB_DELAYS = [0, -1.1, -2.3, -3.2, -0.6, -1.7, -2.8, -3.7];
 function pieceHtml(code, {extra = "", i = 0} = {}) {
   const it = item(code);
   if (!it) return `<div class="piece"><div class="stage"><div class="ph"></div></div><div class="nm">Unknown ${esc(code)}</div></div>`;
-  const dirty = isDirty(code);
+  const dirty = isDirty(code), pool = poolSize(code), clean = pool ? pairsClean(code) : 0;
   return `<div class="piece${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}" style="--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${extra}
+    ${pool ? `<span class="qty${clean <= Math.ceil(pool * .15) ? " low" : ""}" title="${clean} of ${pool} pairs clean">×${clean}</span>` : ""}
     <div class="stage"><div class="amb" aria-hidden="true">${img(it.photo, "")}</div><div class="ph">${img(it.photo, it.name)}</div></div>
-    <div class="nm">${esc(it.name)}</div><div class="cl">${dirty ? "In the hamper" : esc(it.colour)}${it.uncalibrated && !dirty ? " ⚠" : ""}</div></div>`;
+    <div class="nm">${esc(it.name)}</div><div class="cl">${pool ? `${clean} of ${pool} pairs clean` : dirty ? "In the hamper" : esc(it.colour)}${it.uncalibrated && !dirty ? " ⚠" : ""}</div></div>`;
 }
 
 // Only cards on screen bob: an observer toggles .on, so off-screen rails cost nothing.
@@ -1021,10 +1038,10 @@ function mast(title, sub) {
 function viewToday() {
   const d = new Date(), plan = todayPlan(), worn = wornOn(todayStr());
   const title = d.toLocaleDateString("en-US", {weekday:"long"}) + ", " + d.toLocaleDateString("en-US", {month:"short", day:"numeric"});
-  const h = hamper();
+  const hn = hamperCount();
   let out = mast(title, plan ? plan.subtitle.replace(/^Provo:\s*/, "") : "");
-  out += `<div class="hamper"><span class="grow">${h.length ? `<b>${h.length}</b> in the hamper` : "Hamper's empty"}</span>
-    ${h.length ? `<button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
+  out += `<div class="hamper"><span class="grow">${hn ? `<b>${hn}</b> in the hamper` : "Hamper's empty"}</span>
+    ${hn ? `<button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
   if (worn.length) {
     out += `<p class="worn-badge">✓ Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
   }
@@ -1051,8 +1068,8 @@ function viewToday() {
 let closetFilter = "all";
 function viewCloset() {
   const all = items();
-  const list = closetFilter === "all" ? all : closetFilter === "hamper" ? all.filter(i => isDirty(i.code)) : all.filter(i => i.slot === closetFilter);
-  const chips = [["all", `All ${all.length}`], ...SLOTS, ["hamper", `Hamper ${hamper().length}`]];
+  const list = closetFilter === "all" ? all : closetFilter === "hamper" ? inHamperList() : all.filter(i => i.slot === closetFilter);
+  const chips = [["all", `All ${all.length}`], ...SLOTS, ["hamper", `Hamper ${inHamperList().length}`]];
   return mast("Closet", `${all.filter(i => !i.avoid).length} pieces in rotation`) +
     `<div class="actions"><button class="btn primary" data-act="add-item">Add a piece</button></div>
     <div class="filters" role="group" aria-label="Filter">${chips.map(([k, l]) => `<button class="chip" aria-pressed="${closetFilter === k}" data-filter="${k}">${esc(l)}</button>`).join("")}</div>
@@ -1224,13 +1241,16 @@ function pickItem(sh, slot, current, done) {
 function itemSheet(code) {
   const it = item(code), worn = (S.log?.worn || []).filter(x => x.items.includes(code));
   const lim = (S.laundry?.wash_after || {})[it.type] || 0, w = wearsSinceWash(code);
+  const pool = poolSize(code), used = pool ? pairsUsed(code) : 0;
   openSheet(`<div style="display:flex;gap:14px">${img(it.photo, it.name)}<div><h2>${esc(it.name)}</h2>
       <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)} · tag ${esc(code)}</p>
       <p class="lead">Worn ${worn.length} time${worn.length === 1 ? "" : "s"}${worn[0] ? `, last ${new Date(worn[0].date + "T12:00").toLocaleDateString("en-US", {month:"short", day:"numeric"})}` : ""}.</p>
-      ${manualDirty(code) ? `<p class="lead">In the hamper (you put it there).</p>`
+      ${pool ? `<p class="lead"><b>${pool - used}</b> of ${pool} pairs clean${used ? ` · ${used} in the hamper` : ""}.</p>
+        <div class="stepper"><span class="lead" style="margin:0">Pairs owned</span><button class="btn small ghost" data-i="qty-" aria-label="One fewer pair">−</button><b>${pool}</b><button class="btn small ghost" data-i="qty+" aria-label="One more pair">+</button></div>`
+      : manualDirty(code) ? `<p class="lead">In the hamper (you put it there).</p>`
         : lim ? `<p class="lead">${isDirty(code) ? `In the hamper after ${w} wear${w === 1 ? "" : "s"}.` : `${w} of ${lim} wears before the hamper.`}</p>` : ""}</div></div>
-    <div class="sheet-actions">${isDirty(code) || (lim && w) ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
-      ${!isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
+    <div class="sheet-actions">${pool ? (used ? `<button class="btn" data-i="wash">Washed all pairs</button>` : "") : isDirty(code) || (lim && w) ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
+      ${!pool && !isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
       <button class="btn ${it.avoid ? "primary" : "ghost"}" data-i="avoid">${it.avoid ? "Put back in rotation" : "Hide from fits"}</button></div>`,
     sh => {
       sh.querySelector("img").style.cssText = "width:110px;height:138px;object-fit:cover;border-radius:8px;flex:0 0 auto";
@@ -1238,6 +1258,10 @@ function itemSheet(code) {
         const b = e.target.closest("[data-i]"); if (!b) return;
         if (b.dataset.i === "wash") { run("washItem", {code, at: nowIso()}); toast(`${it.name} washed`); }
         if (b.dataset.i === "hamper") { run("hamperItem", {code, at: nowIso()}); toast(`${it.name} is in the hamper`); }
+        if (b.dataset.i === "qty+" || b.dataset.i === "qty-") {
+          const q = Math.max(2, pool + (b.dataset.i === "qty+" ? 1 : -1));   // stays a pool; below 2 it would stop being one
+          run("setItem", {code, patch:{qty: q}}); toast(`${q} pairs`); return itemSheet(code);
+        }
         if (b.dataset.i === "avoid") { run("setItem", {code, patch:{avoid: !it.avoid}}); toast(it.avoid ? "Hidden from fits" : "Back in rotation"); }
         closeSheet();
       };
