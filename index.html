@@ -735,9 +735,10 @@ label.f textarea{min-height:64px;resize:vertical}
 <section class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></section>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.12-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.18-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1049,7 +1050,7 @@ function viewToday() {
   else if (!plan) {
     const last = (S.log.planned || [])[0];
     out += `<div class="empty"><h3>No sheet for today yet</h3>The morning sheet lands at 6:59am.${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
-      <div class="actions"><button class="btn primary" data-act="log-own">Build my own fit</button></div></div>`;
+      <div class="actions"><button class="btn primary" data-act="suggest">Suggest fits</button><button class="btn ghost" data-act="log-own">Build my own fit</button></div></div>`;
   } else {
     plan.fits.forEach(f => {
       const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
@@ -1060,7 +1061,7 @@ function viewToday() {
           : `<button class="btn primary" data-act="wear" data-n="${f.n}">Wore this</button>`}
           <button class="btn ghost" data-act="tweak" data-n="${f.n}">Tweak in Claude</button></div></article>`;
     });
-    out += `<div class="actions" style="margin-top:28px"><button class="btn ghost" data-act="log-own">Wore something else? Build it</button></div>`;
+    out += `<div class="actions" style="margin-top:28px"><button class="btn ghost" data-act="suggest">Suggest more fits</button><button class="btn ghost" data-act="log-own">Wore something else? Build it</button></div>`;
   }
   return out;
 }
@@ -1219,6 +1220,76 @@ function buildFit(start = {}) {
   });
 }
 
+/* ---------------- suggest fits (engine.js: free, no AI) ---------------- */
+const WX_PRESETS = {cold: {hi: 38, lo: 27}, cool: {hi: 52, lo: 40}, mild: {hi: 66, lo: 50}, warm: {hi: 82, lo: 62}};
+const OCCASIONS = [["class", "Class", "day"], ["lab", "Lab", "day"], ["lounge", "Chill", "evening"], ["out", "Out", "evening"], ["church", "Church", "day"]];
+let wxCache = null;
+function parseWx(sub) {   // "Provo: 48°F high / 32°F low · sunny · 0% rain · …" from the morning sheet
+  const m = /(\d+)°F high \/ (\d+)°F low/.exec(sub || ""); if (!m) return null;
+  const r = /(\d+)% rain/.exec(sub), w = /(\d+)(?:-(\d+))? mph/.exec(sub);
+  return {hi: +m[1], lo: +m[2], rain: r ? +r[1] : 0, snow: /snow/i.test(sub), wind: w ? +(w[2] || w[1]) : 0};
+}
+async function loadWx() {   // today's sheet first, then a free forecast (Open-Meteo, no key), else null and the sheet asks
+  const p = todayPlan(), fromPlan = p && parseWx(p.subtitle);
+  if (fromPlan) return {wx: fromPlan, src: "today's sheet"};
+  if (wxCache && wxCache.day === todayStr()) return wxCache;
+  try {
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${cfg.lat || 40.2338}&longitude=${cfg.lon || -111.6585}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,snowfall_sum,wind_speed_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=1`;
+    const r = await fetch(u, {signal: AbortSignal.timeout(6000)}); if (!r.ok) throw 0;
+    const d = (await r.json()).daily;
+    wxCache = {day: todayStr(), src: "forecast", wx: {hi: d.temperature_2m_max[0], lo: d.temperature_2m_min[0], rain: d.precipitation_probability_max[0] || 0, snow: (d.snowfall_sum[0] || 0) > .1, wind: d.wind_speed_10m_max[0] || 0}};
+    return wxCache;
+  } catch { return null; }
+}
+function suggestSheet() {
+  if (!window.RailEngine) return toast("The fit engine didn't load. Reload the app.");
+  const st = {kind: new Date().getHours() < 17 ? "class" : "lounge", salt: 0, wx: null, src: "", preset: null, rain: null, fits: []};
+  openSheet("", sh => {
+    const weather = () => {
+      const w = st.preset ? Object.assign({rain: 0, snow: false, wind: 0}, WX_PRESETS[st.preset]) : st.wx && Object.assign({}, st.wx);
+      if (w && st.rain != null) w.rain = st.rain ? 80 : 0;
+      return w;
+    };
+    const compute = () => {
+      const w = weather(); st.problems = [];
+      if (!w) return st.fits = [];
+      const occ = OCCASIONS.find(o => o[0] === st.kind);
+      const r = RailEngine.suggest({wardrobe: S.wardrobe, log: S.log || {worn: [], planned: []}, laundry: S.laundry || DEFAULTS["laundry.json"]()},
+        {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt});
+      st.problems = r.problems; st.fits = r.fits;
+    };
+    const paint = () => {
+      const w = weather(), chip = (a, k, l, on) => `<button class="chip" aria-pressed="${on}" data-s="${a}" data-k="${k}">${l}</button>`;
+      const line = w ? `${Math.round(w.lo)}–${Math.round(w.hi)}°F${w.rain >= 50 ? " · rain" : ""}${w.snow ? " · snow" : ""}${st.preset ? "" : ` · ${st.src}`}` : "Checking the forecast…";
+      sh.innerHTML = `<div class="grab"></div><h2>Suggest fits</h2><p class="lead">${esc(line)}. Built from your closet, your hamper and what you've worn lately.</p>
+        <div class="filters" role="group" aria-label="Occasion">${OCCASIONS.map(([k, l]) => chip("kind", k, l, st.kind === k)).join("")}</div>
+        <div class="filters" role="group" aria-label="Weather">${Object.keys(WX_PRESETS).map(k => chip("wx", k, k[0].toUpperCase() + k.slice(1), st.preset === k)).join("")}${chip("rain", "", "Rain", !!(w && w.rain >= 50))}</div>
+        ${st.fits.map((f, i) => `<article class="fit"><div class="fit-head"><h2><span class="n">${i + 1}</span>${esc(f.name)}</h2></div>
+          <div class="rail bob">${bySlot(f.items).map((c, j) => pieceHtml(c, {i: j})).join("")}</div>
+          <p class="note">${esc(f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "")}${f.capOptional ? " Cap optional." : ""}</p>
+          <div class="actions"><button class="btn primary" data-s="wear" data-i="${i}">Wore this</button></div></article>`).join("")}
+        ${st.problems.length ? `<p class="lead">${esc(st.problems.join(". "))}. Do laundry or unhide something.</p>` : w && !st.fits.length ? `<p class="lead">Nothing fits those rules right now.</p>` : ""}
+        <div class="sheet-actions"><button class="btn ghost" data-s="close">Close</button><button class="btn" data-s="again" ${st.fits.length ? "" : "disabled"}>Show others</button></div>`;
+    };
+    const redo = () => { const y = sh.scrollTop; compute(); paint(); sh.scrollTop = y; };
+    redo();
+    loadWx().then(r => { if (r && !st.wx && !st.preset) { st.wx = r.wx; st.src = r.src; if (!sh.hidden) redo(); } else if (!r && !st.wx && !st.preset) { st.preset = "cool"; if (!sh.hidden) redo(); } });
+    sh.onclick = e => {
+      const b = e.target.closest("[data-s]"); if (!b) return;
+      const a = b.dataset.s;
+      if (a === "close") return closeSheet();
+      if (a === "kind") { st.kind = b.dataset.k; st.salt = 0; return redo(); }
+      if (a === "wx") { st.preset = st.preset === b.dataset.k ? null : b.dataset.k; st.salt = 0; return redo(); }
+      if (a === "rain") { const w = weather(); st.rain = !(w && w.rain >= 50); st.salt = 0; return redo(); }
+      if (a === "again") { st.salt++; return redo(); }
+      if (a === "wear") {
+        const f = st.fits[+b.dataset.i], occ = OCCASIONS.find(o => o[0] === st.kind);
+        sh.onclick = null; return wearSheet({date: todayStr(), name: f.name, when: occ[1], items: bySlot(f.items)});
+      }
+    };
+  });
+}
+
 function pickItem(sh, slot, current, done) {
   let f = slot || "all";
   const paint = () => {
@@ -1326,6 +1397,7 @@ document.addEventListener("click", async e => {
   if (act === "wear") { const f = plan.fits.find(x => x.n === +a.dataset.n); return wearSheet({date: plan.date, name: f.name, when: f.when, items: f.items, n: f.n}); }
   if (act === "tweak") return tweak(plan.fits.find(x => x.n === +a.dataset.n), plan);
   if (act === "log-own") return buildFit();
+  if (act === "suggest") return suggestSheet();
   if (act === "laundry") {
     if (a.dataset.armed) { run("laundry", {at: nowIso()}); if (window.SX) SX.bump(".hamper"); return toast("Hamper emptied"); }
     a.dataset.armed = 1; a.textContent = "Tap again to empty"; a.classList.add("warn");
