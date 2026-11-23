@@ -213,23 +213,23 @@ label.f textarea{min-height:64px;resize:vertical}
 .ver{color:var(--muted);font-size:13px;margin-top:28px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
-<!-- suite:css v10 · shared by Kitchen, Grocery, Lift, DishLog, Protocol, Rail, Game Log, Playback — edit tools/suite.py in the kitchen repo, not here -->
+<!-- suite:css v11 · shared by Kitchen, Grocery, Lift, DishLog, Protocol, Rail, Game Log, Playback — edit tools/suite.py in the kitchen repo, not here -->
 <style id="suite-css">
 /* App colors come from each app's home-screen icon, so the bar, the icon and
    the page all agree. The tab for every app carries its own color, so the
    whole set reads as one color-coded system wherever you are in it. */
 .sx-bar{
-  --sx-kitchen:#7A2E1E; --sx-grocery:#2D5840; --sx-lift:#A8522B; --sx-dishlog:#6A2347; --sx-protocol:#1E3550; --sx-rail:#3A2A63; --sx-gamelog:#242B5C; --sx-playback:#124C50;
+  --sx-kitchen:#7A2E1E; --sx-grocery:#2D5840; --sx-lift:#A8522B; --sx-dishlog:#6A2347; --sx-protocol:#1E3550; --sx-rail:#3A2A63; --sx-gamelog:#242B5C; --sx-playback:#7B2482;
   --sx-on:#FFF8EF;
   --sx-paper:#FAF6F0; --sx-ink:#1F1A14; --sx-dim:#7D7262; --sx-line:#DDD3C2; --sx-hover:#EFE7DA;
 }
 @media (prefers-color-scheme:dark){ .sx-bar:not(.sx-light){
-  --sx-kitchen:#E8987C; --sx-grocery:#7CC39A; --sx-lift:#EE9C66; --sx-dishlog:#DD8DB2; --sx-protocol:#5FE6B0; --sx-rail:#B9A6F2; --sx-gamelog:#F5B63F; --sx-playback:#6FD3C6;
+  --sx-kitchen:#E8987C; --sx-grocery:#7CC39A; --sx-lift:#EE9C66; --sx-dishlog:#DD8DB2; --sx-protocol:#5FE6B0; --sx-rail:#B9A6F2; --sx-gamelog:#F5B63F; --sx-playback:#E58AE8;
   --sx-on:#15120E;
   --sx-paper:#17140F; --sx-ink:#F1EADF; --sx-dim:#A0947F; --sx-line:#3B342B; --sx-hover:#2A251E;
 }}
 .sx-bar.sx-dark{
-  --sx-kitchen:#E8987C; --sx-grocery:#7CC39A; --sx-lift:#EE9C66; --sx-dishlog:#DD8DB2; --sx-protocol:#5FE6B0; --sx-rail:#B9A6F2; --sx-gamelog:#F5B63F; --sx-playback:#6FD3C6;
+  --sx-kitchen:#E8987C; --sx-grocery:#7CC39A; --sx-lift:#EE9C66; --sx-dishlog:#DD8DB2; --sx-protocol:#5FE6B0; --sx-rail:#B9A6F2; --sx-gamelog:#F5B63F; --sx-playback:#E58AE8;
   --sx-on:#15120E;
 }
 /* layout tokens every app's own layout lines up with. No width cap: on a
@@ -407,7 +407,7 @@ label.f textarea{min-height:64px;resize:vertical}
     <a class="sx-cell" style="--c:var(--sx-protocol)" href="https://frostie4life9.github.io/daily_schedule/"><img src="https://frostie4life9.github.io/daily_schedule/apple-touch-icon.png?v=20261017p" alt="" width="54" height="54" decoding="async"><b>Protocol</b></a>
     <a class="sx-cell" style="--c:var(--sx-rail)" href="./" aria-current="page"><img src="icons/rail-180.png?v=1" alt="" width="54" height="54" decoding="async"><b>Rail</b></a>
     <a class="sx-cell" style="--c:var(--sx-gamelog)" href="https://frostie4life9.github.io/gamelog/"><img src="https://frostie4life9.github.io/gamelog/apple-touch-icon.png?v=20261021a" alt="" width="54" height="54" decoding="async"><b>Game Log</b></a>
-    <a class="sx-cell" style="--c:var(--sx-playback)" href="https://frostie4life9.github.io/playback/"><img src="https://frostie4life9.github.io/playback/apple-touch-icon.png?v=20261021a" alt="" width="54" height="54" decoding="async"><b>Playback</b></a>
+    <a class="sx-cell" style="--c:var(--sx-playback)" href="https://frostie4life9.github.io/playback/"><img src="https://frostie4life9.github.io/playback/apple-touch-icon.png?v=20261123h" alt="" width="54" height="54" decoding="async"><b>Playback</b></a>
 </div></div>
 <div class="sx-ideas" id="sx-ideas" hidden><div class="sx-ipop" role="dialog" aria-label="Ideas">
   <div class="sx-ih"><b>Ideas</b><span class="sx-ist" id="sx-ist" role="status" aria-live="polite"></span></div>
@@ -738,7 +738,7 @@ label.f textarea{min-height:64px;resize:vertical}
 <script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.18-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.23-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
