@@ -103,7 +103,7 @@ check((await page.textContent("[data-b=next]")).includes("4"), "next shows count
 await page.click("[data-b=next]");
 await page.waitForSelector("#w-name");
 check((await page.textContent("#sheet .lead")).includes("yesterday"), "wear sheet shows yesterday");
-const order = await page.$$eval("#sheet .prow .t span", els => els.map(e => e.textContent.split(" ")[0]));
+const order = await page.$$eval("#sheet .prow", els => els.map(e => e.dataset.code));
 check(JSON.stringify(order) === JSON.stringify(["6039", "8483", "9001", "8280"]), "pieces ordered top→bottom→socks→shoes " + order);
 await page.fill("#w-name", "Own fit test"); await shot("b2-wear");
 await page.click("[data-w=save]");

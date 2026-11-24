@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FAF6F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E7E6E2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161615" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,200 +15,286 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/rail-32.png?v=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&family=Anybody:wdth,wght@50..150,500..900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Rail shares the suite's warm paper palette (Kitchen, Grocery, Lift, DishLog)
-   and keeps violet as its own color, taken from its home-screen icon. --sage is
-   the old name for "the app's accent"; it stays so the rules below read the same. */
+/* THE RAIL · "Studio" (2026.11.24-b). Every piece is a cut-out photo laid on a photo-studio backdrop.
+   Today's looks are flat lays whose backdrop takes the outfit's own colour (--fc, set per look from its pieces);
+   type is a condensed lookbook face (Anybody), body is Hanken Grotesk, small facts read like a care label (Plex Mono).
+   Fraunces + Manrope still load because the shared suite bar uses them. --sage is the old name for "the accent". */
 :root{
-  --page:#FAF6F0; --surface:#FFFAF2; --raised:#F1EADF; --carpet:#5c5e57; --tile-bg:var(--raised);
-  --line:#DDD3C2; --text:#1F1A14; --muted:#7D7262; --sage:#4E3A86; --sage-ink:#FFFAF2;
-  --amber:#A86E08; --danger:#A63D40;
-  --shadow:0 1px 2px rgba(31,26,20,.04),0 6px 18px rgba(31,26,20,.06);
-  --r-tile:8px; --r-sheet:22px;
+  --page:#E7E6E2; --floor:#D9D7D1; --surface:#FBFAF7; --raised:#F0EFEB; --tile-bg:var(--raised);
+  --line:#D6D4CE; --text:#141414; --muted:#5B5A57; --sage:#141414; --sage-ink:#FFFFFF;
+  --pop:#C9442A; --pop-ink:#FFFFFF; --amber:#A8441F; --danger:#A63D40;
+  --shadow:0 1px 2px rgba(20,20,20,.05),0 8px 22px rgba(20,20,20,.07);
+  --drop:drop-shadow(0 12px 12px rgba(20,20,20,.18)) drop-shadow(0 2px 3px rgba(20,20,20,.16));
+  --r-sheet:28px; --fc:#8A8780; --fcmix:70%;
+  --display:"Anybody","Arial Narrow",system-ui,sans-serif; --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
   color-scheme:light dark;
 }
 @media (prefers-color-scheme:dark){:root{
-  --page:#17140F; --surface:#231F19; --raised:#2C261F;
-  --line:#3B342B; --text:#F1EADF; --muted:#A0947F; --sage:#B9A6F2; --sage-ink:#17140F;
-  --amber:#E4BC4A; --danger:#E6735F;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  --page:#161615; --floor:#1F1F1D; --surface:#232321; --raised:#2B2A28;
+  --line:#3A3936; --text:#F1F0EC; --muted:#A8A6A0; --sage:#F1F0EC; --sage-ink:#141414;
+  --pop:#F07052; --pop-ink:#1A0E0A; --amber:#F0956F; --danger:#E6735F;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.3);
+  --drop:drop-shadow(0 12px 14px rgba(0,0,0,.5)) drop-shadow(0 2px 3px rgba(0,0,0,.4));
 }}
-h1,h2,.sect,.stat b{font-family:"Fraunces",Georgia,serif;font-style:italic;letter-spacing:-.01em}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--page);color:var(--text)}
-body{font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45;
-  -webkit-font-smoothing:antialiased;min-height:100dvh;padding-bottom:calc(76px + var(--safe-b))}
+body{font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100dvh;padding-bottom:calc(104px + var(--safe-b))}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0}
-:focus-visible{outline:2px solid var(--sage);outline-offset:2px;border-radius:4px}
+:focus-visible{outline:2px solid var(--text);outline-offset:3px;border-radius:6px}
 img{display:block;max-width:100%}
-.wrap{max-width:760px;margin:0 auto;padding:22px var(--sx-gut,16px) 24px}
+.wrap{max-width:760px;margin:0 auto;padding:18px var(--sx-gut,16px) 24px}
+.k{font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.disp{font-family:var(--display);font-weight:850;font-stretch:58%;text-transform:uppercase;line-height:.84;letter-spacing:-.005em}
 
-/* masthead: the date is the headline, set wide */
-.mast h1{font-weight:600;font-size:clamp(32px,8.6vw,46px);line-height:1.02;letter-spacing:-.02em}
-.mast .sub{color:var(--muted);margin-top:8px;font-size:15px;max-width:60ch}
-.mast .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.sync{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:6px}
+/* masthead */
+.mast .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mast h1{font-family:var(--display);font-weight:850;font-stretch:58%;text-transform:uppercase;font-size:clamp(60px,17vw,96px);line-height:.82;margin-top:8px;overflow-wrap:anywhere}
+.mast .right{display:flex;align-items:center;gap:10px}
+.mast .sub{color:var(--muted);margin-top:10px;font-size:15px;max-width:60ch}
+.gear{width:40px;height:40px;border-radius:99px;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--text)}
+.gear svg{width:19px;height:19px}
+.sync{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .sync.off{color:var(--amber)}
+.mast .big{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.mast .big .n{font-family:var(--display);font-weight:850;font-stretch:62%;font-size:clamp(60px,17vw,96px);line-height:.82;color:var(--pop);font-variant-numeric:tabular-nums}
+.wx{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.wx span{font:500 10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:color-mix(in srgb,var(--surface) 72%,transparent)}
 
-/* hamper strip */
-.hamper{margin:20px 0 6px;display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);
-  border:1px solid var(--line);border-radius:14px;font-size:15px;box-shadow:var(--shadow)}
-.hamper b{font-weight:650}
-.hamper .grow{flex:1;color:var(--muted)}
-.hamper .grow b{color:var(--text)}
+/* hamper strip on Today */
+.hamper{margin:14px 0 4px;display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;min-height:48px;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);font-size:14.5px}
+.hamper .grow{flex:1;color:var(--muted);display:flex;align-items:center;gap:8px}
+.hamper .grow b{color:var(--text);font-weight:700}
+.hamper .dotp{width:8px;height:8px;border-radius:99px;background:var(--pop);flex:none}
+.hamper .dotp.ok{background:#3E8E5E}
 
-/* a fit = photo cards floating on a soft glow made from their own photo.
-   The rail scrolls sideways; its gutter is widened so the blur isn't clipped. */
-.fit{margin-top:30px}
-.fit-head{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
-.fit-head h2{font-weight:600;font-size:24px;line-height:1.15}
-.fit-head .n{color:var(--sage);margin-right:8px}
-.when{color:var(--muted);font-size:14px;text-align:right;flex-shrink:0;max-width:45%}
-.rail{position:relative;margin:4px calc(-1 * var(--sx-gut,16px)) 0;padding:12px var(--sx-gut,16px) 14px;
-  display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:var(--sx-gut,16px);scrollbar-width:none}
-.rail::-webkit-scrollbar{display:none}
-.piece{flex:0 0 auto;width:118px;scroll-snap-align:start;position:relative;--glow:.6}
-.piece .stage{position:relative}
-.piece .amb{position:absolute;top:17.3%;left:8.5%;right:8.5%;bottom:-8%;border-radius:20px;overflow:hidden;
-  filter:blur(16px) saturate(1.4);opacity:var(--glow);pointer-events:none}
-.piece .amb img{width:100%;height:100%;object-fit:cover}
-.piece .ph{position:relative;z-index:1;width:118px;height:150px;border-radius:var(--r-tile);overflow:hidden;background:var(--tile-bg)}
-.piece .ph img{width:100%;height:100%;object-fit:cover}
-/* cut-out item photos (cut/*.webp): garment on a clean card, no carpet */
-img[src^="cut/"]{object-fit:contain!important;padding:7%;box-sizing:border-box}
-.piece .amb img[src^="cut/"]{padding:0}
-.piece .nm{position:relative;z-index:1;font-size:13px;line-height:1.25;margin-top:22px;font-weight:600;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.piece .cl{position:relative;z-index:1;font-size:12px;color:var(--muted);margin-top:2px}
-.piece.dirty{--glow:.3}
-.piece.dirty .ph{outline:2px dashed var(--amber);outline-offset:-2px}
-.piece.dirty .ph img{opacity:.55}
-/* pooled pieces (qty > 1, e.g. the black Nike socks): a pairs-clean count instead of the hamper look */
-.piece .qty{position:absolute;top:8px;right:8px;z-index:2;min-width:26px;padding:3px 8px;border-radius:999px;
-  background:var(--surface);color:var(--text);font-size:12px;font-weight:650;line-height:1.2;text-align:center;
-  box-shadow:0 1px 4px rgba(0,0,0,.18);font-variant-numeric:tabular-nums}
-.piece .qty.low{background:var(--amber);color:#fff}
-.stepper{display:flex;align-items:center;gap:12px;margin-top:10px}
-.stepper b{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
-/* gentle bob (Today and Worn only): .on is set while the card is on screen */
-@keyframes rail-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes rail-breathe{0%,100%{transform:translateY(0) scale(1);opacity:var(--glow)}
-  50%{transform:translateY(2px) scale(.9);opacity:calc(var(--glow) * .7)}}
-.rail.bob .piece.on .ph{animation:rail-bob 4.2s ease-in-out var(--d,0s) infinite}
-.rail.bob .piece.on .amb{animation:rail-breathe 4.2s ease-in-out var(--d,0s) infinite}
-@media (prefers-reduced-motion:reduce){.rail.bob .piece .ph,.rail.bob .piece .amb{animation:none}}
-.note{color:var(--sage);margin-top:12px;font-size:15px;max-width:62ch}
-.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.btn{border-radius:999px;padding:10px 16px;font-weight:600;font-size:15px;line-height:1.1;
-  background:var(--raised);border:1px solid var(--line);transition:transform .08s}
+/* buttons, chips */
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:999px;min-height:44px;padding:0 18px;font-weight:600;font-size:15px;line-height:1.1;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--surface);border:1px solid var(--line);color:var(--text);transition:transform .1s,background .2s}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--sage);color:var(--sage-ink);border-color:var(--sage)}
-.btn.ghost{background:none}
-.btn.small{padding:7px 12px;font-size:14px}
+.btn.ghost{background:transparent}
+.btn.small{min-height:36px;padding:0 14px;font-size:13.5px}
 .btn.warn{border-color:var(--amber);color:var(--amber)}
+.btn.big{min-height:56px;font-size:16px;flex:1}
+.btn.round{width:56px;min-height:56px;padding:0;flex:none}
+.btn svg{width:19px;height:19px;flex:none}
 .btn[disabled]{opacity:.5;pointer-events:none}
-.worn-badge{display:inline-flex;align-items:center;gap:6px;color:var(--sage);font-weight:600;font-size:15px;padding:10px 0}
-
-.empty{margin-top:28px;padding:22px 18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted)}
-.empty h3{color:var(--text);font-size:18px;font-weight:650;margin-bottom:6px}
-.empty .actions{margin-top:16px}
-
-/* section titles inside tabs */
-.sect{font-weight:600;font-size:22px;margin:30px 0 12px}
-
-/* closet */
-.filters{display:flex;gap:8px;overflow-x:auto;margin-top:18px;scrollbar-width:none;padding-bottom:2px}
+.worn-badge{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:15px}
+.filters{display:flex;gap:8px;overflow-x:auto;margin-top:16px;scrollbar-width:none;padding-bottom:2px}
 .filters::-webkit-scrollbar{display:none}
-.chip{padding:7px 13px;border-radius:999px;border:1px solid var(--line);font-size:14px;white-space:nowrap;color:var(--muted)}
-.chip[aria-pressed=true]{background:var(--text);color:var(--page);border-color:var(--text);font-weight:600}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:18px 10px;margin-top:22px}
-.grid .piece{width:auto}
-.grid .piece .ph{width:100%;height:auto;aspect-ratio:4/5}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--surface) 75%,transparent);font-size:13.5px;font-weight:600;white-space:nowrap;color:var(--text);display:inline-flex;align-items:center}
+.chip[aria-pressed=true]{background:var(--text);color:var(--page)}
+.empty{margin-top:22px;padding:24px 20px;border-radius:24px;background:var(--surface);color:var(--muted);box-shadow:var(--shadow)}
+.empty h3{color:var(--text);font-family:var(--display);font-weight:800;font-stretch:62%;text-transform:uppercase;font-size:30px;line-height:.95;margin-bottom:8px}
+.sect{font-family:var(--display);font-weight:800;font-stretch:64%;text-transform:uppercase;font-size:26px;line-height:1;margin:30px 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sect .k{font-stretch:normal}
+
+/* TODAY: looks carousel. Each look is a studio set tinted by its own outfit. */
+.looks{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:16px calc(-1 * var(--sx-gut,16px)) 0;padding:0 var(--sx-gut,16px) 4px;
+  scroll-padding-inline:var(--sx-gut,16px);scrollbar-width:none;overscroll-behavior-x:contain}
+.looks::-webkit-scrollbar{display:none}
+.fit{flex:0 0 calc(100% - 22px);scroll-snap-align:start;position:relative;isolation:isolate;overflow:hidden;border-radius:30px;padding:18px 18px 20px;
+  background:color-mix(in oklab,var(--fc) 10%,var(--page));transition:background .5s}
+.looks .fit:only-child{flex-basis:100%}
+.fit::before{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;z-index:-1;background:color-mix(in oklab,var(--fc) 17%,var(--floor));
+  border-radius:50% 50% 0 0 / 34px 34px 0 0}
+@media (min-width:700px){.fit{flex-basis:calc(50% - 6px)}}
+.fit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.fit-head h2{font-family:var(--display);font-weight:850;font-stretch:56%;text-transform:uppercase;font-size:clamp(46px,13vw,64px);line-height:.84;letter-spacing:-.005em;
+  color:color-mix(in oklab,var(--fc) var(--fcmix),var(--text));overflow-wrap:anywhere}
+@media (prefers-color-scheme:dark){.fit-head h2{color:color-mix(in oklab,var(--fc) 30%,var(--text))}}
+.fit-head .cnt{text-align:right;flex:none;padding-top:4px}
+.fit-head .cnt b{display:block;font-family:var(--display);font-weight:800;font-stretch:70%;font-size:28px;line-height:1}
+.fit-head .cnt b i{font-style:normal;opacity:.35}
+.when{margin-top:8px}
+.lay{position:relative;width:100%;max-width:460px;aspect-ratio:1/1.02;margin:10px auto 0}
+.piece.lp{position:absolute;padding:0;transform:rotate(var(--r,0deg));transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.lp img{width:100%;height:auto;filter:var(--drop)}
+.lp img.raw{aspect-ratio:4/5;object-fit:cover;border-radius:12px}
+.lp:active{transform:rotate(var(--r,0deg)) scale(.97)}
+.lp.dirty img{opacity:.5}
+.lp .tg{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%) rotate(calc(-1 * var(--r,0deg)));font:500 9px var(--mono);letter-spacing:.08em;
+  background:var(--text);color:var(--page);border-radius:5px;padding:3px 6px;white-space:nowrap}
+@keyframes rail-bob{0%,100%{translate:0 0}50%{translate:0 -4px}}
+.lay.bob .lp.on img{animation:rail-bob 4.6s ease-in-out var(--d,0s) infinite}
+@media (prefers-reduced-motion:reduce){.lay.bob .lp img{animation:none}}
+.legend{font-size:12.5px;line-height:1.45;color:var(--muted);margin-top:8px;text-align:center}
+/* the styling note, printed on a hang tag */
+.swing{position:relative;margin:14px 2px 0;padding:14px 16px 14px 40px;background:var(--surface);border-radius:8px 14px 14px 8px;box-shadow:var(--shadow);
+  clip-path:polygon(16px 0,100% 0,100% 100%,16px 100%,0 calc(100% - 14px),0 14px)}
+.swing::before{content:"";position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:99px;background:color-mix(in oklab,var(--fc) 10%,var(--page));box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.swing .k{margin-bottom:4px}
+.swing p{font-size:14px;line-height:1.42;color:var(--text)}
+.fit .actions{margin-top:14px;flex-wrap:nowrap}
+.fit .btn.round{background:color-mix(in srgb,var(--surface) 80%,transparent);border:0}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+.dots button{width:8px;height:8px;border-radius:99px;background:color-mix(in srgb,var(--text) 22%,transparent);transition:width .3s,background .3s;padding:0}
+.dots button[aria-current=true]{width:26px;background:var(--text)}
+.more{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:22px}
+
+/* tiles (Closet, Diary, sheets): the cut-out on a soft swatch of its own colour */
+.piece{position:relative}
+.tile{min-width:0}
+.tile .ph{position:relative;aspect-ratio:1/1.05;border-radius:18px;background:color-mix(in oklab,var(--fc) 14%,var(--raised));display:grid;place-items:center;overflow:hidden}
+.tile .ph img{width:80%;height:80%;object-fit:contain;filter:var(--drop);transition:transform .3s}
+.tile .ph img.raw{width:100%;height:100%;object-fit:cover;filter:none}
+.tile:hover .ph img{transform:translateY(-3px)}
+.tile .nm{font-size:12.5px;line-height:1.2;margin-top:7px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .cl{font:500 9.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.tile.dirty .ph img{opacity:.45}
+.tile.dirty .cl{color:var(--amber)}
+.tile .hp{position:absolute;left:8px;bottom:8px;font:500 9px var(--mono);letter-spacing:.08em;background:var(--text);color:var(--page);border-radius:5px;padding:3px 6px}
+.tile.hidden-item .ph img{filter:grayscale(1);opacity:.4}
+.piece .qty{position:absolute;top:8px;right:8px;z-index:2;min-width:26px;padding:3px 8px;border-radius:999px;background:var(--surface);color:var(--text);
+  font:500 11px/1.2 var(--mono);text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.piece .qty.low{background:var(--pop);color:var(--pop-ink)}
+.lp .qty{top:-6px;right:-10px}
 .piece button.hit{position:absolute;inset:0;z-index:3}
-.piece.hidden-item .ph img{filter:grayscale(1);opacity:.4}
-.piece.hidden-item .amb{display:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:16px 10px;margin-top:18px}
+.rail{display:flex;gap:10px;overflow-x:auto;margin:0 calc(-1 * var(--sx-gut,16px));padding:4px var(--sx-gut,16px) 8px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail .piece{flex:0 0 100px}
+.stepper{display:flex;align-items:center;gap:12px;margin-top:10px}
+.stepper b{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
 
-/* worn log */
-.stats{display:flex;gap:10px;margin-top:20px}
-.stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
-.stat b{display:block;font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
-.stat span{font-size:13px;color:var(--muted)}
-.entry{padding:18px 0;border-bottom:1px solid var(--line)}
+/* closet colour bar */
+.cbar{display:flex;height:16px;border-radius:99px;overflow:hidden;gap:2px;margin-top:16px}
+.cbar button{min-width:6px;padding:0;transition:opacity .2s}
+.cbar.sel button:not([aria-pressed=true]){opacity:.3}
+.cbar-k{display:flex;justify-content:space-between;margin-top:6px;gap:10px}
+.fab{position:fixed;right:calc(var(--sx-gut,16px) + 4px);bottom:calc(98px + var(--safe-b));z-index:19;width:60px;height:60px;border-radius:99px;background:var(--pop);color:var(--pop-ink);
+  display:grid;place-items:center;box-shadow:0 12px 26px color-mix(in srgb,var(--pop) 45%,transparent)}
+.fab svg{width:24px;height:24px}
+
+/* hamper */
+.pile{position:relative;height:250px;margin:6px calc(-1 * var(--sx-gut,16px)) 0}
+.pile img{position:absolute;filter:var(--drop)}
+.pile .none{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:15px}
+.alert{margin-top:6px;padding:16px;border-radius:20px;background:var(--text);color:var(--page);display:flex;gap:12px;align-items:flex-start}
+.alert svg{width:22px;height:22px;flex:none;color:#F3B06B;margin-top:1px}
+.alert b{display:block;font-size:15px}
+.alert span{font-size:13.5px;line-height:1.4;opacity:.8}
+.loads{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.load{background:var(--surface);border-radius:20px;padding:14px 14px 14px 16px;box-shadow:var(--shadow)}
+.load .top{display:flex;align-items:center;gap:12px}
+.load .sw{width:30px;height:30px;border-radius:9px;flex:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 14%,transparent)}
+.load .t{flex:1;min-width:0}
+.load .t b{display:block;font-size:15px}
+.load p{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.foot{text-align:center;margin-top:12px}
+
+/* diary */
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:40px;height:40px;border-radius:99px;background:color-mix(in srgb,var(--surface) 70%,transparent);display:grid;place-items:center}
+.cal-nav button[disabled]{opacity:.35;pointer-events:none}
+.cal-nav svg{width:18px;height:18px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:16px}
+.cal .wd{text-align:center;font:500 10px var(--mono);color:var(--muted);padding-bottom:2px}
+.cal .d{position:relative;aspect-ratio:1/1.04;border-radius:12px;background:color-mix(in srgb,var(--surface) 45%,transparent);display:grid;place-items:center;overflow:hidden;padding:0}
+.cal .d.has{background:color-mix(in oklab,var(--fc) 16%,var(--raised))}
+.cal .d img{width:74%;height:74%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2))}
+.cal .d i{position:absolute;left:5px;top:3px;font:500 9px var(--mono);font-style:normal;color:var(--muted)}
+.cal .d.today{box-shadow:inset 0 0 0 2px var(--text)}
+.cal .d.fut{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 12%,transparent)}
+.cal .d.pad{visibility:hidden}
+.repeat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.repeat .cl{text-align:center}
+.nudge{margin-top:18px;width:100%;text-align:left;padding:12px 14px;border-radius:20px;background:var(--surface);display:flex;align-items:center;gap:14px;box-shadow:var(--shadow)}
+.nudge .ph{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.nudge .ph img{width:44px;height:44px;object-fit:contain}
+.nudge b{display:block;font-size:14.5px;line-height:1.3}
+.nudge span{font-size:13px;color:var(--muted)}
+.nudge svg{width:18px;height:18px;flex:none;margin-left:auto}
+.entry{padding:16px 0;border-bottom:1px solid var(--line);scroll-margin-top:90px}
 .entry .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.entry h3{font-size:17px;font-weight:700}
-.entry .d{color:var(--muted);font-size:14px;white-space:nowrap}
+.entry h3{font-size:16px;font-weight:700}
+.entry .d{white-space:nowrap}
 .entry .strip{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
-.entry .strip img{width:62px;height:78px;object-fit:cover;border-radius:5px;flex:0 0 auto;background:var(--tile-bg)}
-.entry .strip .selfie{width:78px;height:104px;margin-right:4px}
+.entry .strip .sw{width:60px;height:66px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.entry .strip .sw img{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
+.entry .strip .selfie{width:66px;height:88px;object-fit:cover;border-radius:12px;margin-right:4px}
 .entry .fb{font-size:14px;margin-top:8px}
-.entry .fb.g{color:var(--sage)} .entry .fb.b{color:var(--amber)}
-.mini-list{margin-top:8px;color:var(--muted);font-size:14px}
+.entry .fb.b{color:var(--amber)}
+.mini-list{margin-top:8px;color:var(--muted);font-size:14px;line-height:1.5}
 
-/* tab bar */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;
-  background:color-mix(in srgb,var(--page) 90%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);
-  border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
-nav.tabs .in{display:flex;max-width:760px;width:100%}
-nav.tabs button{flex:1;padding:10px 0 12px;font-size:12px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
-nav.tabs button[aria-current=page]{color:var(--sage)}
-nav.tabs svg{width:24px;height:24px}
+/* tab bar: a floating pill */
+nav.tabs{position:fixed;left:0;right:0;bottom:calc(14px + var(--safe-b));z-index:20;display:flex;justify-content:center;padding:0 var(--sx-gut,16px);pointer-events:none}
+nav.tabs .in{display:flex;max-width:440px;width:100%;height:64px;border-radius:99px;background:#141414;padding:0 8px;pointer-events:auto;
+  box-shadow:0 14px 34px rgba(0,0,0,.28)}
+@media (prefers-color-scheme:dark){nav.tabs .in{background:#2E2D2B;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.06)}}
+nav.tabs button{flex:1;position:relative;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:color .2s}
+nav.tabs button[aria-current=page]{color:#fff}
+nav.tabs svg{width:22px;height:22px}
+nav.tabs .bdg{position:absolute;top:7px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--pop);color:var(--pop-ink);font:700 10px/18px var(--body)}
+nav.tabs .bdg:empty{display:none}
 
 /* bottom sheet */
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;opacity:0;transition:opacity .2s}
+.scrim{position:fixed;inset:0;background:rgba(10,10,10,.42);z-index:80;opacity:0;transition:opacity .2s}
 .scrim.on{opacity:1}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:81;max-height:92dvh;overflow:auto;background:var(--surface);
-  border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:10px 16px calc(20px + var(--safe-b));border:1px solid var(--line);border-bottom:0;box-shadow:0 -12px 40px -18px rgba(0,0,0,.4);
-  transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto}
+  border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:10px 20px calc(20px + var(--safe-b));box-shadow:0 -14px 44px -18px rgba(0,0,0,.45);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto;overscroll-behavior:contain}
 .sheet.on{transform:none}
-.sheet{overscroll-behavior:contain}
-.grab{touch-action:none}
-.picker .sel img{outline:3px solid var(--sage);outline-offset:-3px}
-.picker .sel::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--sage);color:var(--sage-ink);
-  font-size:13px;font-weight:700;display:grid;place-items:center}
-.picked{display:flex;gap:8px;overflow-x:auto;margin-top:14px;padding-bottom:4px;min-height:84px;align-items:flex-start}
-.picked button{flex:0 0 auto;position:relative;width:60px}
-.picked img{width:60px;height:75px;object-fit:cover;border-radius:6px;background:var(--tile-bg)}
-.picked button::after{content:"✕";position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--text);color:var(--surface);
-  font-size:10px;display:grid;place-items:center}
-.picked .hint{color:var(--muted);font-size:14px;align-self:center}
-.days{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
-.days input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:15px;color:var(--text)}
+.sheet .fit{flex:none;margin-top:16px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px;touch-action:none}
+.sheet h2{font-family:var(--display);font-weight:850;font-stretch:60%;text-transform:uppercase;font-size:40px;line-height:.9}
+.sheet .lead{color:var(--muted);font-size:14px;margin-top:6px}
+.sheet .filters .chip:not([aria-pressed=true]){background:var(--raised)}
 @media (prefers-reduced-motion:reduce){.sheet,.scrim{transition:none}}
-.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
-.sheet h2{font-size:26px;font-weight:600}
-.sheet .lead{color:var(--muted);font-size:14px;margin-top:4px}
-.rows{margin-top:16px}
-.prow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
-.prow img{width:52px;height:64px;object-fit:cover;border-radius:5px;background:var(--tile-bg)}
+.rows{margin-top:14px}
+.prow{display:flex;align-items:center;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+.prow:last-child{border-bottom:1px solid var(--line)}
+.prow .th{width:58px;height:58px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.prow .th img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
+.prow .th img.raw{width:58px;height:58px;object-fit:cover;border-radius:14px;filter:none}
 .prow .t{flex:1;min-width:0}
 .prow .t b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prow .t span{color:var(--muted);font-size:13px}
+.prow .t span{font:500 10.5px/1.35 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-top:2px}
 .prow .t .warn{color:var(--amber)}
-label.f{display:block;margin-top:16px;font-size:14px;color:var(--muted)}
-label.f input,label.f textarea,label.f select{display:block;width:100%;margin-top:6px;background:var(--surface);border:1px solid var(--line);
-  border-radius:10px;padding:11px 12px;font-size:16px;color:var(--text)}
-label.f textarea{min-height:64px;resize:vertical}
-.photo-pick{margin-top:16px;display:flex;gap:12px;align-items:center}
-.photo-pick img{width:72px;height:96px;object-fit:cover;border-radius:8px}
-.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:12px 8px;margin-top:14px}
+label.f{display:block;margin-top:14px;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+label.f input,label.f textarea,label.f select{display:block;width:100%;margin-top:6px;background:var(--raised);border:1px solid transparent;
+  border-radius:14px;padding:12px 14px;font:400 16px var(--body);letter-spacing:0;text-transform:none;color:var(--text)}
+label.f input:focus,label.f textarea:focus,label.f select:focus{outline:none;border-color:var(--text)}
+label.f textarea{min-height:60px;resize:vertical}
+.photo-pick{margin-top:14px;display:flex;gap:12px;align-items:center}
+.photo-pick img{width:72px;height:96px;object-fit:cover;border-radius:12px}
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px 8px;margin-top:14px}
 .picker button{text-align:left;position:relative}
-.picker img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;background:var(--tile-bg)}
-.picker span{display:block;font-size:12px;margin-top:4px;line-height:1.2}
-.picker .dirty img{opacity:.45;outline:2px dashed var(--amber);outline-offset:-2px}
+.picker .sw{aspect-ratio:1/1.05;border-radius:14px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.picker .sw img{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 4px 4px rgba(0,0,0,.18))}
+.picker .sw img.raw{width:100%;height:100%;object-fit:cover;border-radius:14px;filter:none}
+.picker span:not(.sw){display:block;font-size:12px;margin-top:5px;line-height:1.2}
+.picker .sel .sw{box-shadow:inset 0 0 0 2.5px var(--text)}
+.picker .sel::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--text);color:var(--page);font-size:13px;font-weight:700;display:grid;place-items:center}
+.picker .dirty .sw img{opacity:.45}
 .picker .dirty span{color:var(--amber)}
-.sheet-actions{display:flex;gap:10px;margin-top:22px;position:sticky;bottom:calc(-20px - var(--safe-b));
-  background:var(--surface);padding:12px 0 calc(8px + var(--safe-b))}
-.sheet-actions .btn{flex:1;padding:13px}
+.picked{display:flex;gap:8px;overflow-x:auto;margin-top:14px;padding:6px 0 4px;min-height:84px;align-items:flex-start}
+.picked button{flex:0 0 auto;position:relative;width:62px;height:66px;border-radius:12px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.picked img{width:80%;height:80%;object-fit:contain}
+.picked img.raw{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.picked button::after{content:"✕";position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--text);color:var(--surface);font-size:10px;display:grid;place-items:center}
+.picked .hint{color:var(--muted);font-size:14px;align-self:center}
+.days{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.days input[type=date]{background:var(--raised);border:0;border-radius:999px;min-height:36px;padding:0 12px;font-size:14px;color:var(--text)}
+.sheet-actions{display:flex;gap:10px;margin-top:20px;position:sticky;bottom:calc(-20px - var(--safe-b));background:var(--surface);padding:12px 0 calc(8px + var(--safe-b))}
+.sheet-actions .btn{flex:1;min-height:54px}
+.item-hero{display:flex;gap:16px;align-items:center}
+.item-hero .ph{width:120px;height:132px;border-radius:20px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.item-hero .ph img{width:84%;height:84%;object-fit:contain;filter:var(--drop)}
+.item-hero .ph img.raw{width:100%;height:100%;object-fit:cover;border-radius:20px;filter:none}
+.item-hero h2{font-size:34px}
 
-.toast{position:fixed;left:50%;bottom:calc(88px + var(--safe-b));transform:translateX(-50%);z-index:90;background:var(--text);
-  color:var(--page);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;
-  pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:90;background:var(--text);color:var(--page);padding:11px 18px;border-radius:999px;
+  font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.on{opacity:1}
 .err{color:var(--danger);font-size:14px;margin-top:10px}
-.settings p{color:var(--muted);font-size:15px;margin-top:8px;max-width:60ch}
+.settings p{color:var(--muted);font-size:15px;margin-top:10px;max-width:60ch}
 .settings code{background:var(--raised);padding:1px 5px;border-radius:4px;font-size:14px}
 .ver{color:var(--muted);font-size:13px;margin-top:28px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -725,10 +811,10 @@ label.f textarea{min-height:64px;resize:vertical}
 <main class="wrap" id="view" aria-live="polite"></main>
 
 <nav class="tabs" aria-label="Sections"><div class="in">
-  <button data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h18"/><path d="M7 7v-2a2 2 0 0 1 4 0c0 1.2-1 1.6-1 2"/><path d="M6 7l-2 11h6l1-6 1 6h6L16 7"/></svg>Today</button>
-  <button data-tab="closet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 6a2 2 0 1 1 2 2c-1 .3-2 1-2 2"/><path d="M12 10 3 16.5c-.8.6-.4 1.5.5 1.5h17c.9 0 1.3-.9.5-1.5L12 10"/></svg>Closet</button>
-  <button data-tab="worn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Worn</button>
-  <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
+  <button data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>Today</button>
+  <button data-tab="closet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6a2 2 0 1 1 2 2c-1 .3-2 1-2 2"/><path d="M12 10 3 16.5c-.8.6-.4 1.5.5 1.5h17c.9 0 1.3-.9.5-1.5L12 10"/></svg>Closet</button>
+  <button data-tab="hamper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8h15l-1.6 12.2a1 1 0 0 1-1 .8H7.1a1 1 0 0 1-1-.8z"/><path d="M8 8a4 4 0 0 1 8 0"/></svg>Hamper<span class="bdg" id="hbdg"></span></button>
+  <button data-tab="worn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M9 2.5v4M15 2.5v4"/></svg>Diary</button>
 </div></nav>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -738,7 +824,7 @@ label.f textarea{min-height:64px;resize:vertical}
 <script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.24-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.24-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -993,112 +1079,294 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet
   sh.addEventListener("touchend", end); sh.addEventListener("touchcancel", end);
 })();
 
-// Stagger the bob so cards in a row never move in step (seconds into the 4.2s loop).
+/* ---------------- colour: every piece gets a swatch from the words in its colour ---------------- */
+const COLOURS = [["light denim","#A7B8CC"],["light blue","#A9C4DE"],["dark brown","#4A3325"],["dark charcoal","#2E2F31"],["dark grey","#4A4B4E"],
+  ["forest green","#2F5B3F"],["heather grey","#A3A5A6"],["off-white","#EFEDE6"],["navy black","#1A2030"],["black","#1B1B1B"],["white","#F4F4F1"],
+  ["cream","#E9E1CF"],["oatmeal","#DCCFB8"],["beige","#CDBB9A"],["khaki","#B9A57E"],["tan","#C29A6B"],["camel","#B88A55"],["brown","#6B4A33"],
+  ["rust","#9A4A2A"],["orange","#E07A2E"],["red","#B33A2E"],["burgundy","#6E2233"],["navy","#1F2A44"],["royal","#2C4DA0"],["blue","#3B5C9A"],
+  ["denim","#7C93B0"],["forest","#2F5B3F"],["olive","#56603A"],["sage","#9CB09A"],["mint","#A8D5C2"],["teal","#4F8C88"],["green","#3F7A4A"],
+  ["charcoal","#3A3B3D"],["heather","#A3A5A6"],["grey","#8A8D90"],["gray","#8A8D90"],["lilac","#B9A6E0"],["purple","#6B4E9A"],["pink","#E3A5B8"],
+  ["yellow","#E8C547"],["gold","#C9A045"]];
+function colourOf(str) {   // the earliest colour word wins ("white / green" is white); a longer phrase beats its own last word
+  const s = String(str || "").toLowerCase(); let best = null, at = 1e9;
+  for (const [k, h] of COLOURS) { const i = s.indexOf(k); if (i >= 0 && (i < at || (i === at && k.length > best[0].length))) { at = i; best = [k, h]; } }
+  return best ? {name: best[0], hex: best[1]} : {name: "other", hex: "#9A9790"};
+}
+const rgbOf = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const lum = h => { const [r, g, b] = rgbOf(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+const chroma = h => { const c = rgbOf(h); return Math.max(...c) - Math.min(...c); };
+const fcOf = code => colourOf(item(code)?.colour).hex;
+const isCut = p => !!p && p.startsWith("tiles/");
+const rawCls = p => isCut(p) ? "" : "raw";
+const TORSO_RANK = {outerwear:0, knit:1, hoodie:1, crewneck:1, collared:2, tee:3};
+const torso = codes => codes.filter(c => ["layer", "top"].includes(item(c)?.slot))
+  .sort((a, b) => ((item(a).slot === "layer" ? -10 : 0) + (TORSO_RANK[item(a).type] ?? 2)) - ((item(b).slot === "layer" ? -10 : 0) + (TORSO_RANK[item(b).type] ?? 2)));
+// A look's colour: the first piece with real colour (outer layer first), else whatever it's mostly made of.
+function leadOf(codes) {
+  const order = [...torso(codes), ...codes.filter(c => item(c)?.slot === "bottom")].map(fcOf);
+  return order.find(h => chroma(h) > 30 && lum(h) < .75) || order[0] || "#8A8780";
+}
+const fcStyle = codes => { const h = leadOf(codes); return `--fc:${h};--fcmix:${lum(h) > .45 ? "0%" : "75%"}`; };
+const ICON = {
+  gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+  pen: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  prev: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>`,
+  next: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`,
+};
+const GEAR = `<button class="gear" data-tab="settings" aria-label="Settings">${ICON.gear}</button>`;
+
+// Stagger the bob so pieces never move in step (seconds into the loop).
 const BOB_DELAYS = [0, -1.1, -2.3, -3.2, -0.6, -1.7, -2.8, -3.7];
-function pieceHtml(code, {extra = "", i = 0} = {}) {
+function qtyHtml(code) {
+  const pool = poolSize(code); if (!pool) return "";
+  const clean = pairsClean(code);
+  return `<span class="qty${clean <= Math.ceil(pool * .15) ? " low" : ""}" title="${clean} of ${pool} pairs clean">×${clean}</span>`;
+}
+// A tile: the cut-out on a soft swatch of its own colour (Closet, Diary, rails).
+function pieceHtml(code, {extra = ""} = {}) {
   const it = item(code);
-  if (!it) return `<div class="piece"><div class="stage"><div class="ph"></div></div><div class="nm">Unknown ${esc(code)}</div></div>`;
+  if (!it) return `<div class="piece tile"><div class="ph"></div><div class="nm">Unknown piece</div></div>`;
   const dirty = isDirty(code), pool = poolSize(code), clean = pool ? pairsClean(code) : 0;
-  return `<div class="piece${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}" style="--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${extra}
-    ${pool ? `<span class="qty${clean <= Math.ceil(pool * .15) ? " low" : ""}" title="${clean} of ${pool} pairs clean">×${clean}</span>` : ""}
-    <div class="stage"><div class="amb" aria-hidden="true">${img(it.photo, "")}</div><div class="ph">${img(it.photo, it.name)}</div></div>
-    <div class="nm">${esc(it.name)}</div><div class="cl">${pool ? `${clean} of ${pool} pairs clean` : dirty ? "In the hamper" : esc(it.colour)}${it.uncalibrated && !dirty ? " ⚠" : ""}</div></div>`;
+  return `<div class="piece tile${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}" style="--fc:${fcOf(code)}">${extra}${qtyHtml(code)}
+    <div class="ph">${img(it.photo, it.name, rawCls(it.photo))}${dirty && !pool ? `<span class="hp">HAMPER</span>` : ""}</div>
+    <div class="nm">${esc(it.name)}</div><div class="cl">${pool ? `${clean} of ${pool} pairs clean` : dirty ? "In the hamper" : esc(it.colour)}${it.avoid ? " · hidden" : ""}</div></div>`;
 }
 
-// Only cards on screen bob: an observer toggles .on, so off-screen rails cost nothing.
+/* A flat lay: pieces placed like a styled product shot. Outer layer in front, what's under it peeking out,
+   pants to the right, shoes and socks low, cap up top. Positions are % of a square-ish stage. */
+const LAY = {
+  torso: [{l:3,t:15,w:58,r:-4,z:3}, {l:30,t:4,w:46,r:6,z:1}, {l:0,t:38,w:40,r:-11,z:0}],
+  bottom: [{l:55,t:31,w:42,r:3,z:2}], shoes: [{l:5,t:57,w:29,r:-7,z:4}], socks: [{l:37,t:67,w:10,r:12,z:4}], cap: [{l:1,t:0,w:24,r:-10,z:5}],
+  extra: [{l:66,t:2,w:24,r:8,z:2}, {l:70,t:72,w:24,r:-6,z:4}, {l:46,t:82,w:20,r:5,z:4}, {l:84,t:44,w:16,r:-8,z:4}, {l:22,t:84,w:18,r:9,z:4}],
+};
+function layHtml(codes, {bob = true} = {}) {
+  const known = codes.filter(c => item(c)), placed = [], used = {torso:0, bottom:0, shoes:0, socks:0, cap:0, extra:0};
+  const take = (k, c) => { const spot = LAY[k][used[k]]; if (spot) { used[k]++; placed.push([c, spot]); return true; } return false; };
+  const rest = [];
+  torso(known).forEach(c => take("torso", c) || rest.push(c));
+  known.filter(c => !["layer", "top"].includes(item(c).slot)).forEach(c => {
+    const s = item(c).slot; if (!(LAY[s] && take(s, c))) rest.push(c);
+  });
+  rest.forEach((c, i) => take("extra", c) || placed.push([c, {l: 4 + (i % 5) * 19, t: 88, w: 14, r: 0, z: 6}]));
+  return `<div class="lay${bob ? " bob" : ""}">${placed.map(([c, p], i) => {
+    const it = item(c), dirty = isDirty(c), pool = poolSize(c);
+    return `<button class="piece lp${dirty ? " dirty" : ""}" data-sx-key="${esc(c)}" data-act="item" data-code="${esc(c)}" aria-label="${esc(it.name)}"
+      style="left:${p.l}%;top:${p.t}%;width:${p.w}%;z-index:${p.z};--r:${p.r}deg;--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${img(it.photo, "", rawCls(it.photo))}${qtyHtml(c)}${dirty && !pool ? `<span class="tg">HAMPER</span>` : ""}</button>`;
+  }).join("")}</div><p class="legend">${bySlot(known).map(c => esc(item(c).name)).join(" · ")}</p>`;
+}
+// One look on its studio set. Shared by Today and Suggest fits.
+function lookHtml({n, total, name, when, note, noteLabel = "Styling note", codes, acts, bob = true}) {
+  return `<article class="fit" style="${fcStyle(codes)}"><div class="fit-head"><h2>${esc(name)}</h2>
+      ${total ? `<div class="cnt"><span class="k">Look</span><b>${n}<i>/${total}</i></b></div>` : ""}</div>
+    ${when ? `<p class="k when">${esc(when)}</p>` : ""}
+    ${layHtml(codes, {bob})}
+    ${note ? `<div class="swing"><p class="k">${esc(noteLabel)}</p><p>${esc(note)}</p></div>` : ""}
+    <div class="actions">${acts}</div></article>`;
+}
+
+// Only pieces on screen bob: an observer toggles .on, so off-screen looks cost nothing.
 // With Reduce Motion on, nothing is observed and nothing moves.
 const bobMotion = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
 let bobIO = null;
 function watchBob() {
   if (bobIO) { bobIO.disconnect(); bobIO = null; }
   if ((bobMotion && bobMotion.matches) || !("IntersectionObserver" in window)) return;
-  const cards = document.querySelectorAll(".rail.bob .piece");
+  const cards = document.querySelectorAll(".lay.bob .lp");
   if (!cards.length) return;
   bobIO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("on", e.isIntersecting)), {rootMargin: "40px"});
   cards.forEach(c => bobIO.observe(c));
 }
 if (bobMotion && bobMotion.addEventListener) bobMotion.addEventListener("change", () => {
-  if (bobMotion.matches) document.querySelectorAll(".rail.bob .piece.on").forEach(c => c.classList.remove("on"));
+  if (bobMotion.matches) document.querySelectorAll(".lay.bob .lp.on").forEach(c => c.classList.remove("on"));
   watchBob();
 });
 
 /* ---------------- views ---------------- */
+let lookIdx = 0;
 function render() {
   if (!configured() && tab !== "settings") tab = "settings";
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
+  const bd = $("#hbdg"); if (bd) bd.textContent = S.log ? (hamperCount() || "") : "";
   const v = $("#view");
-  v.innerHTML = ({today:viewToday, closet:viewCloset, worn:viewWorn, settings:viewSettings}[tab])();
+  v.innerHTML = ({today:viewToday, closet:viewCloset, hamper:viewHamper, worn:viewWorn, settings:viewSettings}[tab])();
+  if (tab === "today") mountLooks();
   watchBob();
   setSync();
 }
+// The looks slide sideways; the dots follow, and a redraw (after a sync) keeps you on the look you were on.
+function mountLooks() {
+  const row = $("#looks"); if (!row) return;
+  const slides = [...row.children];
+  lookIdx = Math.min(lookIdx, slides.length - 1);
+  if (lookIdx > 0) row.scrollLeft = slides[lookIdx].offsetLeft - slides[0].offsetLeft;
+  const mark = () => document.querySelectorAll(".dots button").forEach((b, i) => b.setAttribute("aria-current", String(i === lookIdx)));
+  mark();
+  row.addEventListener("scroll", () => {
+    const x = row.scrollLeft, w = slides[1] ? slides[1].offsetLeft - slides[0].offsetLeft : 1;
+    const i = Math.max(0, Math.min(slides.length - 1, Math.round(x / w)));
+    if (i !== lookIdx) { lookIdx = i; mark(); }
+  }, {passive: true});
+}
+function goLook(i) {
+  const row = $("#looks"); if (!row) return;
+  const slides = [...row.children]; lookIdx = i;
+  row.scrollTo({left: slides[i].offsetLeft - slides[0].offsetLeft, behavior: bobMotion && bobMotion.matches ? "auto" : "smooth"});
+  document.querySelectorAll(".dots button").forEach((b, k) => b.setAttribute("aria-current", String(k === i)));
+}
 
-function mast(title, sub) {
-  return `<header class="mast"><div class="row"><h1>${esc(title)}</h1><span id="sync" class="sync"></span></div>${sub ? `<p class="sub">${esc(sub)}</p>` : ""}</header>`;
+function mast(kicker, title, {sub = "", count = null} = {}) {
+  return `<header class="mast"><div class="row"><span class="k">${esc(kicker)}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+    <div class="big"><h1>${esc(title)}</h1>${count != null ? `<span class="n">${count}</span>` : ""}</div>${sub ? `<p class="sub">${esc(sub)}</p>` : ""}</header>`;
+}
+function wxChips(sub) {   // "Provo: 50°F high / 32°F low · sunny · Chem 11" → PROVO 50° / 32° · SUNNY · CHEM 11
+  if (!sub) return "";
+  const m = /^([^:·]{2,30}):\s*/.exec(sub), place = m ? m[1] : "";
+  const parts = (m ? sub.slice(m[0].length) : sub).replace(/°F high \/ /, "° / ").replace(/°F low/, "°").split(/\s*·\s*/).filter(Boolean);
+  if (place && parts.length) parts[0] = place + " " + parts[0];
+  return `<div class="wx">${parts.map(p => `<span>${esc(p)}</span>`).join("")}</div>`;
 }
 
 function viewToday() {
   const d = new Date(), plan = todayPlan(), worn = wornOn(todayStr());
-  const title = d.toLocaleDateString("en-US", {weekday:"long"}) + ", " + d.toLocaleDateString("en-US", {month:"short", day:"numeric"});
+  const date = d.toLocaleDateString("en-US", {weekday:"short"}) + " · " + d.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
   const hn = hamperCount();
-  let out = mast(title, plan ? plan.subtitle.replace(/^Provo:\s*/, "") : "");
-  out += `<div class="hamper"><span class="grow">${hn ? `<b>${hn}</b> in the hamper` : "Hamper's empty"}</span>
-    ${hn ? `<button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
-  if (worn.length) {
-    out += `<p class="worn-badge">✓ Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
-  }
-  if (!S.log) out += `<div class="empty"><h3>Loading your closet</h3>Pulling your data from GitHub.</div>`;
-  else if (!plan) {
+  let out = `<header class="mast"><div class="row"><span class="k">${esc(date)}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+    ${plan ? wxChips(plan.subtitle) : ""}</header>`;
+  out += `<div class="hamper"><span class="grow"><span class="dotp${hn ? "" : " ok"}" aria-hidden="true"></span>${hn ? `<span><b>${hn}</b> in the hamper</span>` : "Hamper's empty"}</span>
+    ${hn ? `<button class="btn small ghost" data-tab="hamper">Open</button><button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
+  if (worn.length) out += `<p class="worn-badge" style="margin-top:12px">${ICON.check} Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
+  if (!S.log) return out + `<div class="empty"><h3>Loading your closet</h3>Pulling your data from GitHub.</div>`;
+  if (!plan) {
     const last = (S.log.planned || [])[0];
-    out += `<div class="empty"><h3>No sheet for today yet</h3>The morning sheet lands at 6:59am.${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
+    return out + `<div class="empty"><h3>No looks yet today</h3>The morning sheet lands at 6:59am.${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
       <div class="actions"><button class="btn primary" data-act="suggest">Suggest fits</button><button class="btn ghost" data-act="log-own">Build my own fit</button></div></div>`;
-  } else {
-    plan.fits.forEach(f => {
-      const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
-      out += `<article class="fit"><div class="fit-head"><h2><span class="n">${f.n}</span>${esc(f.name)}</h2><span class="when">${esc(f.when)}</span></div>
-        <div class="rail bob">${f.items.map((c, i) => pieceHtml(c, {i})).join("")}</div>
-        ${f.note ? `<p class="note">${esc(f.note)}</p>` : ""}
-        <div class="actions">${isWorn ? `<span class="worn-badge">✓ Wearing this</span><button class="btn small ghost" data-act="wear" data-n="${f.n}">Edit</button>`
-          : `<button class="btn primary" data-act="wear" data-n="${f.n}">Wore this</button>`}
-          <button class="btn ghost" data-act="tweak" data-n="${f.n}">Tweak in Claude</button></div></article>`;
-    });
-    out += `<div class="actions" style="margin-top:28px"><button class="btn ghost" data-act="suggest">Suggest more fits</button><button class="btn ghost" data-act="log-own">Wore something else? Build it</button></div>`;
   }
+  const total = plan.fits.length;
+  out += `<div class="looks" id="looks">${plan.fits.map(f => {
+    const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
+    const acts = (isWorn ? `<button class="btn big" data-act="wear" data-n="${f.n}">${ICON.check} Logged · Edit</button>`
+      : `<button class="btn primary big" data-act="wear" data-n="${f.n}">${ICON.check} Wearing this</button>`)
+      + `<button class="btn round" data-act="tweak" data-n="${f.n}" aria-label="Tweak in Claude" title="Tweak in Claude">${ICON.pen}</button>`;
+    return lookHtml({n: f.n, total, name: f.name, when: f.when, note: f.note, codes: f.items, acts});
+  }).join("")}</div>`;
+  if (total > 1) out += `<div class="dots" role="group" aria-label="Looks">${plan.fits.map((f, i) => `<button data-look="${i}" aria-label="Look ${i + 1}: ${esc(f.name)}" aria-current="${i === lookIdx}"></button>`).join("")}</div>`;
+  out += `<div class="more"><button class="btn ghost" data-act="suggest">Suggest more fits</button><button class="btn ghost" data-act="log-own">Wore something else? Build it</button></div>`;
   return out;
 }
 
 let closetFilter = "all";
+function colourGroups(list) {
+  const m = new Map();
+  list.forEach(i => { const c = colourOf(i.colour), g = m.get(c.hex) || {hex: c.hex, name: c.name, n: 0}; g.n++; m.set(c.hex, g); });
+  return [...m.values()].sort((a, b) => b.n - a.n);
+}
 function viewCloset() {
-  const all = items();
-  const list = closetFilter === "all" ? all : closetFilter === "hamper" ? inHamperList() : all.filter(i => i.slot === closetFilter);
-  const chips = [["all", `All ${all.length}`], ...SLOTS, ["hamper", `Hamper ${inHamperList().length}`]];
-  return mast("Closet", `${all.filter(i => !i.avoid).length} pieces in rotation`) +
-    `<div class="actions"><button class="btn primary" data-act="add-item">Add a piece</button></div>
+  const all = items(), hl = inHamperList();
+  const list = closetFilter === "all" ? all : closetFilter === "hamper" ? hl
+    : closetFilter.startsWith("#") ? all.filter(i => colourOf(i.colour).hex === closetFilter) : all.filter(i => i.slot === closetFilter);
+  const groups = colourGroups(all.filter(i => !i.avoid)), byC = closetFilter.startsWith("#");
+  const named = groups.slice(0, 3).map(g => g.name);
+  const chips = [["all", `All ${all.length}`], ...SLOTS, ["hamper", `Hamper ${hl.length}`]];
+  return mast("Your", "Closet", {count: null}) +
+    `<p class="k" style="margin-top:8px">${all.filter(i => !i.avoid).length} pieces in rotation · ${hl.length} in the hamper</p>
+    <div class="cbar${byC ? " sel" : ""}" role="group" aria-label="Filter by colour">${groups.map(g => `<button data-filter="${g.hex}" aria-pressed="${closetFilter === g.hex}"
+      aria-label="${esc(g.name)}: ${g.n}" title="${esc(g.name)} · ${g.n}" style="flex:${g.n};background:${g.hex}${lum(g.hex) > .75 ? ";box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)" : ""}"></button>`).join("")}</div>
+    <div class="cbar-k"><span class="k">${byC ? `Showing ${esc(colourOf(list[0]?.colour).name)}` : `Mostly ${esc(named.slice(0, -1).join(", "))}${named.length > 1 ? " + " : ""}${esc(named[named.length - 1] || "")}`}</span><span class="k">${groups.length} colours</span></div>
     <div class="filters" role="group" aria-label="Filter">${chips.map(([k, l]) => `<button class="chip" aria-pressed="${closetFilter === k}" data-filter="${k}">${esc(l)}</button>`).join("")}</div>
-    <div class="grid">${list.map(i => pieceHtml(i.code, {extra:`<button class="hit" data-act="item" data-code="${i.code}" aria-label="${esc(i.name)}"></button>`})).join("") || `<p class="mini-list">Nothing here.</p>`}</div>`;
+    <div class="grid">${list.map(i => pieceHtml(i.code, {extra:`<button class="hit" data-act="item" data-code="${i.code}" aria-label="${esc(i.name)}"></button>`})).join("") || `<p class="mini-list">Nothing here.</p>`}</div>
+    <button class="fab" data-act="add-item" aria-label="Add a piece">${ICON.plus}</button>`;
 }
 
+/* ---------------- hamper ---------------- */
+const hashOf = s => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+const PILE = [[6,40,34],[52,22,34],[28,70,36],[60,96,30],[3,128,36],[40,140,30],[72,8,24],[22,4,26],[76,150,22],[46,180,24],[12,190,24],[64,184,22]];
+const PILE_FEW = [[12,34,42],[50,52,38],[30,96,36]];   // a small pile sits in the middle instead of spread out
+const LOADS = [["darks", "Darks", "#1B1B1B"], ["colours", "Colours", "#C9442A"], ["lights", "Lights", "#F4F4F1"]];
+function loadOf(it) { const h = colourOf(it.colour).hex, L = lum(h), C = chroma(h); return L > .35 ? "lights" : C > 60 && L > .07 ? "colours" : "darks"; }
+const daysSince = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 864e5) : null;
+function viewHamper() {
+  const list = inHamperList(), hn = hamperCount(), all = items();
+  const spots = list.length <= 3 ? PILE_FEW : PILE;
+  const pile = list.slice(0, spots.length).map((it, i) => {
+    const h = hashOf(it.code), [l, t, w] = spots[i], small = ["socks", "cap"].includes(it.slot);
+    return `<img src="${esc(photoSrc(it.photo))}" data-p="${esc(it.photo)}" alt="" class="${rawCls(it.photo)}" style="left:${l}%;top:${t}px;width:${small ? w * .45 : w}%;transform:rotate(${(h % 51) - 25}deg)${isCut(it.photo) ? "" : ";border-radius:12px"}">`;
+  }).join("");
+  const tees = all.filter(i => i.type === "tee" && !i.avoid && !isDirty(i.code)).length, since = daysSince(S.laundry?.last_full);
+  let alert = "";
+  if (hn && tees <= 2) alert = [`Do a load soon`, `You're down to ${tees} clean tee${tees === 1 ? "" : "s"}.`];
+  else if (hn && since != null && since >= 10) alert = [`It's been ${since} days since a full wash`, `${hn} piece${hn === 1 ? " is" : "s are"} waiting.`];
+  const loads = LOADS.map(([k, label, sw]) => {
+    const inLoad = list.filter(it => loadOf(it) === k); if (!inLoad.length) return "";
+    const n = inLoad.reduce((s, it) => s + (poolSize(it.code) ? pairsUsed(it.code) : 1), 0);
+    return `<div class="load"><div class="top"><span class="sw" style="background:${sw}" aria-hidden="true"></span>
+      <div class="t"><b>${label}</b><span class="k">${n} piece${n === 1 ? "" : "s"}</span></div>
+      <button class="btn small" data-act="wash-load" data-codes="${inLoad.map(i => i.code).join(",")}">Washed</button></div>
+      <p>${inLoad.map(it => esc(it.name) + (poolSize(it.code) ? ` ×${pairsUsed(it.code)}` : "")).join(", ")}</p></div>`;
+  }).join("");
+  const clean = all.filter(i => !isDirty(i.code)).length;
+  return mast("Laundry", "Hamper", {count: hn}) +
+    `<div class="pile" aria-hidden="true">${pile || `<p class="none">Nothing in the hamper. Everything's clean.</p>`}</div>
+    ${alert ? `<div class="alert">${ICON.clock}<div><b>${esc(alert[0])}</b><span>${esc(alert[1])}</span></div></div>` : ""}
+    <div class="loads">${loads}</div>
+    ${hn ? `<div class="actions"><button class="btn primary big" data-act="laundry" data-label="Did all the laundry">Did all the laundry</button></div>` : ""}
+    <p class="k foot">${clean} clean${since != null ? ` · last full wash ${since === 0 ? "today" : since === 1 ? "yesterday" : since + " days ago"}` : ""}</p>`;
+}
+
+/* ---------------- diary ---------------- */
+let diaryOff = 0;
 function viewWorn() {
-  const worn = S.log?.worn || [];
+  const worn = S.log?.worn || [], today = todayStr();
+  const base = new Date(); base.setDate(1); base.setMonth(base.getMonth() - diaryOff);
+  const y = base.getFullYear(), m = base.getMonth(), ym = `${y}-${String(m + 1).padStart(2, "0")}`;
+  const inMonth = worn.filter(x => x.date.startsWith(ym)), byDay = {};
+  inMonth.forEach(x => (byDay[x.date] = byDay[x.date] || []).push(x));
+  const earliest = worn.reduce((a, x) => x.date < a ? x.date : a, today).slice(0, 7);
+  const pad = new Date(y, m, 1).getDay(), nd = new Date(y, m + 1, 0).getDate();
+  const leadPiece = x => torso(x.items.filter(c => item(c)))[0] || x.items.find(c => item(c));
+  let cells = ["S","M","T","W","T","F","S"].map(w => `<span class="wd" aria-hidden="true">${w}</span>`).join("") + `<span class="d pad"></span>`.repeat(pad);
+  for (let dd = 1; dd <= nd; dd++) {
+    const ds = `${ym}-${String(dd).padStart(2, "0")}`, es = byDay[ds], cls = ds === today ? " today" : ds > today ? " fut" : "";
+    if (es) {
+      const c = leadPiece(es[0]), it = item(c);
+      cells += `<button class="d has${cls}" data-act="day" data-d="${ds}" style="--fc:${fcOf(c)}" aria-label="${esc(new Date(ds + "T12:00").toLocaleDateString("en-US", {month:"long", day:"numeric"}))}: ${esc(es.map(e => e.name).join(", "))}"><i>${dd}</i>${it ? img(it.photo, "", rawCls(it.photo)) : ""}</button>`;
+    } else cells += `<span class="d${cls}"><i>${dd}</i></span>`;
+  }
+  const counts = {}; (inMonth.length ? inMonth : worn).forEach(x => x.items.forEach(c => counts[c] = (counts[c] || 0) + 1));
+  const top = Object.entries(counts).filter(([c]) => item(c)).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const since = new Date(Date.now() - 30 * 864e5).toLocaleDateString("en-CA");
   const recent = new Set(worn.filter(x => x.date >= since).flatMap(x => x.items));
-  const idle = items().filter(i => !i.avoid && !recent.has(i.code));
-  const counts = {}; worn.forEach(x => x.items.forEach(c => counts[c] = (counts[c] || 0) + 1));
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  let out = mast("Worn", "") + `<div class="actions"><button class="btn primary" data-act="log-own">Log a fit</button></div><div class="stats"><div class="stat"><b>${worn.length}</b><span>fits logged</span></div>
-    <div class="stat"><b>${idle.length}</b><span>pieces not worn in 30 days</span></div></div>`;
-  if (top.length) out += `<h2 class="sect">Most worn</h2><div class="rail bob">${top.map(([c], i) => pieceHtml(c, {i})).join("")}</div>`;
-  out += `<h2 class="sect">Every fit</h2>`;
-  if (!worn.length) out += `<div class="empty"><h3>Nothing logged yet</h3>Tap “Wore this” on today's sheet and it shows up here.</div>`;
-  out += worn.map(x => `<div class="entry"><div class="top"><h3>${esc(x.name)}</h3><span class="d">${new Date(x.date + "T12:00").toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"})}</span></div>
-    <div class="strip">${x.photo ? img(x.photo, "Mirror pic", "selfie") : ""}${x.items.map(c => item(c) ? img(item(c).photo, item(c).name) : "").join("")}</div>
+  const idle = items().filter(i => !i.avoid && !recent.has(i.code) && !["socks"].includes(i.slot));
+  const pickIdle = idle.length ? idle[Math.floor(Date.now() / 864e5) % idle.length] : null;
+  const monthName = base.toLocaleDateString("en-US", {month:"long"});
+  const seen = new Set();
+  let out = `<header class="mast"><div class="row"><span class="k">Diary · ${y}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+    <div class="big"><h1>${esc(monthName)}</h1><div style="text-align:right;padding-bottom:4px"><span class="n" style="font-size:44px;color:var(--text)">${inMonth.length}</span><p class="k">fits logged</p></div></div></header>
+    <div class="actions" style="justify-content:space-between"><button class="btn small" data-act="log-own">${ICON.plus} Log a fit</button>
+      <div class="cal-nav"><button data-act="month" data-m="1" aria-label="Previous month" ${ym <= earliest ? "disabled" : ""}>${ICON.prev}</button><button data-act="month" data-m="-1" aria-label="Next month" ${diaryOff ? "" : "disabled"}>${ICON.next}</button></div></div>
+    <div class="cal">${cells}</div>`;
+  if (top.length) out += `<h2 class="sect">On repeat <span class="k">${inMonth.length ? "This month" : "All time"}</span></h2>
+    <div class="repeat">${top.map(([c, n]) => `<div class="piece tile" style="--fc:${fcOf(c)}"><button class="hit" data-act="item" data-code="${c}" aria-label="${esc(item(c).name)}, worn ${n} times"></button>
+      <div class="ph">${img(item(c).photo, "", rawCls(item(c).photo))}</div><div class="cl">${n}×</div></div>`).join("")}</div>`;
+  if (pickIdle) out += `<button class="nudge" data-act="build-with" data-code="${pickIdle.code}" style="--fc:${fcOf(pickIdle.code)}"><span class="ph">${img(pickIdle.photo, "", rawCls(pickIdle.photo))}</span>
+    <span><b>${esc(pickIdle.name)} hasn't been out in 30+ days</b><span>Build a fit around it?</span></span>${ICON.next}</button>`;
+  out += `<h2 class="sect">${esc(monthName)} fits</h2>`;
+  if (!inMonth.length) out += `<div class="empty"><h3>Nothing logged</h3>${diaryOff ? "No fits this month." : "Tap “Wearing this” on a look and it shows up here."}</div>`;
+  out += inMonth.map(x => {
+    const id = seen.has(x.date) ? "" : (seen.add(x.date), ` id="e-${x.date}"`);
+    return `<div class="entry"${id}><div class="top"><h3>${esc(x.name)}</h3><span class="k d">${esc(new Date(x.date + "T12:00").toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"}))}</span></div>
+    <div class="strip">${x.photo ? img(x.photo, "Mirror pic", "selfie") : ""}${bySlot(x.items).map(c => item(c) ? `<span class="sw" style="--fc:${fcOf(c)}">${img(item(c).photo, item(c).name, rawCls(item(c).photo))}</span>` : "").join("")}</div>
     ${x.worked ? `<p class="fb g">+ ${esc(x.worked)}</p>` : ""}${x.didnt ? `<p class="fb b">− ${esc(x.didnt)}</p>` : ""}
-    ${(x.uncatalogued || []).length ? `<p class="mini-list">Also: ${x.uncatalogued.map(u => esc(u.name)).join(", ")}</p>` : ""}</div>`).join("");
-  if (idle.length) out += `<h2 class="sect">Not worn in 30 days</h2><p class="mini-list">${idle.map(i => esc(i.name)).join(" · ")}</p>`;
+    ${(x.uncatalogued || []).length ? `<p class="mini-list">Also: ${x.uncatalogued.map(u => esc(u.name)).join(", ")}</p>` : ""}</div>`;
+  }).join("");
+  if (idle.length > 1) out += `<h2 class="sect">Not worn in 30 days <span class="k">${idle.length}</span></h2><p class="mini-list">${idle.map(i => esc(i.name)).join(" · ")}</p>`;
   return out;
 }
 
 function viewSettings() {
-  return mast("Settings", "") + `<div class="settings">
+  return mast("The Rail", "Settings") + `<div class="settings">
     <p>Your closet, fit log and mirror pics live in your private GitHub repo. This phone needs a fine-grained token with <code>Contents: Read and write</code> on that repo only. It's stored on this device and sent only to GitHub.</p>
     <label class="f">GitHub owner<input id="s-owner" value="${esc(cfg.owner)}" autocapitalize="off" autocorrect="off"></label>
     <label class="f">Data repo<input id="s-repo" value="${esc(cfg.repo)}" autocapitalize="off" autocorrect="off"></label>
@@ -1110,14 +1378,25 @@ function viewSettings() {
 }
 
 /* ---------------- flows ---------------- */
+// What the wear sheet says under each piece: how close it is to the hamper once this wear counts.
+function wearNote(c, logged) {
+  const it = item(c); if (!it) return {t: "", warn: false};
+  const pool = poolSize(c);
+  if (pool) return {t: `${it.colour} · ${pairsClean(c)} of ${pool} pairs clean`, warn: false};
+  if (isDirty(c) && !logged) return {t: `${it.colour} · in the hamper`, warn: true};
+  const lim = (S.laundry?.wash_after || {})[it.type] || 0;
+  if (!lim) return {t: it.colour, warn: false};
+  const left = lim - wearsSinceWash(c) - (logged ? 0 : 1);
+  return {t: `${it.colour} · ${left <= 0 ? "hamper after this" : `${left} more wear${left === 1 ? "" : "s"} before a wash`}`, warn: left <= 0};
+}
 function wearSheet({date, name, when, items: codes, n, weather, kind}) {
   const existing = wornOn(date).find(w => n ? w.from_plan === `${date}#${n}` : w.name === name);
   const st = {items:[...(existing?.items || codes)], name: existing?.name || name, photo:null, photoUrl: existing?.photo ? photoSrc(existing.photo) : ""};
   const paint = sh => {
-    sh.innerHTML = `<div class="grab"></div><h2>${n ? "Wore this" : "Log a fit"}</h2><p class="lead">${date !== todayStr() ? `For ${dayName(date)}. ` : ""}Swap anything you changed. It all counts toward the hamper.</p>
+    sh.innerHTML = `<div class="grab"></div><h2>${n ? "Wearing it" : "Log a fit"}</h2><p class="lead">${date !== todayStr() ? `For ${dayName(date)}. ` : ""}Swap anything that's different. Each piece counts toward the hamper.</p>
       ${n ? "" : `<label class="f">Name it<input id="w-name" value="${esc(st.name)}" placeholder="e.g. Gym then class"></label>`}
-      <div class="rows">${st.items.map((c, i) => { const it = item(c); return `<div class="prow">${img(it?.photo, it?.name)}
-        <div class="t"><b>${esc(it?.name || c)}</b><span class="${isDirty(c) && !existing ? "warn" : ""}">${esc(c)} · ${isDirty(c) && !existing ? "in the hamper" : esc(it?.colour || "")}</span></div>
+      <div class="rows">${st.items.map((c, i) => { const it = item(c), wn = wearNote(c, !!existing); return `<div class="prow" data-code="${esc(c)}"><span class="th" style="--fc:${fcOf(c)}">${img(it?.photo, "", rawCls(it?.photo))}</span>
+        <div class="t"><b>${esc(it?.name || "Unknown piece")}</b><span class="${wn.warn ? "warn" : ""}">${esc(wn.t)}</span></div>
         <button class="btn small" data-w="swap" data-i="${i}">Swap</button><button class="btn small ghost" data-w="drop" data-i="${i}" aria-label="Remove">✕</button></div>`; }).join("")}</div>
       <div class="actions"><button class="btn small" data-w="add">Add a piece</button></div>
       <div class="photo-pick">${st.photoUrl ? `<img src="${esc(st.photoUrl)}" alt="Mirror pic">` : ""}
@@ -1201,10 +1480,10 @@ function buildFit(start = {}) {
           <button class="chip" aria-pressed="${st.date === todayStr()}" data-b="day" data-d="${todayStr()}">Today</button>
           <button class="chip" aria-pressed="${st.date === yday}" data-b="day" data-d="${yday}">Yesterday</button>
           <input type="date" id="b-date" max="${todayStr()}" value="${custom ? st.date : ""}" aria-label="Other day"></div>
-        <div class="picked">${st.sel.length ? bySlot(st.sel).map(c => `<button data-b="unpick" data-code="${c}" aria-label="Remove ${esc(item(c)?.name || c)}">${img(item(c)?.photo, "")}</button>`).join("")
+        <div class="picked">${st.sel.length ? bySlot(st.sel).map(c => `<button data-b="unpick" data-code="${c}" style="--fc:${fcOf(c)}" aria-label="Remove ${esc(item(c)?.name || "piece")}">${img(item(c)?.photo, "", rawCls(item(c)?.photo))}</button>`).join("")
           : `<span class="hint">Nothing picked yet.</span>`}</div>
         <div class="filters">${[["all", "All"], ...SLOTS].map(([k, l]) => `<button class="chip" aria-pressed="${st.f === k}" data-b="f" data-k="${k}">${l}</button>`).join("")}</div>
-        <div class="picker">${list.map(i => `<button data-b="pick" data-code="${i.code}" aria-pressed="${st.sel.includes(i.code)}" class="${st.sel.includes(i.code) ? "sel" : ""} ${isDirty(i.code) ? "dirty" : ""}">${img(i.photo, "")}<span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
+        <div class="picker">${list.map(i => `<button data-b="pick" data-code="${i.code}" aria-pressed="${st.sel.includes(i.code)}" class="${st.sel.includes(i.code) ? "sel" : ""} ${isDirty(i.code) ? "dirty" : ""}"><span class="sw" style="--fc:${fcOf(i.code)}">${img(i.photo, "", rawCls(i.photo))}</span><span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
         <div class="sheet-actions"><button class="btn ghost" data-b="cancel">Cancel</button>
           <button class="btn primary" data-b="next" ${st.sel.length ? "" : "disabled"}>Next${st.sel.length ? ` · ${st.sel.length}` : ""}</button></div>`;
     };
@@ -1274,10 +1553,9 @@ function suggestSheet() {
       sh.innerHTML = `<div class="grab"></div><h2>Suggest fits</h2><p class="lead">${esc(line)}. Built from your closet, your hamper and what you've worn lately.</p>
         <div class="filters" role="group" aria-label="Occasion">${OCCASIONS.map(([k, l]) => chip("kind", k, l, st.kind === k)).join("")}</div>
         <div class="filters" role="group" aria-label="Weather">${Object.keys(WX_PRESETS).map(k => chip("wx", k, k[0].toUpperCase() + k.slice(1), st.preset === k)).join("")}${chip("rain", "", "Rain", !!(w && w.rain >= 50))}</div>
-        ${st.fits.map((f, i) => `<article class="fit"><div class="fit-head"><h2><span class="n">${i + 1}</span>${esc(f.name)}</h2></div>
-          <div class="rail bob">${bySlot(f.items).map((c, j) => pieceHtml(c, {i: j})).join("")}</div>
-          <p class="note">${esc(f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "")}${f.capOptional ? " Cap optional." : ""}</p>
-          <div class="actions"><button class="btn primary" data-s="wear" data-i="${i}">Wore this</button></div></article>`).join("")}
+        ${st.fits.map((f, i) => lookHtml({n: i + 1, total: st.fits.length, name: f.name, codes: bySlot(f.items), bob: false, noteLabel: "Why this works",
+          note: (f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "") + (f.capOptional ? " Cap optional." : ""),
+          acts: `<button class="btn primary big" data-s="wear" data-i="${i}">${ICON.check} Wearing this</button>`})).join("")}
         ${st.problems.length ? `<p class="lead">${esc(st.problems.join(". "))}. Do laundry or unhide something.</p>` : w && !st.fits.length ? `<p class="lead">Nothing fits those rules right now.</p>` : ""}
         <div class="sheet-actions"><button class="btn ghost" data-s="close">Close</button><button class="btn" data-s="again" ${st.fits.length ? "" : "disabled"}>Show others</button></div>`;
     };
@@ -1307,7 +1585,7 @@ function pickItem(sh, slot, current, done) {
       .sort((a, b) => isDirty(a.code) - isDirty(b.code));
     sh.innerHTML = `<div class="grab"></div><h2>${current ? "Swap for…" : "Add a piece"}</h2>
       <div class="filters">${[["all", "All"], ...SLOTS].map(([k, l]) => `<button class="chip" aria-pressed="${f === k}" data-pf="${k}">${l}</button>`).join("")}</div>
-      <div class="picker">${list.map(i => `<button data-pick="${i.code}" class="${isDirty(i.code) ? "dirty" : ""}">${img(i.photo, "")}<span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
+      <div class="picker">${list.map(i => `<button data-pick="${i.code}" class="${isDirty(i.code) ? "dirty" : ""}"><span class="sw" style="--fc:${fcOf(i.code)}">${img(i.photo, "", rawCls(i.photo))}</span><span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
       <div class="sheet-actions"><button class="btn ghost" data-pb>Back</button></div>`;
   };
   paint();
@@ -1323,8 +1601,8 @@ function itemSheet(code) {
   const it = item(code), worn = (S.log?.worn || []).filter(x => x.items.includes(code));
   const lim = (S.laundry?.wash_after || {})[it.type] || 0, w = wearsSinceWash(code);
   const pool = poolSize(code), used = pool ? pairsUsed(code) : 0;
-  openSheet(`<div style="display:flex;gap:14px">${img(it.photo, it.name)}<div><h2>${esc(it.name)}</h2>
-      <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)} · tag ${esc(code)}</p>
+  openSheet(`<div class="item-hero"><span class="ph" style="--fc:${fcOf(code)}">${img(it.photo, it.name, rawCls(it.photo))}</span><div><h2>${esc(it.name)}</h2>
+      <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)}</p>
       <p class="lead">Worn ${worn.length} time${worn.length === 1 ? "" : "s"}${worn[0] ? `, last ${new Date(worn[0].date + "T12:00").toLocaleDateString("en-US", {month:"short", day:"numeric"})}` : ""}.</p>
       ${pool ? `<p class="lead"><b>${pool - used}</b> of ${pool} pairs clean${used ? ` · ${used} in the hamper` : ""}.</p>
         <div class="stepper"><span class="lead" style="margin:0">Pairs owned</span><button class="btn small ghost" data-i="qty-" aria-label="One fewer pair">−</button><b>${pool}</b><button class="btn small ghost" data-i="qty+" aria-label="One more pair">+</button></div>`
@@ -1334,7 +1612,6 @@ function itemSheet(code) {
       ${!pool && !isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
       <button class="btn ${it.avoid ? "primary" : "ghost"}" data-i="avoid">${it.avoid ? "Put back in rotation" : "Hide from fits"}</button></div>`,
     sh => {
-      sh.querySelector("img").style.cssText = "width:110px;height:138px;object-fit:cover;border-radius:8px;flex:0 0 auto";
       sh.onclick = e => {
         const b = e.target.closest("[data-i]"); if (!b) return;
         if (b.dataset.i === "wash") { run("washItem", {code, at: nowIso()}); toast(`${it.name} washed`); }
@@ -1353,7 +1630,7 @@ function addItemSheet() {
   const st = {blob:null, url:""};
   const paint = sh => {
     const keep = ["a-name", "a-colour", "a-type"].map(id => $("#" + id, sh)?.value);
-    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat on the carpet and shoot straight down, like the rest of the closet.</p>
+    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat and shoot straight down, like the rest of the closet.</p>
       <div class="photo-pick">${st.url ? `<img src="${esc(st.url)}" alt="">` : ""}<label class="btn small">${st.url ? "Retake" : "Take or choose photo"}<input type="file" accept="image/*" id="a-photo" class="sr"></label></div>
       <label class="f">Name<input id="a-name" placeholder="e.g. Waffle henley"></label>
       <label class="f">Colour<input id="a-colour" placeholder="e.g. oatmeal"></label>
@@ -1396,9 +1673,11 @@ document.addEventListener("click", async e => {
     if (window.SX) SX.enter("#view", null, "up");     // the new tab settles in; sync redraws stay still
     return;
   }
+  const lk = e.target.closest("[data-look]");
+  if (lk) return goLook(+lk.dataset.look);
   const fl = e.target.closest("[data-filter]");
   if (fl) {                                          // pieces glide into their filtered spots
-    closetFilter = fl.dataset.filter;
+    closetFilter = closetFilter === fl.dataset.filter && fl.dataset.filter.startsWith("#") ? "all" : fl.dataset.filter;
     window.SX ? SX.flip("#view", ".grid .piece", render) : render();
     return;
   }
@@ -1410,9 +1689,18 @@ document.addEventListener("click", async e => {
   if (act === "suggest") return suggestSheet();
   if (act === "laundry") {
     if (a.dataset.armed) { run("laundry", {at: nowIso()}); if (window.SX) SX.bump(".hamper"); return toast("Hamper emptied"); }
+    const label = a.textContent;
     a.dataset.armed = 1; a.textContent = "Tap again to empty"; a.classList.add("warn");
-    setTimeout(() => { if (a.isConnected) { delete a.dataset.armed; a.textContent = "Did laundry"; a.classList.remove("warn"); } }, 3000); return;
+    setTimeout(() => { if (a.isConnected) { delete a.dataset.armed; a.textContent = label; a.classList.remove("warn"); } }, 3000); return;
   }
+  if (act === "wash-load") {
+    const at = nowIso(), codes = a.dataset.codes.split(",").filter(Boolean);
+    codes.forEach(code => run("washItem", {code, at}));
+    return toast(`${codes.length} piece${codes.length === 1 ? "" : "s"} washed`);
+  }
+  if (act === "month") { diaryOff = Math.max(0, diaryOff + +a.dataset.m); render(); return; }
+  if (act === "day") { const el = document.getElementById("e-" + a.dataset.d); if (el) el.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+  if (act === "build-with") return buildFit({items: [a.dataset.code]});
   if (act === "item") return itemSheet(a.dataset.code);
   if (act === "add-item") return addItemSheet();
   if (act === "resync") { await flush(); if (!queue.length) { await pull().catch(() => {}); render(); toast("Synced"); } return; }
