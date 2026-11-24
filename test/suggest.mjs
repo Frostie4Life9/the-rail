@@ -102,5 +102,7 @@ check((await page.$$eval("#sheet .prow .t span", els => els.length)) === pick.le
 await shot("s2-wear");
 await page.click("[data-w=save]");
 check(await until(() => logJ().worn.some(w => w.date === new Date().toLocaleDateString("en-CA") && w.items.length === pick.length)), "suggested fit logged");
+const lw = logJ().worn.find(w => w.date === new Date().toLocaleDateString("en-CA") && w.items.length === pick.length);
+check(lw && lw.weather && lw.weather.hi === 38 && lw.kind === "class", "log keeps weather + occasion for learning " + JSON.stringify(lw && [lw.weather, lw.kind]));
 check(!errors.length, "no page errors " + errors.join(" | "));
 await browser.close(); server.close();

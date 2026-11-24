@@ -25,6 +25,9 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 const repo = new Map(); let shaN = 0;
 const put = (p, buf) => repo.set(p, { buf, sha: "s" + (++shaN) });
 for (const f of ["wardrobe.json", "fit-log.json", "laundry.json"]) put(f, fs.readFileSync(path.join(seedDir, f)));
+// the walk-through uses these pieces; un-hide them in the fake repo so the test doesn't depend on what's hidden in the real closet
+{ const w = JSON.parse(repo.get("wardrobe.json").buf); w.items.forEach(i => { if (["6044", "6106", "6107", "8281", "6077", "6092", "8286", "8249", "6081", "8257", "6085", "8280", "8282"].includes(i.code)) i.avoid = false; });
+  put("wardrobe.json", Buffer.from(JSON.stringify(w))); }
 const today = new Date().toLocaleDateString("en-CA");
 const log = JSON.parse(repo.get("fit-log.json").buf);
 log.planned = [{ date: today, subtitle: "Provo: 62°F high / 40°F low · sunny · church or chill", fits: [
@@ -91,9 +94,9 @@ await page.waitForTimeout(300); await shot("4-after-log");
 
 // hamper: the hoodie limit is 4, joggers 3 — log two more fits by hand to push joggers over
 for (const nm of ["Gym", "Study"]) {
-  await page.click("[data-act=log-own]"); await page.waitForSelector("#w-name");
-  await page.fill("#w-name", nm); await page.click("[data-w=add]"); await page.click('[data-pf="bottom"]'); await page.click('[data-pick="6092"]');
-  await page.waitForSelector("#w-name"); await page.click("[data-w=save]"); await page.waitForTimeout(150);
+  await page.click("[data-act=log-own]"); await page.waitForSelector('#sheet.on [data-b=pick][data-code="6092"]');   // builder: pick, then name it
+  await page.click('[data-b=pick][data-code="6092"]'); await page.click("[data-b=next]");
+  await page.waitForSelector("#w-name"); await page.fill("#w-name", nm); await page.click("[data-w=save]"); await page.waitForTimeout(400);
 }
 await until(() => logJ().worn.length === 3);
 await page.waitForTimeout(300);
@@ -111,7 +114,8 @@ await page.waitForSelector(".photo-pick img"); await page.fill("#a-name", "Waffl
 await page.selectOption("#a-type", "knit"); await page.click("[data-a=save]");
 await until(() => JSON.parse(repo.get("wardrobe.json").buf).items.some(i => i.name === "Waffle henley"));
 const w = JSON.parse(repo.get("wardrobe.json").buf); const added = w.items.find(i => i.name === "Waffle henley");
-check(added && added.code === "9001" && added.slot === "top" && repo.has(added.photo), "new piece gets tag 9001 + photo");
+const nextCode = String(JSON.parse(fs.readFileSync(path.join(seedDir, "wardrobe.json"))).next_code || 9001);
+check(added && added.code === nextCode && added.slot === "top" && repo.has(added.photo), `new piece gets tag ${nextCode} + photo`);
 
 await page.click("[data-tab=worn]"); await page.waitForSelector(".entry"); await page.waitForTimeout(300); await shot("7-worn");
 await page.click("[data-tab=today]"); await page.waitForTimeout(200);

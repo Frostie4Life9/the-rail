@@ -1,15 +1,19 @@
 /* The Rail fit engine: free, deterministic, no AI and no network.
  *
- * suggest(data, opts) builds many candidate outfits from the closet, drops the ones that break a hard rule,
+ * suggest(data, opts) builds candidate outfits from the closet, drops the ones that break a hard rule,
  * scores the rest, and returns a few that are good AND different from each other.
+ *
+ * Scoring is a linear model over named features (colour pop, contrast, warmth gap, rotation, ...).
+ * PRIOR holds hand-set weights; TUNED holds weights learned from real fits (test/engine-train.mjs writes it);
+ * personalize(data) learns a per-person adjustment from that person's own worn log, in the browser.
  *
  *   data = {wardrobe: {items: [...]}, log: {worn: [...], planned: [...]}, laundry: {...}}   (the three JSON files)
  *   opts = {today: "YYYY-MM-DD", weather: {hi, lo, rain (0-100), snow (bool), wind (mph)},
  *           occasion: {kind: "class"|"lab"|"lounge"|"out"|"church"|"errand", phase: "morning"|"day"|"evening"|"night"},
- *           n: 3, salt: 0, avoid: [codes to steer away from], rules: {alwaysCap: true}}
+ *           n: 3, salt: 0, avoid: [codes to steer away from], exclude: [[codes], ...] fits already shown,
+ *           rules: {alwaysCap, labShortSleeve}, weights}
  *
- * Works in the browser (window.RailEngine) and in Node (module.exports). Everything about taste lives in the
- * tables and in W (weights) so it can be tuned against the closet in test/engine-eval.mjs.
+ * Works in the browser (window.RailEngine) and in Node (module.exports).
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -17,28 +21,38 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  /* ------------------------------------------------------------------ weights (points; ~+-5 is a big swing) */
-  const W = {
-    warmthDeficit: 2.4,      // per warmth point under what the weather needs (cold is the worst failure)
-    warmthExcess: 0.9,       // per point of overdress
-    formality: 1.3,          // per point the outfit's average formality is off the occasion's target
-    formalityGap: 1.3,       // per point the biggest gap between pieces exceeds 1.6 (hoodie + dress shoes)
-    pop: 2.0, quiet: 0.8,    // exactly one colour pop / no accent colour
-    clash: 3.5, crowded: 3.0,
-    statementOne: 1.0, statementNone: 0.2, statementTwo: -0.8, statementMany: -2.5,
-    shoePop: 0.6, shoePopBusy: 1.0,   // statement shoes are a good thing with a quiet outfit, too much with a busy one
-    matchy: 0.9,             // top and bottom the same colour (not black)
-    contrast: 1.0,
-    recentWorn: 1.2,         // top / bottom / shoes / layer worn in the last 2 days
-    recentWorn2: 0.6,        // 3-4 days ago
-    yesterdayRepeat: 2.0,    // yesterday's bottoms or shoes again
-    fresh: 0.5,              // not worn lately (scaled by how rarely it's been worn in 60 days)
-    cold14: 0.8, newItem: 1.0,
-    pairLearn: 0.3, pairCap: 0.9, didnt: 1.2,
-    sock: 1.0, cap: 1.0,
-    reuseOnDay: 4.0,         // a piece already used in an earlier fit the same day
-    jitter: 0.12,
+  /* ------------------------------------------------------------------ weights: + is good, - is bad */
+  const PRIOR = {
+    // warmth and weather
+    warmDef: -2.4, overdressed: -0.9, topTooWarm: -0.9, warmOK: 0.8, layerHot: -1.2, shortsCold: -5,
+    openToeCold: -2.5, openToeOut: -1, wetSuede: -5, wetLight: -3, wetBeater: 1, wetLightBottom: -1.2,
+    shirtOverHoodie: -1.5, linenCold: -1.5, layered: 0,
+    // formality
+    formUnder: -1.3, formOver: -1.3, formGap: -1.3, churchUnder: -2.5,
+    // colour
+    quiet: 0.8, pop: 2, clash: -3.5, twoHues: 0.4, crowded: -6, matchy: -0.9, contrastHi: 1, contrastLow: -0.6,
+    contrastTB: 0, navyBlack: -0.6, earth: 0, allDark: 0, allLight: 0, shoeBottomContrast: 0,
+    // statement pieces
+    loudNone: 0.2, loudOne: 1, loudTwo: -0.8, loudMany: -2.5, shoePopQuiet: 0.6, shoePopBusy: -1,
+    // rotation and history
+    recent2: -1.2, recent4: -0.6, fresh: 0.5, cold14: 0.8, newItem: 1, yBottom: -2, yShoe: -2, pairs: 0.3, didnt: -1.2,
+    // affinity: how often these pieces have been put together in past sheets and worn fits (lift over chance)
+    coreAff: 0.5, sockAff: 0.3, capAff: 0.3,
+    // socks
+    sockDefault: 0.6, sockMatch: 0.8, sockEcho: 1, sockOff: -0.8, sockBrownBlack: -0.5, sockLight: 0.2,
+    // caps
+    capMatch: 1, capNeutral: 0.2, capOff: -0.6, capCamel: 0.4, capRecent: -0.5, capMatchShoe: 0,
   };
+  /*tuned:start*/
+  // learned 2026-11-24 from 153 fits over 29 days (test/engine-train.mjs)
+  const TUNED = {"warmDef":-0.905,"overdressed":-0.9,"topTooWarm":-0.883,"warmOK":-0.49,"layerHot":-1.2,"shortsCold":-5,"openToeCold":-2.5,"openToeOut":-1.411,"wetSuede":-5,"wetLight":-3,"wetBeater":1,"wetLightBottom":-1.2,"shirtOverHoodie":-1.34,"linenCold":-1.526,"layered":0.857,"formUnder":-0.746,"formOver":-1.37,"formGap":-1.89,"quiet":0.54,"pop":1.288,"clash":-2.863,"twoHues":0.735,"crowded":-6,"matchy":-0.941,"contrastHi":0.06,"contrastLow":0.102,"contrastTB":-0.346,"navyBlack":-0.6,"earth":-0.6,"allDark":0.872,"allLight":-0.399,"shoeBottomContrast":0.012,"loudNone":0.294,"loudOne":-0.066,"loudTwo":-0.35,"loudMany":-1.978,"shoePopQuiet":0.209,"shoePopBusy":0.134,"recent2":-1.2,"recent4":-0.6,"fresh":0.5,"cold14":0.8,"newItem":1,"yBottom":-2,"yShoe":-2,"pairs":0.766,"didnt":-1.2,"coreAff":0.985,"sockAff":0.528,"capAff":0.12,"sockDefault":0.6,"sockMatch":1.028,"sockEcho":0.413,"sockOff":-1.083,"sockBrownBlack":-0.398,"sockLight":-0.503,"capMatch":0.549,"capNeutral":0.461,"capOff":-0.6,"capCamel":-0.012,"capRecent":-0.5,"capMatchShoe":0.291};
+  /*tuned:end*/
+  const W = Object.assign({}, PRIOR, TUNED || {});
+  const HARD = {lab: 50, repeatCombo: 6, reuseOnDay: 4, jitter: 0.12};
+  // Policy, not taste: rotation and safety stay at their hand values. Learning them from people who re-wear favourites
+  // would switch rotation off, and safety rules rarely show up in the data at all.
+  const FIXED = new Set(["recent2", "recent4", "fresh", "cold14", "newItem", "yBottom", "yShoe", "capRecent", "didnt", "sockDefault",
+    "churchUnder", "shortsCold", "wetSuede", "wetLight", "wetBeater", "wetLightBottom", "openToeCold"]);
 
   /* ------------------------------------------------------------------ dates */
   const dayNum = s => Math.floor(Date.parse(s.slice(0, 10) + "T12:00:00Z") / 864e5);
@@ -57,6 +71,7 @@
     [/light blue/, "blue", .75], [/blue/, "blue", .45], [/pink/, "pink", .8],
   ];
   const NEUTRAL = new Set(["white", "cream", "black", "charcoal", "grey", "navy", "denim", "brown", "tan", "camel"]);
+  const EARTH = new Set(["brown", "tan", "camel", "cream", "olive", "rust", "sage"]);
   const HUE = {red: "red", rust: "orange", orange: "orange", olive: "green", green: "green", sage: "green",
     teal: "blue", blue: "blue", purple: "purple", pink: "pink"};
   const CLASH = [["red", "green"], ["orange", "blue"], ["orange", "purple"], ["pink", "green"], ["red", "blue"]];
@@ -94,13 +109,14 @@
       || (c.split("/").filter(p => { const m = COLOURS.find(([re]) => re.test(p)); return m && !NEUTRAL.has(m[1]); }).length >= 2);
     const graphic = /graphic|tour|chromakopia|cherry bomb|save the bees|portrait|dandelion|swimming|chuckle|starry|monkey club|woozy|geese|estes|golf|byu|\blr\b|who cares/.test(n);
     a.loud = t === "cap" || t === "socks" ? 0 : strong ? 2 : graphic && (t === "tee" || t === "crewneck" || t === "hoodie") ? 1 : 0;
-    // shoes
     a.suede = /suede/.test(n + " " + c) && !/not suede/.test(note);
     a.openToe = /birkenstock|slides|adilette|sandal/.test(n);
     a.beater = /beater/.test(note);
     const cs = colours(it);
     a.lightShoe = t === "shoes" && cs.some(x => x.primary && x.light > .7);
     a.colours = cs;
+    a.fam = (cs[0] || {}).family;
+    a.light = cs[0] ? cs[0].light : .5;
     // pieces that can be worn over a tee as a layer (hoodie, crewneck, sweater), vs. shells (jackets, vests, overshirts)
     a.over = t === "hoodie" || t === "crewneck" || t === "knit";
     if (it.attrs) Object.assign(a, it.attrs);
@@ -147,17 +163,29 @@
     const pair = {}, bad = {};
     const pk = (a, b) => a < b ? a + "|" + b : b + "|" + a;
     worn.forEach(x => {
+      if (ago(x.date, today) <= 0) return;
       for (let i = 0; i < x.items.length; i++) for (let j = i + 1; j < x.items.length; j++) {
         const k = pk(x.items[i], x.items[j]);
         pair[k] = (pair[k] || 0) + 1;
         if (x.didnt) bad[k] = 1;
       }
     });
+    // co-occurrence across every good fit before today: sheets (weight 1) and worn fits (weight 2)
+    const co = {}, cnt = {};
+    let N = 0;
+    const addFit = (items, wt) => {
+      N += wt; items.forEach(c => cnt[c] = (cnt[c] || 0) + wt);
+      for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) { const k = pk(items[i], items[j]); co[k] = (co[k] || 0) + wt; }
+    };
+    worn.forEach(x => { if (ago(x.date, today) > 0) addFit(x.items, 2); });
+    planned.forEach(p => { if (ago(p.date, today) > 0) (p.fits || []).forEach(f => addFit(f.items, 1)); });
+    // smoothed log lift: >0 these two go together more than chance, <0 they're kept apart
+    const aff = (a, b) => N < 10 ? 0 : Math.log(((co[pk(a, b)] || 0) + .5) / (((cnt[a] || 0) * (cnt[b] || 0)) / N + .5));
     const seen = new Set();
     worn.forEach(x => { if (ago(x.date, today) <= 14) x.items.forEach(c => seen.add(c)); });
     planned.forEach(p => { if (ago(p.date, today) <= 14) (p.fits || []).forEach(f => f.items.forEach(c => seen.add(c))); });
     const hasHistory = worn.length + planned.length >= 6;
-    return {today, avail, bySlot, last, count60, yesterday, recentCombos, pair, bad, seen, hasHistory, pk};
+    return {today, avail, bySlot, last, count60, yesterday, recentCombos, pair, bad, seen, hasHistory, pk, aff};
   }
 
   /* ------------------------------------------------------------------ weather */
@@ -170,155 +198,186 @@
     return {start: start - wind, peak: peak - wind * .5};
   }
   const need = T => 1 + (70 - T) * .095;       // warmth points the upper body should carry at T degrees F
-
   const TARGET = {lounge: .6, class: 1.2, lab: 1.0, errand: 1.0, out: 1.6, church: 2.4};
 
-  /* ------------------------------------------------------------------ scoring pieces */
+  /* ------------------------------------------------------------------ features */
   function groups(parts) {
     // weight of each hue group visible in the outfit
     const g = {}, wt = {top: 1, layer: 1, bottom: 1, shoes: .8, cap: .5, socks: .3};
-    parts.forEach(({it, slot}) => attrs(it).colours.forEach(c => {
+    parts.forEach(([it, slot]) => attrs(it).colours.forEach(c => {
       const grp = HUE[c.family]; if (!grp) return;
       g[grp] = (g[grp] || 0) + wt[slot] * (c.primary ? 1 : .5);
     }));
     return g;
   }
+  const shortName = it => String(it.name).replace(/^(corduroy|heavy|short-sleeve|ribbed|open-knit)\s+/i, "").toLowerCase();
 
-  function core(ctx, o, layer, top, bottom, shoes, wx, why, rules) {
+  // Features of the core outfit (layer, top, bottom, shoes). note[feature] = text collects reasons when asked.
+  function coreFeats(ctx, o, wx, {layer, top, bottom, shoes}, note) {
     const A = {top: attrs(top), bottom: attrs(bottom), shoes: attrs(shoes), layer: layer && attrs(layer)};
-    let s = 0;
-    const note = (pts, txt) => { s += pts; if (why && txt && pts > .5) why.push(txt); };
+    const F = {};
+    const say = (k, txt) => { if (note) note[k] = txt; };
 
     // --- warmth
     const f = feel(wx, o.phase), nCold = need(f.start), nWarm = need(f.peak);
-    const layered = layer && A.layer.over;                       // tee under a hoodie / crewneck: the tee adds less
+    const layered = !!(layer && A.layer.over);                    // tee under a hoodie / crewneck: the tee adds less
     const upper = layered ? A.layer.warmth + A.top.warmth * .55 : A.top.warmth + (layer ? A.layer.warmth : 0);
     const deficit = nCold - upper, excess = A.top.warmth - nWarm - 0.7;
-    if (deficit > .3) s -= W.warmthDeficit * (deficit - .3);
-    else if (deficit < -1.2 && !layer) s -= W.warmthExcess * (-deficit - 1.2);
-    if (excess > 0) s -= W.warmthExcess * excess;
-    if (deficit <= .3 && deficit > -1.2) s += .8;
-    if (wx.hi >= 68 && layer) s -= 1.2;
-    if (bottom.type === "shorts" && f.start < 62) s -= 5;
-    if (A.shoes.openToe && f.start < 42 && o.kind !== "lounge") s -= 2.5;
-    if (A.shoes.openToe && f.start < 55 && o.kind === "class") s -= 1;
-
-    // --- wet weather: suede and pale shoes suffer, beater shoes are made for it
+    if (deficit > .3) F.warmDef = deficit - .3;
+    else if (deficit < -1.2 && !layer) F.overdressed = -deficit - 1.2;
+    if (excess > 0) F.topTooWarm = excess;
+    if (deficit <= .3 && deficit > -1.2) { F.warmOK = 1; say("warmOK", "warm enough for " + Math.round(f.start) + "°F" + (layer ? " with the " + shortName(layer) : "")); }
+    if (wx.hi >= 68 && layer) F.layerHot = 1;
+    if (layered) F.layered = 1;
+    if (bottom.type === "shorts" && f.start < 62) F.shortsCold = 1;
+    if (A.shoes.openToe && f.start < 42 && o.kind !== "lounge") F.openToeCold = 1;
+    if (A.shoes.openToe && o.kind !== "lounge") F.openToeOut = 1;
     const wet = wx.snow || (wx.rain || 0) >= 50;
     if (wet) {
-      if (A.shoes.suede) s -= 5;
-      if (A.shoes.lightShoe) s -= 3;
-      if (A.shoes.beater) s += 1;
-      if (attrs(bottom).colours.some(c => c.light > .8)) s -= 1.2;
+      if (A.shoes.suede) F.wetSuede = 1;
+      if (A.shoes.lightShoe) F.wetLight = 1;
+      if (A.shoes.beater) { F.wetBeater = 1; say("wetBeater", "the " + shortName(shoes) + " can take the wet"); }
+      if (A.bottom.light > .8) F.wetLightBottom = 1;
     }
-
-    // --- lab days: no long sleeve worn alone under the lab coat (Skyler's rule), so the top itself must be short sleeve
-    if (o.kind === "lab" && rules.labShortSleeve && A.top.sleeve === "long") s -= 50;
-
-    if (layer && !A.layer.over && layer.type === "collared" && A.top.warmth >= 2.2) s -= 1.5;   // shirt-layer over a hoodie
-    if (/linen/.test(String(bottom.name).toLowerCase()) && f.start < 55) s -= f.start < 48 ? 3 : 1.5;
+    if (layer && !A.layer.over && layer.type === "collared" && A.top.warmth >= 2.2) F.shirtOverHoodie = 1;
+    if (/linen/.test(String(bottom.name).toLowerCase()) && f.start < 55) F.linenCold = (55 - f.start) / 7;
 
     // --- formality
     const fs = [A.top.formal, A.bottom.formal, A.shoes.formal].concat(layer ? [A.layer.formal] : []);
     const mean = fs.reduce((a, b) => a + b, 0) / fs.length, tgt = TARGET[o.kind] ?? 1.2;
-    s -= W.formality * Math.abs(mean - tgt);
+    if (mean < tgt) F.formUnder = tgt - mean; else F.formOver = mean - tgt;
+    if (o.kind === "church" && mean < tgt) F.churchUnder = tgt - mean;      // dressing down for church is a rule, not a taste
     const gap = Math.max(...fs) - Math.min(...fs);
-    if (gap > 1.2) s -= W.formalityGap * (gap - 1.2);
+    if (gap > 1.2) F.formGap = gap - 1.2;
 
     // --- colour
-    const parts = [{it: top, slot: "top"}, {it: bottom, slot: "bottom"}, {it: shoes, slot: "shoes"}].concat(layer ? [{it: layer, slot: "layer"}] : []);
-    const g = groups(parts), strong = Object.keys(g).filter(k => g[k] >= .8);
-    if (strong.length === 0) note(W.quiet);
-    else if (strong.length === 1) note(W.pop, "one colour pop");
-    else {
-      const clash = CLASH.some(([x, y]) => g[x] >= .5 && g[y] >= .5);
-      if (clash) s -= W.clash; else if (strong.length === 2) s += .4; else s -= W.crowded;
-      if (strong.length >= 3) s -= W.crowded;
-    }
-    const tc = A.top.colours[0], bc = A.bottom.colours[0];
-    if (tc && bc) {
-      if (tc.family === bc.family && tc.family !== "black") s -= W.matchy;
-      const d = Math.abs(tc.light - bc.light);
-      if (d >= .35) note(W.contrast, "light against dark");
-      else if (d < .15 && !(tc.light < .3 && bc.light < .3)) s -= .6;
-      if ((tc.family === "navy" && bc.family === "black") || (tc.family === "black" && bc.family === "navy")) s -= .6;
-    }
+    const core = [[top, "top"], [bottom, "bottom"], [shoes, "shoes"]].concat(layer ? [[layer, "layer"]] : []);
+    const g = groups(core), strong = Object.keys(g).filter(k => g[k] >= .8);
+    if (strong.length === 0) F.quiet = 1;
+    else if (strong.length === 1) { F.pop = 1; say("pop", "one colour pop"); }
+    else if (CLASH.some(([x, y]) => g[x] >= .5 && g[y] >= .5)) F.clash = 1;
+    else if (strong.length === 2) F.twoHues = 1;
+    else F.crowded = 1;
+    const vis = layer ? A.layer : A.top;                                  // what reads from across the room
+    const tl = vis.light, bl = A.bottom.light, d = Math.abs(tl - bl);
+    F.contrastTB = d;
+    if (d >= .35) { F.contrastHi = 1; say("contrastHi", "light against dark"); }
+    else if (d < .15 && !(tl < .3 && bl < .3)) F.contrastLow = 1;
+    if (A.top.fam && A.top.fam === A.bottom.fam && A.top.fam !== "black") F.matchy = 1;
+    if ((vis.fam === "navy" && A.bottom.fam === "black") || (vis.fam === "black" && A.bottom.fam === "navy")) F.navyBlack = 1;
+    const fams = core.map(([it]) => attrs(it).fam).filter(Boolean);
+    F.earth = fams.filter(x => EARTH.has(x)).length / Math.max(fams.length, 1);
+    if (F.earth >= .75) say("earth", "earthy palette");
+    const lights = core.map(([it]) => attrs(it).light);
+    if (lights.every(x => x < .32)) F.allDark = 1;
+    if (lights.every(x => x > .7)) F.allLight = 1;
+    F.shoeBottomContrast = Math.abs(A.shoes.light - bl);
 
     // --- one statement piece
     const loud = A.top.loud + (layer ? A.layer.loud : 0) + A.bottom.loud;
-    s += loud === 0 ? W.statementNone : loud === 1 ? W.statementOne : loud === 2 ? W.statementTwo : W.statementMany;
-    if (loud === 1) why && why.push("one statement piece");
-    if (A.shoes.loud >= 2) { if (loud <= 1) { s += W.shoePop; why && why.push("the " + shortName(shoes) + " are the statement"); } else s -= W.shoePopBusy; }
+    if (loud === 0) F.loudNone = 1; else if (loud === 1) { F.loudOne = 1; say("loudOne", "one statement piece"); }
+    else if (loud === 2) F.loudTwo = 1; else F.loudMany = 1;
+    if (A.shoes.loud >= 2) {
+      if (loud <= 1) { F.shoePopQuiet = 1; say("shoePopQuiet", "the " + shortName(shoes) + " are the statement"); }
+      else F.shoePopBusy = 1;
+    }
 
     // --- rotation
     [[top, 1], [bottom, 1], [shoes, 1], [layer, .7]].forEach(([it, k]) => {
-      if (!it) return;
-      const d = ctx.last[it.code], c60 = ctx.count60[it.code] || 0;
-      if (it.qty > 1) return;
-      if (d != null && d <= 2) s -= W.recentWorn * k; else if (d != null && d <= 4) s -= W.recentWorn2 * k;
-      s += W.fresh * k / (1 + c60);
-      if (ctx.hasHistory && !ctx.seen.has(it.code)) { s += W.cold14 * k; if (why) why.push("haven't worn the " + shortName(it) + " in a while"); }
-      if (it.added && ago(it.added, ctx.today) <= 14) { s += W.newItem * k; if (why) why.push("the new " + shortName(it)); }
+      if (!it || it.qty > 1) return;
+      const dd = ctx.last[it.code], c60 = ctx.count60[it.code] || 0;
+      if (dd != null && dd <= 2) F.recent2 = (F.recent2 || 0) + k; else if (dd != null && dd <= 4) F.recent4 = (F.recent4 || 0) + k;
+      F.fresh = (F.fresh || 0) + k / (1 + c60);
+      if (ctx.hasHistory && !ctx.seen.has(it.code)) { F.cold14 = (F.cold14 || 0) + k; say("cold14", "you haven't worn the " + shortName(it) + " in a while"); }
+      if (it.added && ago(it.added, ctx.today) <= 14) { F.newItem = (F.newItem || 0) + k; say("newItem", "gets the new " + shortName(it) + " out"); }
     });
-    if (ctx.yesterday.has(bottom.code)) s -= W.yesterdayRepeat;
-    if (ctx.yesterday.has(shoes.code) && !A.shoes.beater) s -= W.yesterdayRepeat;
-    else if (ctx.yesterday.has(shoes.code)) s -= W.yesterdayRepeat * .4;
+    if (ctx.yesterday.has(bottom.code)) F.yBottom = 1;
+    if (ctx.yesterday.has(shoes.code)) F.yShoe = A.shoes.beater ? .4 : 1;
 
     // --- learned pairs
     const codes = [top, bottom, shoes].concat(layer ? [layer] : []).map(i => i.code);
     let learn = 0;
     for (let i = 0; i < codes.length; i++) for (let j = i + 1; j < codes.length; j++) {
       const k = ctx.pk(codes[i], codes[j]);
-      learn += W.pairLearn * Math.min(ctx.pair[k] || 0, 3) ** .5;
-      if (ctx.bad[k]) s -= W.didnt;
+      learn += Math.sqrt(Math.min(ctx.pair[k] || 0, 3));
+      if (ctx.bad[k]) F.didnt = (F.didnt || 0) + 1;
     }
-    s += Math.min(learn, W.pairCap);
-    return s;
+    if (learn) { F.pairs = Math.min(learn, 3); if (learn >= 2) say("pairs", "a pairing you've worn before"); }
+    let af = 0, np = 0;
+    for (let i = 0; i < codes.length; i++) for (let j = i + 1; j < codes.length; j++) { af += ctx.aff(codes[i], codes[j]); np++; }
+    if (np) { F.coreAff = af / np; if (F.coreAff > .6) say("coreAff", "pieces that have worked together for you"); }
+    return F;
   }
 
-  function sockScore(sock, outfit, ctx) {
-    const a = attrs(sock).colours[0]; if (!a) return 0;
-    let s = sock.code === "8916" || (sock.qty > 1 && /black/.test(sock.colour)) ? .6 : 0;   // the default, never scarce
-    const fam = it => (attrs(it).colours[0] || {}).family;
-    const shoeF = fam(outfit.shoes), botF = fam(outfit.bottom);
-    if (a.family === shoeF || a.family === botF) s += .8;
-    const g = groups(Object.entries(outfit).filter(([k, v]) => v && ["top", "layer", "bottom", "shoes"].includes(k)).map(([k, v]) => ({it: v, slot: k})));
-    const grp = HUE[a.family];
-    if (grp && g[grp] >= .8) s += 1;
-    else if (grp) s -= .8;
-    if (a.family === "brown" && shoeF === "black") s -= .5;
-    if (["white", "cream"].includes(a.family) && !(["white", "cream"].includes(shoeF))) s += outfit.shoes && attrs(outfit.shoes).openToe ? 0 : .2;
-    return s * W.sock;
+  function sockFeats(ctx, sock, out, note) {
+    const a = attrs(sock), F = {};
+    const coreIt = ["top", "layer", "bottom", "shoes"].map(k => out[k]).filter(Boolean);
+    F.sockAff = coreIt.reduce((s, it) => s + ctx.aff(sock.code, it.code), 0) / coreIt.length;
+    if (!a.fam) return F;
+    if (sock.qty > 1 && /black/.test(sock.colour)) F.sockDefault = 1;              // the default, never scarce
+    const shoeF = attrs(out.shoes).fam, botF = attrs(out.bottom).fam;
+    if (a.fam === shoeF || a.fam === botF) F.sockMatch = 1;
+    const g = groups(["top", "layer", "bottom", "shoes"].filter(k => out[k]).map(k => [out[k], k]));
+    const grp = HUE[a.fam];
+    if (grp && g[grp] >= .8) {
+      F.sockEcho = 1;
+      const src = ["shoes", "layer", "top", "bottom"].map(k => out[k]).find(it => it && attrs(it).colours.some(c => HUE[c.family] === grp));
+      if (note && src) note.sockEcho = shortName(sock) + " pick up the " + shortName(src);
+    } else if (grp) F.sockOff = 1;
+    if (a.fam === "brown" && shoeF === "black") F.sockBrownBlack = 1;
+    if (["white", "cream"].includes(a.fam) && !["white", "cream"].includes(shoeF) && !attrs(out.shoes).openToe) F.sockLight = 1;
+    return F;
   }
 
-  function capScore(cap, outfit, ctx) {
-    const a = attrs(cap).colours[0]; if (!a) return 0;
-    const fams = ["top", "bottom", "shoes", "layer"].map(k => outfit[k] && (attrs(outfit[k]).colours[0] || {}).family).filter(Boolean);
-    let s = fams.includes(a.family) ? 1 : (NEUTRAL.has(a.family) ? .2 : -.6);
-    if (a.family === "camel" && fams.some(f => ["brown", "tan", "cream"].includes(f))) s += .4;
+  function capFeats(ctx, cap, out) {
+    const a = attrs(cap), F = {};
+    const coreIt = ["top", "layer", "bottom", "shoes"].map(k => out[k]).filter(Boolean);
+    F.capAff = coreIt.reduce((s, it) => s + ctx.aff(cap.code, it.code), 0) / coreIt.length;
+    if (!a.fam) return F;
+    const fams = ["top", "bottom", "shoes", "layer"].map(k => out[k] && attrs(out[k]).fam).filter(Boolean);
+    if (fams.includes(a.fam)) F.capMatch = 1; else if (NEUTRAL.has(a.fam)) F.capNeutral = 1; else F.capOff = 1;
+    if (a.fam === "camel" && fams.some(f => ["brown", "tan", "cream"].includes(f))) F.capCamel = 1;
+    if (attrs(out.shoes).fam === a.fam) F.capMatchShoe = 1;
     const d = ctx.last[cap.code];
-    if (d != null && d <= 1) s -= .5;
-    return s * W.cap;
+    if (d != null && d <= 1) F.capRecent = 1;
+    return F;
   }
+
+  const dot = (w, F) => { let s = 0; for (const k in F) s += (w[k] || 0) * F[k]; return s; };
+  const merge = (...fs) => Object.assign({}, ...fs);
+
+  /* ------------------------------------------------------------------ full outfit from a list of codes */
+  function split(data, codes) {
+    const its = codes.map(c => data.wardrobe.items.find(i => i.code === c)).filter(Boolean);
+    const pick = slot => its.find(i => i.slot === slot);
+    const tops = its.filter(i => i.slot === "top");
+    let top = tops[0], layer = pick("layer") || null;
+    if (tops.length >= 2) { top = tops.find(i => i.type === "tee") || tops[0]; layer = tops.find(i => i !== top); }   // tee under a hoodie / crewneck
+    return {top, layer, bottom: pick("bottom"), shoes: pick("shoes"), socks: pick("socks"), cap: pick("cap")};
+  }
+  function outfitFeats(ctx, o, wx, out) {
+    if (!out.top || !out.bottom || !out.shoes) return null;
+    return merge(coreFeats(ctx, o, wx, out, null), out.socks ? sockFeats(ctx, out.socks, out) : {}, out.cap ? capFeats(ctx, out.cap, out) : {});
+  }
+  const labBreak = (o, rules, out) => o.kind === "lab" && rules.labShortSleeve !== false && attrs(out.top).sleeve === "long";
 
   /* ------------------------------------------------------------------ naming */
-  function shortName(it) {
-    return String(it.name).replace(/^(corduroy|heavy|short-sleeve|ribbed|open-knit)\s+/i, "").replace(/\s+(crewneck|hoodie)$/i, m => m).toLowerCase();
-  }
   function fitName(top, layer, bottom) {
     if (layer && attrs(layer).over) return layer.name + " over " + String(top.name).toLowerCase();
-    const t = String(top.name).replace(/^(the )/i, "");
-    const second = layer ? layer.name : bottom.name;
-    return t + " & " + second.toLowerCase();
+    return String(top.name) + " & " + (layer ? layer.name : bottom.name).toLowerCase();
   }
 
   /* ------------------------------------------------------------------ main */
   function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const defaults = opts => ({
+    o: Object.assign({kind: "class", phase: "day"}, opts.occasion || {}),
+    wx: Object.assign({hi: 60, lo: 45, rain: 0, snow: false, wind: 0}, opts.weather || {}),
+    rules: Object.assign({alwaysCap: true, labShortSleeve: true}, opts.rules || {}),
+    w: opts.weights || W,
+  });
 
   function suggest(data, opts) {
-    const o = Object.assign({kind: "class", phase: "day"}, opts.occasion || {});
-    const wx = Object.assign({hi: 60, lo: 45, rain: 0, snow: false, wind: 0}, opts.weather || {});
-    const rules = Object.assign({alwaysCap: true, labShortSleeve: true}, opts.rules || {});
+    const {o, wx, rules, w} = defaults(opts);
     const n = opts.n || 3, today = opts.today;
     const ctx = prepare(data, {today});
     const steer = new Set(opts.avoid || []);
@@ -332,42 +391,48 @@
     const cands = [];
     for (const top of B.top) for (const layer of [null].concat(shells, top.type === "tee" ? overs : []))
       for (const bottom of B.bottom) for (const shoes of B.shoes) {
-      let s = core(ctx, o, layer, top, bottom, shoes, wx, null, rules);
-      const items = [top.code, bottom.code, shoes.code].concat(layer ? [layer.code] : []);
-      const set = new Set(items);
-      if (ctx.recentCombos.some(c => items.every(x => c.has(x)))) s -= 6;            // don't repeat a combo from the last 2 weeks
-      steer.forEach(c => { if (set.has(c)) s -= W.reuseOnDay; });
-      cands.push({s: s + (rand() - .5) * 2 * W.jitter, layer, top, bottom, shoes});
-    }
+        const out = {top, layer, bottom, shoes};
+        let s = dot(w, coreFeats(ctx, o, wx, out, null));
+        if (labBreak(o, rules, out)) s -= HARD.lab;
+        const items = [top.code, bottom.code, shoes.code].concat(layer ? [layer.code] : []);
+        if (ctx.recentCombos.some(c => items.every(x => c.has(x)))) s -= HARD.repeatCombo;   // nothing from the last 2 weeks again
+        items.forEach(c => { if (steer.has(c)) s -= HARD.reuseOnDay; });
+        cands.push({s: s + (rand() - .5) * 2 * HARD.jitter, out});
+      }
     cands.sort((a, b) => b.s - a.s);
     const pool = cands.slice(0, 300);
-    // socks and cap are picked per outfit (they depend on what the outfit looks like)
+    // socks and cap depend on what the outfit looks like, so they're picked per outfit
     pool.forEach(c => {
-      const outfit = {top: c.top, layer: c.layer, bottom: c.bottom, shoes: c.shoes};
-      let bestS = null, bs = -1e9;
-      B.socks.forEach(k => { const v = sockScore(k, outfit, ctx) + (rand() - .5) * .3; if (v > bs) { bs = v; bestS = k; } });
-      let bestC = null, bc = -1e9;
-      B.cap.forEach(k => { const v = capScore(k, outfit, ctx) + (rand() - .5) * .3; if (v > bc) { bc = v; bestC = k; } });
-      c.socks = bestS; c.cap = bestC; c.s += bs + (bestC ? bc : 0);
+      let bs = -1e9, bc = -1e9;
+      B.socks.forEach(k => { const v = dot(w, sockFeats(ctx, k, c.out)) + (rand() - .5) * .3; if (v > bs) { bs = v; c.out.socks = k; } });
+      B.cap.forEach(k => { const v = dot(w, capFeats(ctx, k, c.out)) + (rand() - .5) * .3; if (v > bc) { bc = v; c.out.cap = k; } });
+      c.s += bs + (c.out.cap ? bc : 0);
     });
     pool.sort((a, b) => b.s - a.s);
 
-    // greedy pick with a diversity penalty so the three fits are genuinely different
+    // greedy pick with a diversity penalty so the fits are genuinely different, from each other and from fits already shown
+    const shown = (opts.exclude || []).map(items => ({out: split(data, items)}));
     const picked = [];
-    const sim = (a, b) => (a.top === b.top ? 2 : 0) + (a.bottom === b.bottom ? 1.5 : 0) + (a.shoes === b.shoes ? 1 : 0) + (a.layer && a.layer === b.layer ? .5 : 0);
+    // how alike two outfits look: shared pieces, whatever role they play. The piece people see first (the top, or a
+    // hoodie / crewneck worn over a tee) counts most; a jacket or vest over different tops counts least.
+    const looks = out => { const m = new Map([[out.top, 2], [out.bottom, 1.5], [out.shoes, 1]]); if (out.layer) m.set(out.layer, attrs(out.layer).over ? 2 : .5); return m; };
+    const sim = (a, b) => { const A = a._l || (a._l = looks(a)), B = b._l || (b._l = looks(b)); let s = 0; A.forEach((v, it) => { if (B.has(it)) s += Math.max(v, B.get(it)); }); return s; };
     while (picked.length < n && pool.length) {
       let bi = -1, bv = -1e9;
-      pool.forEach((c, i) => { const v = c.s - 1.1 * picked.reduce((m, p) => Math.max(m, sim(c, p)), 0); if (v > bv) { bv = v; bi = i; } });
+      pool.forEach((c, i) => {
+        const v = c.s - 1.1 * picked.reduce((m, p) => Math.max(m, sim(c.out, p.out)), 0) - 1.6 * shown.reduce((m, p) => Math.max(m, sim(c.out, p.out)), 0);
+        if (v > bv) { bv = v; bi = i; }
+      });
       picked.push(pool.splice(bi, 1)[0]);
     }
     const fits = picked.map(c => {
-      const why = [];
-      core(ctx, o, c.layer, c.top, c.bottom, c.shoes, wx, why, rules);
-      const f = feel(wx, o.phase);
-      const upper = attrs(c.top).warmth + (c.layer ? attrs(c.layer).warmth : 0);
-      if (upper >= need(f.start) - .3) why.unshift("warm enough for " + Math.round(f.start) + "°F" + (c.layer ? " with the " + shortName(c.layer) : ""));
-      const items = [c.layer, c.top, c.bottom, c.socks, c.shoes, c.cap].filter(Boolean).map(i => i.code);
-      return {name: fitName(c.top, c.layer, c.bottom), items, score: Math.round(c.s * 100) / 100, why: why.slice(0, 3),
+      const out = c.out, note = {};
+      const F = merge(coreFeats(ctx, o, wx, out, note), sockFeats(ctx, out.socks, out, note));
+      // reasons: the features that added the most to this fit's score, in plain words
+      const why = Object.keys(note).filter(k => k !== "warmOK" && (w[k] || 0) * (F[k] || 0) > .3).sort((a, b) => w[b] * F[b] - w[a] * F[a]).map(k => note[k]);
+      if (note.warmOK) why.unshift(note.warmOK);
+      const items = [out.layer, out.top, out.bottom, out.socks, out.shoes, out.cap].filter(Boolean).map(i => i.code);
+      return {name: fitName(out.top, out.layer, out.bottom), items, score: Math.round(c.s * 100) / 100, why: why.slice(0, 3),
         capOptional: o.kind === "church"};
     });
     return {fits, problems};
@@ -387,23 +452,107 @@
 
   /** Score one existing outfit (for backtesting and for ranking what Claude or Skyler picked). */
   function scoreFit(data, opts, codes) {
-    const o = Object.assign({kind: "class", phase: "day"}, opts.occasion || {});
-    const wx = Object.assign({hi: 60, lo: 45, rain: 0, snow: false, wind: 0}, opts.weather || {});
-    const ctx = prepare(data, {today: opts.today});
-    const by = c => data.wardrobe.items.find(i => i.code === c);
-    const its = codes.map(by).filter(Boolean);
-    const pick = slot => its.find(i => i.slot === slot);
-    const tops = its.filter(i => i.slot === "top"), bottom = pick("bottom"), shoes = pick("shoes");
-    let top = tops[0], layer = pick("layer") || null;
-    if (tops.length >= 2) { top = tops.find(i => i.type === "tee") || tops[0]; layer = tops.find(i => i !== top); }   // tee under a hoodie / crewneck
-    if (!top || !bottom || !shoes) return null;
-    const rules = Object.assign({alwaysCap: true, labShortSleeve: true}, opts.rules || {});
-    let s = core(ctx, o, layer, top, bottom, shoes, wx, null, rules);
-    const outfit = {top, layer, bottom, shoes};
-    const sock = pick("socks"), cap = pick("cap");
-    s += (sock ? sockScore(sock, outfit, ctx) : 0) + (cap ? capScore(cap, outfit, ctx) : 0);
-    return s;
+    const {o, wx, rules, w} = defaults(opts);
+    const ctx = opts.ctx || prepare(data, {today: opts.today});
+    const out = split(data, codes), F = outfitFeats(ctx, o, wx, out);
+    if (!F) return null;
+    return dot(w, F) - (labBreak(o, rules, out) ? HARD.lab : 0);
   }
 
-  return {suggest, suggestDay, scoreFit, prepare, attrs, W, feel, need};
+  /** Hard-rule problems with an outfit, in words (used to check the morning sheet before it's saved). */
+  function check(data, opts, codes) {
+    const {o, wx} = defaults(opts), out = split(data, codes), bad = [];
+    const by = c => data.wardrobe.items.find(i => i.code === c);
+    codes.forEach(c => { if (!by(c)) bad.push("unknown piece " + c); else if (by(c).avoid) bad.push(by(c).name + " is hidden"); });
+    if (!out.cap) bad.push("no cap");
+    if (!out.top || !out.bottom || !out.shoes) bad.push("missing a top, bottom or shoes");
+    if (out.top && o.kind === "lab" && attrs(out.top).sleeve === "long") bad.push("lab: " + out.top.name + " is long-sleeved against the skin (lab coat goes over it)");
+    if (out.shoes && (wx.snow || wx.rain >= 50) && attrs(out.shoes).suede) bad.push("suede " + out.shoes.name + " on a wet day");
+    if (out.bottom && out.bottom.type === "shorts" && wx.lo < 55) bad.push("shorts in the cold");
+    return bad;
+  }
+
+  /* ------------------------------------------------------------------ learning */
+  /** Guess the occasion from a sheet's "when" text ("Chem 11am → Physics lab 2pm", "Home after Lit", ...). */
+  function guessOccasion(when) {
+    const s = String(when || "");
+    const kind = /lab\b/i.test(s) ? "lab" : /church/i.test(s) ? "church" : /(home|lounge|homework|couch|study)/i.test(s) ? "lounge"
+      : /(going out|hangout|date|dinner|evening out|out tonight|night out|tonight)/i.test(s) ? "out" : "class";
+    const phase = /(night|evening|tonight|[5-9]\s?pm|date|dinner)/i.test(s) ? "evening" : "day";
+    return {kind, phase};
+  }
+  /** Weather from a sheet subtitle: "Provo: 48°F high / 32°F low · sunny · 0% rain · …". */
+  function parseWeather(sub) {
+    const m = /(\d+)°F high \/ (\d+)°F low/.exec(sub || ""); if (!m) return null;
+    const r = /(\d+)% rain/.exec(sub), w = /(\d+)(?:-(\d+))? mph/.exec(sub);
+    return {hi: +m[1], lo: +m[2], rain: r ? +r[1] : 0, snow: /snow/i.test(sub), wind: w ? +(w[2] || w[1]) : 0};
+  }
+
+  /** Training pairs: each good fit vs. the same fit with one piece swapped, and vs. a random outfit.
+   *  goods = [{date, items, when, weather?, occasion?, weight}]. Returns [{d: featureDiff, w, slot}]. */
+  function makePairs(data, goods, {swaps = 3, randoms = 2, seed = 1} = {}) {
+    const rand = rng(seed), wxBy = {};
+    ((data.log && data.log.planned) || []).forEach(p => { const x = parseWeather(p.subtitle); if (x) wxBy[p.date] = x; });
+    const usable = data.wardrobe.items.filter(i => !i.avoid && !i.retired);
+    const S = {}; usable.forEach(i => (S[i.slot] = S[i.slot] || []).push(i));
+    const one = a => a[Math.floor(rand() * a.length)];
+    const ctxs = {}, pairs = [];
+    const before = d => ({wardrobe: data.wardrobe, laundry: data.laundry,
+      log: {worn: data.log.worn.filter(x => x.date < d), planned: (data.log.planned || []).filter(p => p.date < d)}});
+    for (const g of goods) {
+      const ctx = ctxs[g.date] || (ctxs[g.date] = prepare(before(g.date), {today: g.date}));
+      const wx = g.weather || wxBy[g.date] || {hi: 60, lo: 45, rain: 0, snow: false, wind: 0};
+      const o = g.occasion || guessOccasion(g.when);
+      const out = split(data, g.items), F = outfitFeats(ctx, o, wx, out);
+      if (!F) continue;
+      const negs = [];
+      for (const slot of ["top", "bottom", "shoes", "socks", "cap", "layer"]) {
+        const cur = out[slot]; if (!cur && slot !== "layer") continue;
+        const alts = (S[slot] || []).filter(i => i !== cur); if (!alts.length) continue;
+        for (let k = 0; k < swaps; k++) negs.push([slot, Object.assign({}, out, {[slot]: one(alts)})]);
+      }
+      if (out.layer) negs.push(["layer", Object.assign({}, out, {layer: null})]);
+      for (let k = 0; k < randoms; k++) negs.push(["random", {top: one(S.top), bottom: one(S.bottom), shoes: one(S.shoes), socks: one(S.socks),
+        cap: S.cap ? one(S.cap) : null, layer: rand() < .35 && S.layer ? one(S.layer) : null}]);
+      for (const [slot, nOut] of negs) {
+        if (o.kind === "lab" && attrs(nOut.top).sleeve === "long") continue;   // the hard rule handles those
+        const N = outfitFeats(ctx, o, wx, nOut); if (!N) continue;
+        const d = {};
+        for (const k in F) d[k] = F[k];
+        for (const k in N) d[k] = (d[k] || 0) - N[k];
+        pairs.push({d, w: g.weight || 1, slot, date: g.date});
+      }
+    }
+    return pairs;
+  }
+
+  /** Pairwise logistic regression, pulled toward a prior so a handful of fits can't swing everything. */
+  function train(pairs, prior = W, {lambda = 0.02, iters = 400, lr = 0.5} = {}) {
+    const keys = Object.keys(prior).filter(k => !FIXED.has(k)), w = Object.assign({}, prior);
+    const tw = pairs.reduce((a, p) => a + p.w, 0) || 1;
+    for (let it = 0; it < iters; it++) {
+      const g = {};
+      for (const p of pairs) {
+        const m = dot(w, p.d), s = p.w / (1 + Math.exp(Math.min(m, 30)));      // gradient of log(1 + e^-m)
+        for (const k in p.d) g[k] = (g[k] || 0) + s * p.d[k];
+      }
+      for (const k of keys) w[k] += lr * ((g[k] || 0) / tw - lambda * (w[k] - prior[k]));
+    }
+    for (const k of keys) w[k] = Math.round(w[k] * 1000) / 1000;
+    return w;
+  }
+  const accuracy = (pairs, w) => pairs.reduce((a, p) => { const m = dot(w, p.d); return a + (m > 0 ? 1 : m === 0 ? .5 : 0) * p.w; }, 0) / (pairs.reduce((a, p) => a + p.w, 0) || 1);
+
+  /** Per-person weights from their own worn log (runs in the browser). Null until there's enough to learn from. */
+  function personalize(data, {min = 12} = {}) {
+    const worn = ((data.log && data.log.worn) || []).filter(x => x.items && x.items.length >= 3);
+    if (worn.length < min) return null;
+    const goods = worn.map(x => ({date: x.date, items: x.items, when: x.occasion, weather: x.weather, weight: x.didnt ? .3 : 1,
+      occasion: x.kind ? {kind: x.kind, phase: guessOccasion(x.occasion).phase} : undefined}));
+    const pairs = makePairs(data, goods, {swaps: 2, randoms: 1, seed: worn.length});
+    return train(pairs, W, {lambda: 0.08, iters: 200});
+  }
+
+  return {suggest, suggestDay, scoreFit, check, prepare, attrs, feel, need, W, PRIOR, TUNED, HARD,
+    FIXED, makePairs, train, accuracy, personalize, guessOccasion, parseWeather, split, outfitFeats};
 });

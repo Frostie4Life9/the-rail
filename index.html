@@ -738,7 +738,7 @@ label.f textarea{min-height:64px;resize:vertical}
 <script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.23-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.24-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1110,7 +1110,7 @@ function viewSettings() {
 }
 
 /* ---------------- flows ---------------- */
-function wearSheet({date, name, when, items: codes, n}) {
+function wearSheet({date, name, when, items: codes, n, weather, kind}) {
   const existing = wornOn(date).find(w => n ? w.from_plan === `${date}#${n}` : w.name === name);
   const st = {items:[...(existing?.items || codes)], name: existing?.name || name, photo:null, photoUrl: existing?.photo ? photoSrc(existing.photo) : ""};
   const paint = sh => {
@@ -1161,6 +1161,10 @@ function wearSheet({date, name, when, items: codes, n}) {
         const rec = {date, name: (st.name || "").trim() || "Worn fit", items: st.items, uncatalogued: existing?.uncatalogued || [],
           from_plan: n ? `${date}#${n}` : null, occasion: when || "", worked: (st.worked || "").trim(), didnt: (st.didnt || "").trim(),
           notes: existing?.notes || "", photo: existing?.photo || null, logged_at: existing?.logged_at || nowIso(), source: "app"};
+        // weather and occasion kind let the fit engine learn from this wear (only fits started from Suggest have them)
+        const wx = weather || existing?.weather, k = kind || existing?.kind;
+        if (wx) rec.weather = {hi: Math.round(wx.hi), lo: Math.round(wx.lo), rain: Math.round(wx.rain || 0), snow: !!wx.snow, wind: Math.round(wx.wind || 0)};
+        if (k) rec.kind = k;
         const payload = {rec};
         if (st.photo) {
           const slug = rec.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "fit";
@@ -1223,7 +1227,13 @@ function buildFit(start = {}) {
 /* ---------------- suggest fits (engine.js: free, no AI) ---------------- */
 const WX_PRESETS = {cold: {hi: 38, lo: 27}, cool: {hi: 52, lo: 40}, mild: {hi: 66, lo: 50}, warm: {hi: 82, lo: 62}};
 const OCCASIONS = [["class", "Class", "day"], ["lab", "Lab", "day"], ["lounge", "Chill", "evening"], ["out", "Out", "evening"], ["church", "Church", "day"]];
-let wxCache = null;
+let wxCache = null, learned = {n: -1, w: null};
+// Weights tuned to this person's own worn log (null until ~12 fits are logged; then the built-in weights are the starting point).
+function learnedWeights() {
+  const n = (S.log?.worn || []).length;
+  if (n !== learned.n) { try { learned = {n, w: RailEngine.personalize({wardrobe: S.wardrobe, log: S.log, laundry: S.laundry || DEFAULTS["laundry.json"]()})}; } catch { learned = {n, w: null}; } }
+  return learned.w;
+}
 function parseWx(sub) {   // "Provo: 48°F high / 32°F low · sunny · 0% rain · …" from the morning sheet
   const m = /(\d+)°F high \/ (\d+)°F low/.exec(sub || ""); if (!m) return null;
   const r = /(\d+)% rain/.exec(sub), w = /(\d+)(?:-(\d+))? mph/.exec(sub);
@@ -1243,7 +1253,7 @@ async function loadWx() {   // today's sheet first, then a free forecast (Open-M
 }
 function suggestSheet() {
   if (!window.RailEngine) return toast("The fit engine didn't load. Reload the app.");
-  const st = {kind: new Date().getHours() < 17 ? "class" : "lounge", salt: 0, wx: null, src: "", preset: null, rain: null, fits: []};
+  const st = {kind: new Date().getHours() < 17 ? "class" : "lounge", salt: 0, wx: null, src: "", preset: null, rain: null, fits: [], shown: []};
   openSheet("", sh => {
     const weather = () => {
       const w = st.preset ? Object.assign({rain: 0, snow: false, wind: 0}, WX_PRESETS[st.preset]) : st.wx && Object.assign({}, st.wx);
@@ -1255,7 +1265,7 @@ function suggestSheet() {
       if (!w) return st.fits = [];
       const occ = OCCASIONS.find(o => o[0] === st.kind);
       const r = RailEngine.suggest({wardrobe: S.wardrobe, log: S.log || {worn: [], planned: []}, laundry: S.laundry || DEFAULTS["laundry.json"]()},
-        {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt});
+        {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt, exclude: st.shown, weights: learnedWeights() || undefined});
       st.problems = r.problems; st.fits = r.fits;
     };
     const paint = () => {
@@ -1278,13 +1288,13 @@ function suggestSheet() {
       const b = e.target.closest("[data-s]"); if (!b) return;
       const a = b.dataset.s;
       if (a === "close") return closeSheet();
-      if (a === "kind") { st.kind = b.dataset.k; st.salt = 0; return redo(); }
-      if (a === "wx") { st.preset = st.preset === b.dataset.k ? null : b.dataset.k; st.salt = 0; return redo(); }
-      if (a === "rain") { const w = weather(); st.rain = !(w && w.rain >= 50); st.salt = 0; return redo(); }
-      if (a === "again") { st.salt++; return redo(); }
+      if (a === "kind") { st.kind = b.dataset.k; st.salt = 0; st.shown = []; return redo(); }
+      if (a === "wx") { st.preset = st.preset === b.dataset.k ? null : b.dataset.k; st.salt = 0; st.shown = []; return redo(); }
+      if (a === "rain") { const w = weather(); st.rain = !(w && w.rain >= 50); st.salt = 0; st.shown = []; return redo(); }
+      if (a === "again") { st.shown = st.shown.concat(st.fits.map(f => f.items)).slice(-12); st.salt++; return redo(); }
       if (a === "wear") {
         const f = st.fits[+b.dataset.i], occ = OCCASIONS.find(o => o[0] === st.kind);
-        sh.onclick = null; return wearSheet({date: todayStr(), name: f.name, when: occ[1], items: bySlot(f.items)});
+        sh.onclick = null; return wearSheet({date: todayStr(), name: f.name, when: occ[1], items: bySlot(f.items), weather: weather(), kind: st.kind});
       }
     };
   });
