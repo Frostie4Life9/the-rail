@@ -64,7 +64,7 @@ const check = (c, m) => { if (!c) { console.error("FAIL:", m); process.exitCode 
 
 await page.route("https://api.open-meteo.com/**", r => r.abort());   // no network forecast in tests: today's sheet provides the weather
 await page.goto(base);
-await page.fill("#s-token", "test-token"); await page.click("[data-act=save-cfg]");
+await page.click("details.gh summary"); await page.fill("#s-token", "test-token"); await page.click("[data-act=save-cfg]");
 await page.waitForSelector(".fit");
 
 await page.click("[data-act=suggest] >> nth=0");

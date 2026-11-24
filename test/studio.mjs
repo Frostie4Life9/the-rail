@@ -63,7 +63,7 @@ for (const scheme of ["light", "dark"]) {
   const tag = scheme + ": ";
 
   await page.goto(base);
-  await page.fill("#s-token", "t"); await page.click("[data-act=save-cfg]");
+  await page.click("details.gh summary"); await page.fill("#s-token", "t"); await page.click("[data-act=save-cfg]");
   await page.waitForSelector(".looks .fit"); await page.waitForTimeout(900);
   const plan = log.planned.find(p => p.date === today);
   check(await page.locator(".looks .fit").count() === plan.fits.length, tag + "one look per planned fit");

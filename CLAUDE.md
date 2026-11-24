@@ -15,9 +15,19 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   sources). `cut/` — the same photos with the background removed (transparent WebP); the app shows `cut/`
   for any `tiles/` path and so does `rail.py sheet`. A new tile needs a matching `cut/<name>.webp`.
   The SW caches `cut/` forever by URL, so bump `CUT_V` in index.html whenever cut photos are re-made.
-- Data is NOT in this repo (it's public). It lives in the private repo `Frostie4Life9/the-rail-data`
-  (wardrobe.json, fit-log.json, laundry.json, photos/, tools/rail.py) and the app reads/writes it
-  through the GitHub contents API with a fine-grained token stored on the device.
+- Data is NOT in this repo (it's public). Two ways in, both speaking the GitHub-contents shape (`{content b64, sha}`),
+  so the sync code is one path (`Store()` picks `API` or `GH` in index.html):
+  - **Accounts** (friends, and the owner once set up): Google sign-in → the `rail-api` Worker (`worker/rail-api.js`,
+    `wrangler.jsonc`, https://rail-api.skyfro04.workers.dev). Invite-only: OWNER_EMAIL plus emails the owner adds in
+    Settings. Friends' files and photos live in D1 (`rail`). The owner's files pass straight through to the private repo
+    `Frostie4Life9/the-rail-data` once the `GH_TOKEN` secret is set on the Worker (until then the owner signs in only to
+    manage invites and keeps syncing on the device token). Google client = Playback's (same origin); `GCID` in index.html
+    must match `GOOGLE_CLIENT_ID` in wrangler.jsonc. Workers Builds deploys the Worker when `worker/*` or `wrangler.jsonc`
+    change on main. Secrets (`SECRET`, `GH_TOKEN`) live only in Cloudflare.
+  - **GitHub token** (the owner's original path, under "Owner: connect with a GitHub token" in Settings): a fine-grained
+    token on the device, straight to `the-rail-data` (wardrobe.json, fit-log.json, laundry.json, photos/, tools/rail.py).
+- Tests for accounts: `node test/worker.mjs` (Worker on a local D1) and `node test/accounts.mjs <out-dir>` (a friend's
+  whole first visit in Playwright against the real Worker). Both need `miniflare@4`.
 - Every change in the app is a named op (`OPS` in index.html) that is applied locally, queued, then
   re-applied to a fresh copy of the file and written with its sha — keep ops deterministic and replayable.
 - The daily "Morning fit sheet" scheduled task writes today's plan into fit-log.json via tools/rail.py.

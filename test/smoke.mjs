@@ -66,6 +66,7 @@ const logJ = () => JSON.parse(repo.get("fit-log.json").buf);
 const check = (c, m) => { if (!c) { console.error("FAIL:", m); process.exitCode = 1; } else console.log("ok:", m); };
 
 await page.goto(base);
+await page.click("details.gh summary");   // the GitHub form sits under "Owner: connect with a GitHub token"
 await page.fill("#s-token", "wrong"); await page.click("[data-act=save-cfg]");
 await page.waitForSelector("#cfg-msg:not([hidden])"); check((await page.textContent("#cfg-msg")).includes("rejected"), "bad token explained");
 await page.fill("#s-token", "test-token"); await page.click("[data-act=save-cfg]");

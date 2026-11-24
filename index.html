@@ -297,6 +297,20 @@ label.f textarea{min-height:60px;resize:vertical}
 .settings p{color:var(--muted);font-size:15px;margin-top:10px;max-width:60ch}
 .settings code{background:var(--raised);padding:1px 5px;border-radius:4px;font-size:14px}
 .ver{color:var(--muted);font-size:13px;margin-top:28px}
+.settings details{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+.settings summary{cursor:pointer;font-weight:700;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;min-height:44px}
+.settings summary::-webkit-details-marker{display:none}
+.settings summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-left:auto;transition:transform .2s}
+.settings details[open] summary::after{transform:rotate(-135deg)}
+.gsi{margin-top:16px;min-height:44px}
+.inv-add{display:flex;gap:8px;margin-top:12px}
+.inv-add input{flex:1;min-width:0;min-height:48px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--raised);color:var(--text);font:inherit;font-size:16px}
+.inv{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.inv li{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:var(--raised)}
+.inv .t{flex:1;min-width:0;display:grid}
+.inv .t b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv .t span{color:var(--muted);font-size:13px}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 <!-- suite:css v11 · shared by Kitchen, Grocery, Lift, DishLog, Protocol, Rail, Game Log, Playback — edit tools/suite.py in the kitchen repo, not here -->
@@ -824,7 +838,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.24-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.24-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -841,8 +855,14 @@ function ls(k, v) {
 }
 
 /* ---------------- config ---------------- */
-const cfg = Object.assign({owner:"Frostie4Life9", repo:"the-rail-data", branch:"main", token:""}, ls("rail.cfg") || {});
-const configured = () => !!(cfg.owner && cfg.repo && cfg.token);
+const cfg = Object.assign({owner:"Frostie4Life9", repo:"the-rail-data", branch:"main", token:"", mode:"github", session:"", me:null}, ls("rail.cfg") || {});
+// Two ways to reach your data: "account" (Google sign-in, through the rail-api Worker; how friends use it) or
+// "github" (the owner's original path: a fine-grained token on this device, straight to the private data repo).
+const RAIL_API = "https://rail-api.skyfro04.workers.dev";
+const GCID = "961476018828-tkjmdic1fnrtr7jtfmb7ta9alrupn8km.apps.googleusercontent.com";   // must match GOOGLE_CLIENT_ID in wrangler.jsonc
+const isAccount = () => cfg.mode === "account";
+const isOwnerUser = () => !isAccount() || !!cfg.me?.owner;
+const configured = () => isAccount() ? !!cfg.session : !!(cfg.owner && cfg.repo && cfg.token);
 
 /* ---------------- GitHub contents API ---------------- */
 class GhError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
@@ -873,6 +893,37 @@ const GH = {
     return j.content.sha;
   },
 };
+/* The rail-api Worker speaks the same shape as the GitHub contents API above, so sync code doesn't care which it is. */
+const API = {
+  async req(path, opts = {}) {
+    let res;
+    try { res = await fetch(RAIL_API + path, {cache:"no-store", ...opts, headers:{...(cfg.session ? {Authorization:`Bearer ${cfg.session}`} : {}), ...(opts.headers || {})}}); }
+    catch { throw new GhError(0, "offline"); }
+    if (!res.ok) {
+      let m = res.statusText; try { m = (await res.json()).error || m; } catch {}
+      if (res.status === 401 && path !== "/auth/google") { cfg.session = ""; ls("rail.cfg", cfg); m = "You're signed out. Sign in again in Settings"; }
+      throw new GhError(res.status, m);
+    }
+    return res;
+  },
+  file: path => "/files/" + path.split("/").map(encodeURIComponent).join("/"),
+  async getJson(path) {
+    try {
+      const j = await (await this.req(this.file(path))).json();
+      const bytes = Uint8Array.from(atob(j.content), c => c.charCodeAt(0));
+      return {data: JSON.parse(new TextDecoder().decode(bytes)), sha: j.sha};
+    } catch (e) { if (e.status === 404) return {data:null, sha:null}; throw e; }
+  },
+  async getBlob(path) { return (await this.req(this.file(path))).blob(); },
+  async put(path, b64, sha, message) {
+    const body = {message, content:b64}; if (sha) body.sha = sha;
+    return (await (await this.req(this.file(path), {method:"PUT", body:JSON.stringify(body), headers:{"Content-Type":"application/json"}})).json()).sha;
+  },
+  async json(path, method = "GET", body) {
+    return (await this.req(path, {method, ...(body ? {body:JSON.stringify(body), headers:{"Content-Type":"application/json"}} : {})})).json();
+  },
+};
+const Store = () => isAccount() ? API : GH;
 function b64utf8(str) { const b = new TextEncoder().encode(str); let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(s); }
 async function blobToB64(blob) { const r = new FileReader(); return new Promise((ok, no) => { r.onload = () => ok(r.result.split(",")[1]); r.onerror = no; r.readAsDataURL(blob); }); }
 
@@ -891,7 +942,7 @@ const DEFAULTS = {
 const KEY = {"wardrobe.json":"wardrobe","fit-log.json":"log","laundry.json":"laundry"};
 
 async function pull() {
-  const got = await Promise.all(FILES.map(f => GH.getJson(f)));
+  const got = await Promise.all(FILES.map(f => Store().getJson(f)));
   FILES.forEach((f, i) => { S[KEY[f]] = got[i].data || DEFAULTS[f](); S.shas[f] = got[i].sha; });
   S.synced = nowIso(); saveState();
 }
@@ -935,16 +986,16 @@ async function flush() {
       const q = queue[0], def = OPS[q.op];
       if (q.payload.upload) {            // photo travels with the op that references it
         const u = q.payload.upload;
-        try { await GH.put(u.path, u.b64, null, `Photo ${u.path}`); }
+        try { await Store().put(u.path, u.b64, null, `Photo ${u.path}`); }
         catch (e) { if (e.status !== 422) throw e; }   // 422 = already uploaded on an earlier try
         delete q.payload.upload; saveQueue();
       }
       for (let attempt = 0; ; attempt++) {
-        const fresh = await GH.getJson(def.file);
+        const fresh = await Store().getJson(def.file);
         const data = fresh.data || DEFAULTS[def.file]();
         def.apply(data, q.payload);
         try {
-          S.shas[def.file] = await GH.put(def.file, b64utf8(JSON.stringify(data, null, 1) + "\n"), fresh.sha, `${q.op}: ${summary(q)}`);
+          S.shas[def.file] = await Store().put(def.file, b64utf8(JSON.stringify(data, null, 1) + "\n"), fresh.sha, `${q.op}: ${summary(q)}`);
           S[KEY[def.file]] = data; break;
         } catch (e) { if ((e.status === 409 || e.status === 422) && attempt < 4) continue; throw e; }
       }
@@ -954,6 +1005,7 @@ async function flush() {
   } catch (e) {
     online = e.status !== 0 ? online : false;
     if (e.status === 401 || e.status === 403 || e.status === 404) toast(`Sync stopped: ${e.message}. Check Settings.`);
+    if (isAccount() && !cfg.session) tab = "settings";
   } finally { syncing = false; saveState(); setSync(); render(); }
 }
 function summary(q) {
@@ -1011,7 +1063,7 @@ async function loadPrivatePhoto(path) {
   try {
     const c = await caches.open("rail-private");
     let r = await c.match(key);
-    if (!r && configured()) { const b = await GH.getBlob(path); r = new Response(b); await c.put(key, r.clone()); }
+    if (!r && configured()) { const b = await Store().getBlob(path); r = new Response(b); await c.put(key, r.clone()); }
     return r ? URL.createObjectURL(await r.blob()) : "";
   } catch { return ""; }
 }
@@ -1191,8 +1243,11 @@ function render() {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
   const bd = $("#hbdg"); if (bd) bd.textContent = S.log ? (hamperCount() || "") : "";
   const v = $("#view");
+  const opened = tab === "settings" ? [...v.querySelectorAll("details[open]")].map(d => d.className) : [];   // a sync redraw keeps open panels open
   v.innerHTML = ({today:viewToday, closet:viewCloset, hamper:viewHamper, worn:viewWorn, settings:viewSettings}[tab])();
   if (tab === "today") mountLooks();
+  opened.forEach(c => { const d = c && v.querySelector("details." + c.split(" ")[0]); if (d) d.open = true; });
+  if (tab === "settings") { if (!(cfg.session && cfg.me)) mountGsi(); else if (cfg.me.owner && invites === null) { invites = {invites: null}; loadInvites(); } }
   watchBob();
   setSync();
 }
@@ -1238,10 +1293,12 @@ function viewToday() {
   out += `<div class="hamper"><span class="grow"><span class="dotp${hn ? "" : " ok"}" aria-hidden="true"></span>${hn ? `<span><b>${hn}</b> in the hamper</span>` : "Hamper's empty"}</span>
     ${hn ? `<button class="btn small ghost" data-tab="hamper">Open</button><button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
   if (worn.length) out += `<p class="worn-badge" style="margin-top:12px">${ICON.check} Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
-  if (!S.log) return out + `<div class="empty"><h3>Loading your closet</h3>Pulling your data from GitHub.</div>`;
+  if (!S.log) return out + `<div class="empty"><h3>Loading your closet</h3>Pulling your closet down.</div>`;
+  if (!items().length) return out + `<div class="empty"><h3>Your closet is empty</h3>Add a few pieces: a couple of tops, a pair of pants, shoes. Fits show up here once there's enough to mix.
+      <div class="actions"><button class="btn primary" data-act="add-item">Add a piece</button></div></div>`;
   if (!plan) {
     const last = (S.log.planned || [])[0];
-    return out + `<div class="empty"><h3>No looks yet today</h3>The morning sheet lands at 6:59am.${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
+    return out + `<div class="empty"><h3>No looks yet today</h3>${isOwnerUser() ? "The morning sheet lands at 6:59am." : "Tap Suggest fits and The Rail builds some from your closet and today's weather."}${last ? ` The last one was ${new Date(last.date + "T12:00").toLocaleDateString("en-US", {weekday:"long"})}.` : ""}
       <div class="actions"><button class="btn primary" data-act="suggest">Suggest fits</button><button class="btn ghost" data-act="log-own">Build my own fit</button></div></div>`;
   }
   const total = plan.fits.length;
@@ -1249,7 +1306,7 @@ function viewToday() {
     const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
     const acts = (isWorn ? `<button class="btn big" data-act="wear" data-n="${f.n}">${ICON.check} Logged · Edit</button>`
       : `<button class="btn primary big" data-act="wear" data-n="${f.n}">${ICON.check} Wearing this</button>`)
-      + `<button class="btn round" data-act="tweak" data-n="${f.n}" aria-label="Tweak in Claude" title="Tweak in Claude">${ICON.pen}</button>`;
+      + (isOwnerUser() ? `<button class="btn round" data-act="tweak" data-n="${f.n}" aria-label="Tweak in Claude" title="Tweak in Claude">${ICON.pen}</button>` : "");
     return lookHtml({n: f.n, total, name: f.name, when: f.when, note: f.note, codes: f.items, acts});
   }).join("")}</div>`;
   if (total > 1) out += `<div class="dots" role="group" aria-label="Looks">${plan.fits.map((f, i) => `<button data-look="${i}" aria-label="Look ${i + 1}: ${esc(f.name)}" aria-current="${i === lookIdx}"></button>`).join("")}</div>`;
@@ -1366,15 +1423,87 @@ function viewWorn() {
 }
 
 function viewSettings() {
-  return mast("The Rail", "Settings") + `<div class="settings">
-    <p>Your closet, fit log and mirror pics live in your private GitHub repo. This phone needs a fine-grained token with <code>Contents: Read and write</code> on that repo only. It's stored on this device and sent only to GitHub.</p>
+  const me = cfg.session && cfg.me ? cfg.me : null;
+  // The owner can be signed in (to manage invites) while his closet still comes through the GitHub token.
+  const ownerOnToken = !!me && !isAccount();
+  let acct = "";
+  if (me) {
+    acct = `<h2 class="sect">Account</h2><p>Signed in as <b>${esc(me.name)}</b> · ${esc(me.email)}${ownerOnToken ? ". Your closet still syncs through your GitHub token below." : ""}</p>
+      <div class="actions">${ownerOnToken ? "" : `<button class="btn ghost" data-act="export">Download my data</button>`}<button class="btn ghost" data-act="signout">Sign out</button></div>
+      ${me.owner ? invitesHtml() : ""}
+      ${ownerOnToken ? "" : `<details class="zap"><summary>Delete my account</summary><p>This removes your closet, fit log, hamper and photos from The Rail for good. Download your data first if you want a copy.</p>
+        <button class="btn" data-act="delete-acct">Delete everything</button></details>`}`;
+  } else {
+    acct = `<h2 class="sect">Sign in</h2><p>The Rail is invite-only. Sign in with the Google account your invite was sent to.</p>
+      <div id="gsi-btn" class="gsi"></div><p id="acct-msg" class="err" hidden></p>`;
+  }
+  const showGh = !isAccount() || !me;
+  return mast("The Rail", "Settings") + `<div class="settings">${acct}
+    ${showGh ? `<details class="gh"${!isAccount() && configured() ? " open" : ""}><summary>Owner: connect with a GitHub token</summary>
+    <p>The owner's closet, fit log and mirror pics live in a private GitHub repo. This phone needs a fine-grained token with <code>Contents: Read and write</code> on that repo only. It's stored on this device and sent only to GitHub.</p>
     <label class="f">GitHub owner<input id="s-owner" value="${esc(cfg.owner)}" autocapitalize="off" autocorrect="off"></label>
     <label class="f">Data repo<input id="s-repo" value="${esc(cfg.repo)}" autocapitalize="off" autocorrect="off"></label>
     <label class="f">Token<input id="s-token" type="password" value="${esc(cfg.token)}" placeholder="github_pat_…" autocomplete="off"></label>
     <div class="actions"><button class="btn primary" data-act="save-cfg">Save and connect</button>${configured() ? `<button class="btn ghost" data-act="resync">Sync now</button>` : ""}</div>
-    <p id="cfg-msg" class="err" hidden></p>
-    ${S.synced ? `<p>Last synced ${new Date(S.synced).toLocaleString()}.${queue.length ? ` ${queue.length} change(s) waiting.` : ""}</p>` : ""}
+    <p id="cfg-msg" class="err" hidden></p></details>` : ""}
+    ${S.synced && configured() ? `<p>Last synced ${new Date(S.synced).toLocaleString()}.${queue.length ? ` ${queue.length} change(s) waiting.` : ""}</p>` : ""}
     <p class="ver">The Rail ${VERSION} · <a href="https://github.com/Frostie4Life9/the-rail/tree/v1-archive" style="color:inherit">old version (v1)</a></p></div>`;
+}
+let invites = null;   // owner only: {invites, users}, loaded when Settings opens
+function invitesHtml() {
+  const rows = invites && invites.invites ? invites.invites : null;
+  const joined = new Set((invites?.users || []).map(u => u.email));
+  return `<h2 class="sect">Invite friends</h2><p>Add a friend's Google email, then send them the link. Only people on this list can sign in.</p>
+    <div class="inv-add"><input id="inv-email" type="email" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="friend@gmail.com" aria-label="Friend's Google email"><button class="btn primary" data-act="invite">Invite</button></div>
+    <p id="inv-msg" class="err" hidden></p>
+    ${rows === null ? `<p>Loading invites…</p>` : !rows.length ? `<p>Nobody invited yet.</p>` : `<ul class="inv">${rows.map(r => `<li><span class="t"><b>${esc(r.email)}</b><span>${joined.has(r.email) ? "Joined" : r.used ? "Joined, then left" : "Hasn't signed in yet"}</span></span>
+      <button class="btn small ghost" data-act="share-invite" data-email="${esc(r.email)}">Send link</button><button class="btn small ghost" data-act="uninvite" data-email="${esc(r.email)}" aria-label="Take back invite for ${esc(r.email)}">✕</button></li>`).join("")}</ul>`}`;
+}
+async function loadInvites() {
+  if (!cfg.session || !cfg.me?.owner) return;
+  try { invites = await API.json("/invites"); } catch (e) { invites = {invites: [], users: []}; if (e.status !== 0) toast(e.message); }
+  if (tab === "settings") render();
+}
+function resetLocal() {   // a different person (or storage) on this phone: drop the old closet and its photo cache
+  Object.assign(S, {wardrobe:null, log:null, laundry:null, shas:{}, synced:null}); saveState();
+  queue = []; saveQueue(); imgCache.clear();
+  try { caches.delete("rail-private"); } catch {}
+}
+let gsiLoading = null;
+function mountGsi() {
+  const el = $("#gsi-btn"); if (!el) return;
+  const go = () => {
+    google.accounts.id.initialize({client_id: GCID, callback: onGoogle, auto_select: false, cancel_on_tap_outside: true});
+    google.accounts.id.renderButton(el, {theme: matchMedia("(prefers-color-scheme: dark)").matches ? "filled_black" : "outline",
+      size: "large", shape: "pill", text: "signin_with", width: Math.min(320, el.clientWidth || 300)});
+  };
+  if (window.google?.accounts?.id) return go();
+  if (!gsiLoading) gsiLoading = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+  gsiLoading.then(go).catch(() => { gsiLoading = null; const m = $("#acct-msg"); if (m) { m.hidden = false; m.textContent = "Couldn't load Google sign-in. Check your connection and open Settings again."; } });
+}
+async function onGoogle(resp) {
+  const m = $("#acct-msg"), say = t => { if (m) { m.hidden = false; m.textContent = t; } };
+  try {
+    const j = await API.json("/auth/google", "POST", {credential: resp.credential});
+    if (j.me.owner && j.me.storage === "account" && !isAccount() && cfg.token) {
+      // Owner on the GitHub token, and the Worker can't reach his repo yet: sign in for invites only, keep syncing as before.
+      Object.assign(cfg, {session: j.token, me: j.me}); ls("rail.cfg", cfg);
+      render(); loadInvites(); toast("Signed in. Your closet still syncs through GitHub."); return;
+    }
+    if (queue.length) { say("This phone still has changes waiting to sync. Connect to the internet, let them finish, then sign in."); return; }
+    const switching = !isAccount() ? j.me.storage !== "github" : cfg.me?.email !== j.me.email;
+    Object.assign(cfg, {mode: "account", session: j.token, me: j.me}); ls("rail.cfg", cfg);
+    if (switching) resetLocal();
+    await pull(); online = true; tab = "today"; render(); toast(`Signed in as ${j.me.name}`); flush();
+    if (j.me.owner) loadInvites();
+  } catch (e) {
+    say(e.status === 403 ? "That Google account isn't on the invite list. Ask whoever invited you to add this email, or sign in with the one they used."
+      : e.status === 0 ? "No connection. Try again when you're online." : `Sign-in didn't work: ${e.message}`);
+  }
+}
+function download(name, text) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: "application/json"})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 
 /* ---------------- flows ---------------- */
@@ -1703,8 +1832,50 @@ document.addEventListener("click", async e => {
   if (act === "build-with") return buildFit({items: [a.dataset.code]});
   if (act === "item") return itemSheet(a.dataset.code);
   if (act === "add-item") return addItemSheet();
+  if (act === "signout") {
+    if (queue.length && isAccount()) return toast(`${queue.length} change(s) haven't synced yet. Get online first.`);
+    try { window.google?.accounts?.id?.disableAutoSelect(); } catch {}
+    const wasAccount = isAccount();
+    Object.assign(cfg, {session: "", me: null}); ls("rail.cfg", cfg); invites = null;
+    if (wasAccount) resetLocal();
+    render(); return toast("Signed out");
+  }
+  if (act === "export") {
+    a.disabled = true;
+    try { const j = await API.json("/export"); download(`rail-export-${todayStr()}.json`, JSON.stringify(j, null, 1)); toast("Downloaded"); }
+    catch (err) { toast(err.message); }
+    a.disabled = false; return;
+  }
+  if (act === "delete-acct") {
+    if (a.dataset.armed !== "1") { a.dataset.armed = "1"; a.textContent = "Tap again to delete for good"; a.classList.add("danger"); return; }
+    a.disabled = true;
+    try { await API.json("/me", "DELETE"); Object.assign(cfg, {session: "", me: null}); ls("rail.cfg", cfg); resetLocal(); render(); toast("Account deleted"); }
+    catch (err) { a.disabled = false; toast(err.message); }
+    return;
+  }
+  if (act === "invite") {
+    const inp = $("#inv-email"), msg = $("#inv-msg"), email = inp.value.trim();
+    if (!email) return inp.focus();
+    a.disabled = true;
+    try { await API.json("/invites", "POST", {email}); inp.value = ""; await loadInvites(); toast("Invited. Send them the link."); }
+    catch (err) { msg.hidden = false; msg.textContent = err.message; a.disabled = false; }
+    return;
+  }
+  if (act === "uninvite") {
+    try { await API.json("/invites?email=" + encodeURIComponent(a.dataset.email), "DELETE"); await loadInvites(); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (act === "share-invite") {
+    const link = new URL("./", location.href).href;
+    const text = `You're invited to The Rail, my outfit app. Open ${link} on your phone, tap the gear, and sign in with Google (${a.dataset.email}). Add it to your home screen from the share menu.`;
+    try { if (navigator.share) { await navigator.share({title: "The Rail", text}); return; } } catch { return; }
+    try { await navigator.clipboard.writeText(text); toast("Invite copied"); } catch { toast(link); }
+    return;
+  }
   if (act === "resync") { await flush(); if (!queue.length) { await pull().catch(() => {}); render(); toast("Synced"); } return; }
   if (act === "save-cfg") {
+    if (isAccount() && queue.length) return toast(`${queue.length} change(s) haven't synced yet. Get online first.`);
+    if (isAccount()) { resetLocal(); Object.assign(cfg, {mode: "github", session: "", me: null}); }
     Object.assign(cfg, {owner: $("#s-owner").value.trim(), repo: $("#s-repo").value.trim(), token: $("#s-token").value.trim()});
     const msg = $("#cfg-msg"); a.disabled = true; a.textContent = "Connecting…";
     try {
@@ -1726,6 +1897,8 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && co
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 render();
 if (configured()) (queue.length ? flush() : pull().then(() => { online = true; render(); })).catch(e => { online = e.status !== 0; render(); });
+// Account tokens last 30 days; every visit swaps in a fresh one (and picks up name or owner changes).
+if (cfg.session) API.json("/me").then(j => { Object.assign(cfg, {session: j.token, me: j.me}); ls("rail.cfg", cfg); }).catch(e => { if (e.status === 401) render(); });
 </script>
 <!-- ===== New-version bar (same idea as Kitchen, Grocery, Protocol) =====
      Shortly after load, whenever you come back to the app, and every 10 min while it's open,
