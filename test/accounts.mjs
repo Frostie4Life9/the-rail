@@ -25,8 +25,24 @@ async function gtoken(claims) {
 const mf = new Miniflare({
   modules: true, scriptPath: "worker/rail-api.js", script: fs.readFileSync(path.join(root, "worker/rail-api.js"), "utf8"),
   compatibilityDate: "2026-08-01", d1Databases: ["DB"],
-  bindings: { GOOGLE_CLIENT_ID: CID, OWNER_EMAIL: "owner@example.com", SECRET: "s", ALLOW_ORIGINS: "http://127.0.0.1", __TEST_JWKS: [jwk] }
+  bindings: { GOOGLE_CLIENT_ID: CID, OWNER_EMAIL: "owner@example.com", SECRET: "s", ALLOW_ORIGINS: "http://127.0.0.1", OWNER_REPO: "Frostie4Life9/the-rail-data", __TEST_JWKS: [jwk] },
+  outboundService: req => fakeGitHub(req.method, req.url, req.headers.get("authorization"), req.method === "PUT" ? req.text() : null)
 });
+// One fake GitHub repo, reached by the app directly (token mode) and by the Worker (after the hand-over).
+const ghRepo = new Map([["wardrobe.json", { text: JSON.stringify({ next_code: 9001, items: [{ code: "6039", name: "Rugby", colour: "charcoal", type: "collared", slot: "top" }] }), sha: "g0" }],
+  ["fit-log.json", { text: JSON.stringify({ planned: [], worn: [] }), sha: "g1" }], ["laundry.json", { text: JSON.stringify({ wash_after: {}, washed: {}, dirtied: {} }), sha: "g2" }]]);
+let ghN = 2;
+async function fakeGitHub(method, url, auth, bodyP) {
+  const u = new URL(url);
+  if (u.hostname !== "api.github.com") return new Response("no", { status: 599 });
+  if (!String(auth).includes("github_pat_good")) return new Response(JSON.stringify({ message: "Bad credentials" }), { status: 401, headers: { "content-type": "application/json" } });
+  const p = decodeURIComponent(u.pathname.split("/contents/")[1] || "");
+  if (method === "GET") { const f = ghRepo.get(p); return f ? Response.json({ content: Buffer.from(f.text).toString("base64"), sha: f.sha }) : Response.json({ message: "Not Found" }, { status: 404 }); }
+  const b = JSON.parse(await bodyP), cur = ghRepo.get(p);
+  if (cur && b.sha !== cur.sha) return Response.json({ message: "conflict" }, { status: 409 });
+  const sha = "g" + (++ghN); ghRepo.set(p, { text: Buffer.from(b.content, "base64").toString(), sha });
+  return Response.json({ content: { sha } });
+}
 
 const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp" };
 const server = http.createServer((req, res) => {
@@ -41,8 +57,11 @@ let fail = 0;
 const check = (c, m) => { if (!c) { console.error("FAIL:", m); fail++; } else console.log("ok:", m); };
 
 const browser = await chromium.launch();
-async function phone(email, sub, name) {
+async function phone(email, sub, name, preset) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: "block" });
+  if (preset) await ctx.addInitScript(c => { if (!localStorage.getItem("rail.cfg")) localStorage.setItem("rail.cfg", c); }, JSON.stringify(preset));
+  await ctx.route("https://api.github.com/**", async r => { const q = r.request(); const res = await fakeGitHub(q.method(), q.url(), q.headers()["authorization"], q.method() === "PUT" ? Promise.resolve(q.postData()) : null);
+    await r.fulfill({ status: res.status, headers: { "content-type": "application/json", "access-control-allow-origin": "*" }, body: await res.text() }); });
   const cred = await gtoken({ sub, email, given_name: name });
   // Google's script, stubbed: a button that hands the app a (test-signed) credential.
   await ctx.route("https://accounts.google.com/gsi/client", r => r.fulfill({ contentType: "text/javascript", body: `
@@ -134,7 +153,23 @@ await A.page.waitForSelector("#fake-google");
 r = await mf.dispatchFetch("https://rail.test/me", { headers: { authorization: "Bearer " + friendTok } });
 check(r.status === 401, "delete removes the account");
 
-for (const x of [A, O, A2]) check(!x.errors.length, "no page errors " + x.errors.join(" | "));
+// 8. The owner's real phone: already on the GitHub token. Signing in hands the token over; same closet, no re-setup.
+const P = await phone("owner@example.com", "o1", "Skyler", { owner: "Frostie4Life9", repo: "the-rail-data", branch: "main", token: "github_pat_good_0123456789abcdefghij" });
+await P.page.waitForSelector("text=No looks yet today");
+await P.page.click("[data-tab=settings] >> nth=0");
+await P.page.waitForSelector("#fake-google"); await P.page.click("#fake-google");
+await P.page.waitForSelector("text=now syncs through your account");
+const pc = await P.page.evaluate(() => JSON.parse(localStorage.getItem("rail.cfg")));
+check(pc.mode === "account" && !pc.token && pc.me.storage === "github", "owner moved to sign-in; token gone from the phone");
+await P.page.click("nav.tabs [data-tab=closet]"); await P.page.waitForSelector("text=Rugby", { state: "attached" });
+check(true, "owner's closet still there after the move");
+await P.page.click("nav.tabs [data-tab=closet]");
+const before = ghRepo.get("laundry.json").sha;
+await P.page.evaluate(() => run("laundry", { at: new Date().toISOString() }));
+await P.page.waitForFunction(() => !queue.length, null, { timeout: 10000 });
+check(ghRepo.get("laundry.json").sha !== before, "owner's changes still land in his GitHub repo (via the Worker)");
+
+for (const x of [A, O, A2, P]) check(!x.errors.length, "no page errors " + x.errors.join(" | "));
 await browser.close(); server.close(); await mf.dispose();
 console.log(fail ? `${fail} failed` : "all passed");
 process.exit(fail ? 1 : 0);

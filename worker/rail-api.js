@@ -10,9 +10,11 @@
 
    Where data lives:
      - friends: D1 (files + photos tables). A photo is a compressed JPEG of about 100-400 KB.
-     - the owner: if the GH_TOKEN secret is set, the owner's files are passed straight through to the private
-       GitHub repo OWNER_REPO, so the morning fit-sheet task (which works on that repo) keeps working. Without
-       GH_TOKEN the owner is stored in D1 like everyone else.
+     - the owner: once the Worker has a GitHub token for OWNER_REPO, the owner's files are passed straight through to
+       that private repo, so the morning fit-sheet task (which works on that repo) keeps working. The token comes from
+       the GH_TOKEN secret, or — the usual way — the owner's phone hands over the token it already uses (POST
+       /owner/github); it's kept encrypted in D1 with a key derived from SECRET. Until then the owner signs in only
+       to manage invites.
 
    Routes (all JSON unless noted; Authorization: Bearer <token> on everything except /health and /auth/google):
      GET    /health                       -> {ok, accounts}
@@ -22,6 +24,8 @@
      GET    /export                       -> {files:{path: json}, photos:[path]}
      GET    /files/<path>                 -> {content (base64), sha}   (a photo path returns the image bytes)
      PUT    /files/<path> {content, sha?} -> {sha}   409 if sha is stale, 422 if a photo already exists
+     POST   /owner/github {token}         owner: checks the token can read OWNER_REPO, then keeps it (encrypted)
+     DELETE /owner/github                 owner: forgets it
      GET    /invites                      owner: -> {invites:[{email, made, used}], users:[...]}
      POST   /invites {email}              owner
      DELETE /invites?email=               owner: takes the invite back (someone who already signed up keeps their account)
@@ -71,7 +75,8 @@ async function init(env) {
     env.DB.prepare('CREATE TABLE IF NOT EXISTS invites (email TEXT PRIMARY KEY, made INTEGER NOT NULL, used INTEGER)'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS files (uid TEXT NOT NULL, path TEXT NOT NULL, body TEXT NOT NULL, sha TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (uid, path))'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS photos (uid TEXT NOT NULL, path TEXT NOT NULL, bytes BLOB NOT NULL, size INTEGER NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (uid, path))'),
-    env.DB.prepare('CREATE TABLE IF NOT EXISTS rl (k TEXT PRIMARY KEY, n INTEGER NOT NULL, exp INTEGER NOT NULL)')
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS rl (k TEXT PRIMARY KEY, n INTEGER NOT NULL, exp INTEGER NOT NULL)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL, at INTEGER NOT NULL)')
   ]);
   ready = true;
 }
@@ -83,7 +88,7 @@ async function route(request, env) {
 
   if (p === '/health' || p === '/') {
     const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first();
-    return json({ ok: true, app: 'rail-api', accounts: n ? n.n : 0, signin: !!(env.GOOGLE_CLIENT_ID && env.SECRET), owner_repo: !!env.GH_TOKEN });
+    return json({ ok: true, app: 'rail-api', accounts: n ? n.n : 0, signin: !!(env.GOOGLE_CLIENT_ID && env.SECRET), owner_repo: !!(await ghToken(env)) });
   }
 
   if (p === '/auth/google' && M === 'POST') return signIn(request, env);
@@ -91,6 +96,7 @@ async function route(request, env) {
   const me = await who(request, env);
   if (!me) return json({ error: 'sign in again' }, 401);
   me.owner = isOwner(env, me.email);
+  me.gh = me.owner && !!(await ghToken(env));
 
   if (p === '/me') {
     if (M === 'GET') {
@@ -121,13 +127,30 @@ async function route(request, env) {
     const path = decodeURIComponent(p.slice(7));
     const kind = FILES.includes(path) ? 'file' : PHOTO_RE.test(path) ? 'photo' : null;
     if (!kind) return json({ error: 'not a Rail file' }, 404);
-    if (me.owner && env.GH_TOKEN) return ownerRepo(request, env, path, kind);
+    if (me.gh) return ownerRepo(request, env, path, kind);
     if (M === 'GET') return kind === 'file' ? getFile(env, me, path) : getPhoto(env, me, path);
     if (M === 'PUT') {
       if (!(await limit(env, 'w:' + me.uid, 900, 3600))) return json({ error: 'too many saves, try again soon' }, 429);
       return kind === 'file' ? putFile(request, env, me, path) : putPhoto(request, env, me, path);
     }
     return json({ error: 'method not allowed' }, 405);
+  }
+
+  if (p === '/owner/github') {
+    if (!me.owner) return json({ error: 'owner only' }, 403);
+    if (M === 'DELETE') { await env.DB.prepare("DELETE FROM kv WHERE k = 'gh_token'").run(); ghCache = null; return json({ ok: true }); }
+    if (M !== 'POST') return json({ error: 'method not allowed' }, 405);
+    if (!(await limit(env, 'gh:' + me.uid, 20, 3600))) return json({ error: 'too many tries' }, 429);
+    const { j, err } = await body(request, 4096); if (err) return err;
+    const token = String(j.token || '').trim();
+    if (!/^(github_pat_|ghp_|gho_|ghs_)[A-Za-z0-9_]{20,250}$/.test(token)) return json({ error: "that isn't a GitHub token" }, 400);
+    const r = await ghFetch(env, token, 'wardrobe.json', {});
+    if (r.status === 401 || r.status === 403) return json({ error: 'GitHub rejected that token' }, 400);
+    if (r.status === 404) return json({ error: "that token can't see " + env.OWNER_REPO }, 400);
+    if (!r.ok) return json({ error: 'github ' + r.status }, 502);
+    await env.DB.prepare("INSERT OR REPLACE INTO kv (k, v, at) VALUES ('gh_token', ?1, ?2)").bind(await seal(env, token), Date.now()).run();
+    ghCache = null;
+    return json({ ok: true, me: meOut({ ...me, gh: true }, env) });
   }
 
   if (p === '/invites') {
@@ -187,10 +210,35 @@ async function signIn(request, env) {
     u.email = email;
   }
   u.owner = isOwner(env, u.email);
+  u.gh = u.owner && !!(await ghToken(env));
   return json({ token: await makeToken(env, u.uid), me: meOut(u, env) });
 }
 const isOwner = (env, email) => !!email && cleanEmail(env.OWNER_EMAIL) === cleanEmail(email);
-const meOut = (u, env) => ({ name: u.name, email: u.email, owner: !!u.owner, storage: u.owner && env.GH_TOKEN ? 'github' : 'account' });
+const meOut = (u, env) => ({ name: u.name, email: u.email, owner: !!u.owner, storage: u.gh ? 'github' : 'account' });
+
+/* ---------------- the owner's GitHub token: the GH_TOKEN secret, or the one his phone handed over (sealed in D1) ---------------- */
+let ghCache = null;   // {v, at}
+async function sealKey(env) {
+  const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('rail-gh:' + String(env.SECRET).trim()));
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+}
+async function seal(env, text) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await sealKey(env), new TextEncoder().encode(text)));
+  return toB64(iv) + '.' + toB64(ct);
+}
+async function unseal(env, v) {
+  const [a, b] = String(v).split('.');
+  try { return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(a) }, await sealKey(env), fromB64(b))); } catch { return ''; }
+}
+async function ghToken(env) {
+  if (env.GH_TOKEN) return String(env.GH_TOKEN).trim();
+  if (!env.SECRET) return '';
+  if (ghCache && Date.now() - ghCache.at < 60000) return ghCache.v;
+  const r = await env.DB.prepare("SELECT v FROM kv WHERE k = 'gh_token'").first();
+  ghCache = { v: r ? await unseal(env, r.v) : '', at: Date.now() };
+  return ghCache.v;
+}
 function cleanEmail(s) { s = String(s || '').trim().toLowerCase(); return /^[^\s@<>]{1,64}@[^\s@<>]{1,190}\.[a-z]{2,}$/.test(s) ? s : ''; }
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40);
 
@@ -298,14 +346,18 @@ async function putPhoto(request, env, me, path) {
 }
 
 /* ---------------- the owner's GitHub repo (pass-through) ---------------- */
-async function ownerRepo(request, env, path, kind) {
+function ghFetch(env, token, path, { method = 'GET', raw = false, body } = {}) {
   const repo = String(env.OWNER_REPO || '').trim(), branch = String(env.OWNER_BRANCH || 'main').trim();
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return json({ error: 'OWNER_REPO is not set' }, 500);
-  const gh = `https://api.github.com/repos/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-  const H = raw => ({ Authorization: `Bearer ${String(env.GH_TOKEN).trim()}`, 'User-Agent': 'rail-api', 'X-GitHub-Api-Version': '2022-11-28',
-    Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json' });
+  const url = `https://api.github.com/repos/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}` + (method === 'GET' ? `?ref=${encodeURIComponent(branch)}` : '');
+  return fetch(url, { method, body, headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'rail-api', 'X-GitHub-Api-Version': '2022-11-28',
+    Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json', ...(body ? { 'Content-Type': 'application/json' } : {}) } });
+}
+async function ownerRepo(request, env, path, kind) {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(String(env.OWNER_REPO || '').trim())) return json({ error: 'OWNER_REPO is not set' }, 500);
+  const token = await ghToken(env);
   if (request.method === 'GET') {
-    const r = await fetch(`${gh}?ref=${encodeURIComponent(branch)}`, { headers: H(kind === 'photo') });
+    const r = await ghFetch(env, token, path, { raw: kind === 'photo' });
+    if (r.status === 401) return json({ error: 'GitHub token expired. Sign out and back in with a fresh token on the GitHub form' }, 502);
     if (!r.ok) return json({ error: 'github ' + r.status }, r.status === 404 ? 404 : 502);
     if (kind === 'photo') return new Response(r.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=31536000, immutable' } });
     const j = await r.json();
@@ -313,10 +365,11 @@ async function ownerRepo(request, env, path, kind) {
   }
   if (request.method === 'PUT') {
     const { j, err } = await body(request, Math.ceil(Math.max(FILE_MAX, PHOTO_MAX) * 4 / 3) + 4096); if (err) return err;
-    const out = { message: String(j.message || `rail: ${path}`).slice(0, 200), content: String(j.content || ''), branch };
+    const out = { message: String(j.message || `rail: ${path}`).slice(0, 200), content: String(j.content || ''), branch: String(env.OWNER_BRANCH || 'main').trim() };
     if (j.sha) out.sha = String(j.sha);
-    const r = await fetch(gh, { method: 'PUT', headers: { ...H(false), 'Content-Type': 'application/json' }, body: JSON.stringify(out) });
+    const r = await ghFetch(env, token, path, { method: 'PUT', body: JSON.stringify(out) });
     if (r.status === 409 || r.status === 422) return json({ error: 'changed on another device' }, r.status);
+    if (r.status === 401) return json({ error: 'GitHub token expired' }, 502);
     if (!r.ok) return json({ error: 'github ' + r.status }, 502);
     return json({ sha: (await r.json()).content.sha });
   }

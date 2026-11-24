@@ -838,7 +838,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="engine.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.24-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.24-d";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1486,9 +1486,17 @@ async function onGoogle(resp) {
   try {
     const j = await API.json("/auth/google", "POST", {credential: resp.credential});
     if (j.me.owner && j.me.storage === "account" && !isAccount() && cfg.token) {
-      // Owner on the GitHub token, and the Worker can't reach his repo yet: sign in for invites only, keep syncing as before.
+      // Owner on the GitHub token: hand that token to the Worker so his repo comes through sign-in from now on.
+      // Same repo, same data, so nothing local is reset. If it can't, sign in for invites only and keep syncing as before.
       Object.assign(cfg, {session: j.token, me: j.me}); ls("rail.cfg", cfg);
-      render(); loadInvites(); toast("Signed in. Your closet still syncs through GitHub."); return;
+      try {
+        const h = await API.json("/owner/github", "POST", {token: cfg.token});
+        Object.assign(cfg, {mode: "account", me: h.me, token: ""}); ls("rail.cfg", cfg);
+        online = true; tab = "today"; render(); loadInvites(); toast(`Signed in as ${j.me.name}. Your closet now syncs through your account.`);
+        flush(); return;
+      } catch (err) {
+        render(); loadInvites(); toast(`Signed in. Your closet still syncs through GitHub (${err.message}).`); return;
+      }
     }
     if (queue.length) { say("This phone still has changes waiting to sync. Connect to the internet, let them finish, then sign in."); return; }
     const switching = !isAccount() ? j.me.storage !== "github" : cfg.me?.email !== j.me.email;

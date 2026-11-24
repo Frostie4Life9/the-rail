@@ -20,8 +20,10 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   - **Accounts** (friends, and the owner once set up): Google sign-in → the `rail-api` Worker (`worker/rail-api.js`,
     `wrangler.jsonc`, https://rail-api.skyfro04.workers.dev). Invite-only: OWNER_EMAIL plus emails the owner adds in
     Settings. Friends' files and photos live in D1 (`rail`). The owner's files pass straight through to the private repo
-    `Frostie4Life9/the-rail-data` once the `GH_TOKEN` secret is set on the Worker (until then the owner signs in only to
-    manage invites and keeps syncing on the device token). Google client = Playback's (same origin); `GCID` in index.html
+    `Frostie4Life9/the-rail-data` once the Worker has a GitHub token: when the owner signs in on a phone that has the
+    token form filled, the app hands that token to the Worker (`POST /owner/github`, sealed in D1 with AES-GCM from
+    `SECRET`) and drops it from the phone. A `GH_TOKEN` secret, if set, wins. Until then the owner signs in only to manage
+    invites. Google client = Playback's (same origin); `GCID` in index.html
     must match `GOOGLE_CLIENT_ID` in wrangler.jsonc. Workers Builds deploys the Worker when `worker/*` or `wrangler.jsonc`
     change on main. Secrets (`SECRET`, `GH_TOKEN`) live only in Cloudflare.
   - **GitHub token** (the owner's original path, under "Owner: connect with a GitHub token" in Settings): a fine-grained

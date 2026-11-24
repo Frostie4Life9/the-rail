@@ -18,10 +18,24 @@ async function gtoken(claims, { key = kp.privateKey, aud = CID } = {}) {
 const mf = new Miniflare({
   modules: true, scriptPath: 'worker/rail-api.js', script: readFileSync('worker/rail-api.js', 'utf8'),
   compatibilityDate: '2026-08-01', d1Databases: ['DB'],
-  bindings: { GOOGLE_CLIENT_ID: CID, OWNER_EMAIL: 'owner@example.com', SECRET: 'test-secret', ALLOW_ORIGINS: 'https://frostie4life9.github.io', __TEST_JWKS: [jwk] }
+  bindings: { GOOGLE_CLIENT_ID: CID, OWNER_EMAIL: 'owner@example.com', SECRET: 'test-secret', ALLOW_ORIGINS: 'https://frostie4life9.github.io', OWNER_REPO: 'Frostie4Life9/the-rail-data', __TEST_JWKS: [jwk] },
+  // a fake GitHub contents API for the owner's repo; only 'github_pat_good...' can read it
+  outboundService: async req => {
+    const u = new URL(req.url), auth = req.headers.get('authorization') || '';
+    ghCalls.push(req.method + ' ' + u.pathname);
+    if (u.hostname !== 'api.github.com') return new Response('no', { status: 599 });
+    if (!auth.includes('github_pat_good')) return new Response('{"message":"Bad credentials"}', { status: 401 });
+    const path = decodeURIComponent(u.pathname.split('/contents/')[1] || '');
+    if (req.method === 'GET') { const f = ghRepo.get(path); return f ? Response.json({ content: Buffer.from(f.text).toString('base64'), sha: f.sha }) : new Response('{}', { status: 404 }); }
+    const b = await req.json(), cur = ghRepo.get(path);
+    if (cur && b.sha !== cur.sha) return new Response('{}', { status: 409 });
+    const sha = 'g' + (++ghN); ghRepo.set(path, { text: Buffer.from(b.content, 'base64').toString(), sha });
+    return Response.json({ content: { sha } });
+  }
 });
 
 let pass = 0, fail = 0;
+const ghCalls = [], ghRepo = new Map([['wardrobe.json', { text: JSON.stringify({ items: [{ code: '6039', name: 'Rugby' }] }), sha: 'g0' }]]); let ghN = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL', m); } };
 const call = async (method, path, { token, body, origin } = {}) => {
   const r = await mf.dispatchFetch('https://rail.test' + path, { method, headers: { ...(token ? { authorization: 'Bearer ' + token } : {}), ...(body ? { 'content-type': 'application/json' } : {}), ...(origin ? { origin } : {}) }, body: body ? JSON.stringify(body) : undefined });
@@ -52,6 +66,26 @@ r = await call('POST', '/auth/google', { body: { credential: await gtoken({ sub:
 ok(r.s === 200 && r.j.me.owner && r.j.me.storage === 'account', 'owner signs in (case-insensitive email)');
 const OT = r.j.token;
 
+// the owner's phone hands over its GitHub token
+r = await call('POST', '/owner/github', { token: OT, body: { token: 'nope' } });
+ok(r.s === 400, 'junk token refused');
+r = await call('POST', '/owner/github', { token: OT, body: { token: 'github_pat_bad_0123456789abcdefghij' } });
+ok(r.s === 400 && /rejected/.test(r.j.error), 'token GitHub rejects is refused');
+r = await call('POST', '/owner/github', { token: OT, body: { token: 'github_pat_good_0123456789abcdefghij' } });
+ok(r.s === 200 && r.j.me.storage === 'github', 'good token kept; owner now on his repo');
+r = await call('GET', '/health');
+ok(r.j.owner_repo === true, 'health shows the owner repo is connected');
+const dbRow = await (await mf.getD1Database('DB')).prepare("SELECT v FROM kv WHERE k='gh_token'").first();
+ok(dbRow && !dbRow.v.includes('github_pat'), 'token is stored encrypted, not in plain text');
+r = await call('GET', '/files/wardrobe.json', { token: OT });
+ok(r.s === 200 && dec(r.j.content).items[0].name === 'Rugby' && r.j.sha === 'g0', "owner reads his GitHub repo through the Worker");
+r = await call('PUT', '/files/wardrobe.json', { token: OT, body: { content: enc({ items: [] }), sha: 'stale' } });
+ok(r.s === 409, 'stale write to GitHub reported as a conflict');
+r = await call('PUT', '/files/wardrobe.json', { token: OT, body: { content: enc({ items: [{ code: '6039', name: 'Rugby' }, { code: '9001', name: 'New' }] }), sha: 'g0' } });
+ok(r.s === 200 && JSON.parse(ghRepo.get('wardrobe.json').text).items.length === 2, 'owner write lands in GitHub');
+r = await call('GET', '/me', { token: OT });
+ok(r.j.me.storage === 'github', 'me says github storage');
+
 // invites
 r = await call('POST', '/invites', { token: OT, body: { email: 'Friend@Example.com' } });
 ok(r.s === 200 && r.j.email === 'friend@example.com', 'owner invites');
@@ -62,6 +96,10 @@ ok(r.s === 200 && !r.j.me.owner && r.j.me.name === 'Fran', 'invited friend signs
 const FT = r.j.token;
 r = await call('POST', '/invites', { token: FT, body: { email: 'x@example.com' } });
 ok(r.s === 403, 'friend cannot invite');
+r = await call('POST', '/owner/github', { token: FT, body: { token: 'github_pat_good_0123456789abcdefghij' } });
+ok(r.s === 403, 'friend cannot hand over a GitHub token');
+r = await call('POST', '/auth/google', { body: { credential: await gtoken({ sub: 'f1', email: 'friend@example.com' }) } });
+ok(r.j.me.storage === 'account', "friend's storage stays in the account, not the owner's repo");
 r = await call('GET', '/invites', { token: OT });
 ok(r.s === 200 && r.j.invites[0].used && r.j.users.length === 2, 'invite marked used, users listed');
 
@@ -86,7 +124,7 @@ ok(r.s === 200 && r.j.sha !== sha1, 'write with current sha');
 r = await call('GET', '/files/wardrobe.json', { token: FT });
 ok(r.s === 200 && dec(r.j.content).items.length === 2, 'read back');
 r = await call('GET', '/files/wardrobe.json', { token: OT });
-ok(r.s === 404, "owner can't see friend's wardrobe");
+ok(r.s === 200 && dec(r.j.content).items.length === 2 && dec(r.j.content).items[0].name === 'Rugby', "owner sees his own repo, not the friend's wardrobe");
 r = await call('PUT', '/files/secrets.json', { token: FT, body: { content: enc({}) } });
 ok(r.s === 404, 'unknown file refused');
 r = await call('PUT', '/files/fit-log.json', { token: FT, body: { content: Buffer.from('not json').toString('base64') } });
@@ -123,6 +161,9 @@ ok(r.s === 404, '...with an empty closet');
 r = await call('DELETE', '/invites?email=friend@example.com', { token: OT });
 ok(r.s === 200, 'invite removed');
 
+r = await call('DELETE', '/owner/github', { token: OT });
+r = await call('GET', '/me', { token: OT });
+ok(r.j.me.storage === 'account', 'owner can disconnect the repo');
 await mf.dispose();
 console.log(`worker: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
