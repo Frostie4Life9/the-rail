@@ -264,6 +264,41 @@ label.f input:focus,label.f textarea:focus,label.f select:focus{outline:none;bor
 label.f textarea{min-height:60px;resize:vertical}
 .photo-pick{margin-top:14px;display:flex;gap:12px;align-items:center}
 .photo-pick img{width:72px;height:96px;object-fit:cover;border-radius:12px}
+.photo-pick{flex-wrap:wrap}
+.photo-pick .how{flex-basis:100%;font-size:13px;color:var(--muted)}
+.photo-pick .how.warn{color:var(--amber)}
+/* ---- add-a-piece camera ---- */
+.cam{position:fixed;inset:0;z-index:150;background:#0E0E0D;color:#F3F1EC;display:flex;flex-direction:column;align-items:center;
+  padding:calc(10px + var(--safe-t)) 14px calc(14px + var(--safe-b));gap:10px;touch-action:manipulation}
+.cam-top{width:100%;max-width:520px;display:flex;align-items:center;gap:10px}
+.cam-x{width:44px;height:44px;flex:none;border-radius:22px;border:0;background:rgba(255,255,255,.12);color:inherit;display:grid;place-items:center;cursor:pointer}
+.cam-x svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round}
+.cam-types{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-mask:linear-gradient(90deg,#000 88%,transparent)}
+.cam-types::-webkit-scrollbar{display:none}
+.cam-types button{flex:none;height:34px;padding:0 13px;border-radius:17px;border:1px solid rgba(255,255,255,.22);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.cam-types button[aria-pressed=true]{background:#F3F1EC;color:#111;border-color:#F3F1EC}
+.cam-stage{position:relative;width:min(100%, calc((100dvh - 230px - var(--safe-t) - var(--safe-b)) * .75), 520px);aspect-ratio:3/4;border-radius:22px;overflow:hidden;background:#1d1d1b;flex:none}
+.cam-stage video,.cam-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam-stage .ov{position:absolute;inset:0;pointer-events:none}
+.cam-stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-stage .sil{fill:rgba(255,255,255,.07);stroke:#fff;stroke-width:2.2;stroke-dasharray:7 6;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.cam-stage .det{fill:none;stroke:rgba(255,255,255,.75);stroke-width:1.6;stroke-dasharray:5 6;vector-effect:non-scaling-stroke}
+.cam-stage .paper{fill:rgba(255,255,255,.16);stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.cam-stage .plab{font:700 11px var(--mono, ui-monospace, monospace);fill:#fff;letter-spacing:.06em}
+.cam-stage.review svg .sil,.cam-stage.review svg .det{stroke:rgba(255,255,255,.55)}
+.cam-badge{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px);padding:7px 11px;border-radius:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:13px;font-weight:600;line-height:1.3}
+.cam-badge[hidden]{display:none}
+.cam-badge.ok::before{content:"";display:inline-block;width:7px;height:7px;border-radius:4px;background:#7BC89A;margin-right:7px;vertical-align:1px}
+.cam-badge.warn::before{content:"";display:inline-block;width:7px;height:7px;border-radius:4px;background:#F0A15F;margin-right:7px;vertical-align:1px}
+.cam-hint{max-width:520px;text-align:center;font-size:14px;line-height:1.4;color:rgba(243,241,236,.78);min-height:40px;margin:0}
+.cam-bot{width:100%;max-width:520px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:auto}
+.cam-bot .side{justify-self:start;height:44px;padding:0 14px;border-radius:22px;border:0;background:rgba(255,255,255,.12);color:inherit;font:inherit;font-size:14px;font-weight:600;display:inline-flex;align-items:center;cursor:pointer}
+.cam-bot .side.r{justify-self:end}
+.cam-shut{width:74px;height:74px;border-radius:37px;border:4px solid #F3F1EC;background:transparent;padding:4px;cursor:pointer}
+.cam-shut::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:#F3F1EC;transition:transform .12s}
+.cam-shut:active::after{transform:scale(.9)}
+.cam-shut:disabled{opacity:.4}
+.cam-use{height:54px;padding:0 26px;border-radius:27px;border:0;background:#F3F1EC;color:#111;font:inherit;font-size:16px;font-weight:800;cursor:pointer}
 .picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px 8px;margin-top:14px}
 .picker button{text-align:left;position:relative}
 .picker .sw{aspect-ratio:1/1.05;border-radius:14px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
@@ -836,9 +871,10 @@ label.f textarea{min-height:60px;resize:vertical}
 <div class="toast" id="toast" role="status"></div>
 
 <script src="engine.js"></script>
+<script src="photo.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.24-d";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.24-e";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1763,12 +1799,136 @@ function itemSheet(code) {
     });
 }
 
+/* ---------------- add-a-piece camera ----------------
+   A live viewfinder with a dashed outline of the piece (so everyone's photos come out framed the same way) and a box
+   for a corner of white paper, which photo.js uses to fix the colour of that one shot. After the shot you see the
+   corrected photo; tap anything white to re-fix from that instead. "Use photo" crops to the outline. Choosing from the
+   library works too: no outline or crop, and the colour is fixed by a tap (or a gentle automatic nudge). */
+const SIL_OF = {tee:"tee", collared:"shirt", crewneck:"sweat", knit:"sweat", hoodie:"hoodie", outerwear:"jacket",
+  trousers:"pants", joggers:"pants", shorts:"shorts", shoes:"shoes", socks:"socks", cap:"cap"};
+// 300x400 frame; the garment area is x 18-282, y 20-324 and the paper box sits bottom-right (photo.js FRAME).
+const SIL = {
+  tee: `<path class="sil" d="M108 44 Q150 74 192 44 L232 58 L282 108 L250 150 L226 130 L226 318 L74 318 L74 130 L50 150 L18 108 L68 58 Z"/>`,
+  sweat: `<path class="sil" d="M112 40 Q150 68 188 40 L228 54 Q250 64 258 96 L282 294 L250 300 L232 146 L230 318 L70 318 L68 146 L50 300 L18 294 L42 96 Q50 64 72 54 Z"/><path class="det" d="M74 300 L226 300"/>`,
+  hoodie: `<path class="sil" d="M112 40 Q150 68 188 40 L228 54 Q250 64 258 96 L282 294 L250 300 L232 146 L230 318 L70 318 L68 146 L50 300 L18 294 L42 96 Q50 64 72 54 Z"/><path class="det" d="M112 40 Q118 14 150 14 Q182 14 188 40 M96 236 L204 236 L196 286 L104 286 Z"/>`,
+  shirt: `<path class="sil" d="M114 38 L186 38 L230 54 Q250 64 258 96 L282 294 L250 300 L232 146 L230 318 L70 318 L68 146 L50 300 L18 294 L42 96 Q50 64 70 54 Z"/><path class="det" d="M114 38 L150 72 L186 38 M150 72 L150 318"/>`,
+  jacket: `<path class="sil" d="M110 34 L190 34 L236 50 Q256 60 262 94 L282 300 L246 306 L234 150 L234 322 L66 322 L66 150 L54 306 L18 300 L38 94 Q44 60 64 50 Z"/><path class="det" d="M110 34 L138 96 L150 70 L162 96 L190 34 M150 96 L150 322"/>`,
+  pants: `<path class="sil" d="M84 22 L216 22 L230 318 L164 318 L150 112 L136 318 L70 318 Z"/><path class="det" d="M84 40 L216 40"/>`,
+  shorts: `<path class="sil" d="M78 62 L222 62 L240 252 L162 262 L150 150 L138 262 L60 252 Z"/><path class="det" d="M78 80 L222 80"/>`,
+  shoes: `<path class="sil" d="M98 38 Q134 40 138 96 L136 270 Q130 312 98 312 Q66 312 62 270 L60 96 Q62 40 98 38 Z M202 38 Q238 40 240 96 L238 270 Q234 312 202 312 Q170 312 164 270 L162 96 Q166 40 202 38 Z"/>`,
+  socks: `<path class="sil" d="M76 34 L126 34 L126 236 Q126 300 66 300 L42 300 Q26 272 52 254 L76 240 Z M174 34 L224 34 L224 236 Q224 300 164 300 L140 300 Q124 272 150 254 L174 240 Z"/>`,
+  cap: `<path class="sil" d="M150 52 A92 92 0 1 1 149.9 52 Z"/><path class="det" d="M82 206 Q150 330 218 206"/>`,
+};
+const camOverlay = type => `<svg viewBox="0 0 300 400" preserveAspectRatio="none" aria-hidden="true">${SIL[SIL_OF[type] || "tee"]}
+  <rect class="paper" x="${RailPhoto.FRAME.paper.x * 300}" y="${RailPhoto.FRAME.paper.y * 400}" width="${RailPhoto.FRAME.paper.w * 300}" height="${RailPhoto.FRAME.paper.h * 400}" rx="6"/>
+  <text class="plab" text-anchor="middle" x="${(RailPhoto.FRAME.paper.x + RailPhoto.FRAME.paper.w / 2) * 300}" y="${(RailPhoto.FRAME.paper.y + RailPhoto.FRAME.paper.h / 2) * 400 + 4}">PAPER</text></svg>`;
+const CAM_HINT = "Lay it flat, hold the phone level above it and fill the outline. Put a corner of plain white paper in the box.";
+
+function openCamera(type, file) {
+  return new Promise(done => {
+    const el = document.createElement("div");
+    el.className = "cam"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Photograph a piece");
+    const st = {type, stream: null, orig: null, fixed: null, how: "", why: "", fromCam: false, busy: false};
+    const typeChips = () => Object.entries(TYPE_LABEL).map(([k, l]) => `<button type="button" data-ct="${k}" aria-pressed="${k === st.type}">${esc(l)}</button>`).join("");
+    el.innerHTML = `<div class="cam-top"><button class="cam-x" data-c="close" aria-label="Close camera"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="cam-types">${typeChips()}</div></div>
+      <div class="cam-stage"><video playsinline muted autoplay></video><canvas hidden></canvas><div class="ov">${camOverlay(st.type)}</div><div class="cam-badge" hidden></div></div>
+      <p class="cam-hint">${CAM_HINT}</p>
+      <div class="cam-bot"></div>
+      <input type="file" accept="image/*" class="sr" data-c="lib-in">`;
+    document.body.appendChild(el); document.documentElement.style.overflow = "hidden";
+    const $c = q => el.querySelector(q), video = $c("video"), canvas = $c("canvas"), stage = $c(".cam-stage"), badge = $c(".cam-badge"), hint = $c(".cam-hint"), bot = $c(".cam-bot");
+    const live = () => {
+      stage.classList.remove("review"); canvas.hidden = true; video.hidden = !st.stream; badge.hidden = true; hint.textContent = st.stream ? CAM_HINT : "No camera here. Choose a photo from your library instead.";
+      $c(".ov").hidden = false;
+      bot.innerHTML = `<button class="side" data-c="lib">Photos</button><button class="cam-shut" data-c="shoot" aria-label="Take photo"${st.stream ? "" : " disabled"}></button><span></span>`;
+    };
+    const review = () => {
+      stage.classList.add("review"); video.hidden = true; canvas.hidden = false; $c(".ov").hidden = !st.fromCam;
+      const ok = st.how !== "auto";
+      badge.hidden = false; badge.className = "cam-badge " + (ok ? "ok" : "warn");
+      badge.textContent = st.how === "paper" ? "Colour fixed from the paper" : st.how === "tap" ? "Colour fixed from what you tapped"
+        : st.why === "too coloured" || st.why === "no paper" || st.why === "not even" ? "No white paper found, so the colour is approximate" : "Colour is approximate";
+      hint.textContent = ok ? "Looks off? Tap anything plain white to fix the colour from that." : "Tap anything plain white in the photo to fix the colour, or retake with paper in the box.";
+      bot.innerHTML = `<button class="side" data-c="retake">Retake</button><button class="cam-use" data-c="use">Use photo</button><span></span>`;
+    };
+    const paint = img => { canvas.width = img.width; canvas.height = img.height; canvas.getContext("2d").putImageData(new ImageData(img.data, img.width, img.height), 0, 0); };
+    const fix = ref => { const r = RailPhoto.correct(st.orig, ref); st.fixed = r.img; st.how = r.how; st.why = r.why || ""; paint(r.img); return r; };
+    const stop = () => { if (st.stream) st.stream.getTracks().forEach(t => t.stop()); st.stream = null; };
+    const close = val => { stop(); el.remove(); document.documentElement.style.overflow = ""; done(val); };
+
+    // what's on screen is the middle of the video (object-fit: cover), so grab exactly that 3:4 window
+    function grab() {
+      const vw = video.videoWidth, vh = video.videoHeight; if (!vw) return null;
+      let sw = vw, sh = vw * 4 / 3; if (sh > vh) { sh = vh; sw = vh * 3 / 4; }
+      const sx = (vw - sw) / 2, sy = (vh - sh) / 2, k = Math.min(1, 1200 / sw);
+      const c = document.createElement("canvas"); c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(video, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      return g.getImageData(0, 0, c.width, c.height);
+    }
+    async function fromFile(file) {
+      const bmp = await createImageBitmap(file, {imageOrientation: "from-image"});
+      const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(bmp, 0, 0, c.width, c.height);
+      stop(); st.fromCam = false; st.orig = g.getImageData(0, 0, c.width, c.height);
+      // no known paper spot in a library photo: gentle automatic nudge until they tap something white
+      fix(null); stage.style.aspectRatio = `${c.width} / ${c.height}`; review();
+    }
+    async function finish() {
+      // camera shots are cropped to the outline; library photos are kept whole
+      const src = document.createElement("canvas"); src.width = st.fixed.width; src.height = st.fixed.height;
+      src.getContext("2d").putImageData(new ImageData(st.fixed.data, st.fixed.width, st.fixed.height), 0, 0);
+      const G = st.fromCam ? RailPhoto.FRAME.garment : {x: 0, y: 0, w: 1, h: 1};
+      const sx = G.x * src.width, sy = G.y * src.height, sw = G.w * src.width, sh = G.h * src.height, k = Math.min(1, 900 / Math.max(sw, sh));
+      const out = document.createElement("canvas"); out.width = Math.round(sw * k); out.height = Math.round(sh * k);
+      out.getContext("2d").drawImage(src, sx, sy, sw, sh, 0, 0, out.width, out.height);
+      const blob = await new Promise(ok => out.toBlob(ok, "image/jpeg", .85));
+      close({blob, url: URL.createObjectURL(blob), how: st.how, type: st.type});
+    }
+
+    el.addEventListener("click", async e => {
+      const ct = e.target.closest("[data-ct]");
+      if (ct) { st.type = ct.dataset.ct; el.querySelectorAll("[data-ct]").forEach(b => b.setAttribute("aria-pressed", b === ct)); $c(".ov").innerHTML = camOverlay(st.type); return; }
+      const b = e.target.closest("[data-c]"), c = b && b.dataset.c;
+      if (c === "close") return close(null);
+      if (c === "lib") return $c("[data-c=lib-in]").click();
+      if (c === "shoot" && !st.busy) {
+        st.busy = true; const img = grab(); st.busy = false;
+        if (!img) return;
+        st.orig = img; st.fromCam = true; fix(RailPhoto.FRAME.paper); stop(); review(); return;
+      }
+      if (c === "retake") { stage.style.aspectRatio = ""; await startCam(); return; }
+      if (c === "use") { b.disabled = true; return finish(); }
+      // tap the photo: use that spot as white
+      if (!canvas.hidden && e.target === canvas) {
+        const r = canvas.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        const s = RailPhoto.sample(st.orig, RailPhoto.tapRect(x, y, st.orig), 0), whole = RailPhoto.sample(st.orig, {x: 0, y: 0, w: 1, h: 1}, 0), p = RailPhoto.paperLike(s, whole && whole.luma);
+        if (!p.ok) { toast(p.why === "too dark" ? "That spot's too dark. Tap something plain white." : "That's not white enough. Tap something plain white."); return; }
+        const res = fix(RailPhoto.tapRect(x, y, st.orig));
+        if (res.how === "paper") { st.how = "tap"; review(); }
+      }
+    });
+    el.addEventListener("change", e => { if (e.target.dataset.c === "lib-in" && e.target.files[0]) fromFile(e.target.files[0]).catch(() => toast("Couldn't open that photo.")); });
+    async function startCam() {
+      st.orig = st.fixed = null; st.fromCam = false;
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("no camera");
+        st.stream = st.stream || await navigator.mediaDevices.getUserMedia({audio: false, video: {facingMode: {ideal: "environment"}, width: {ideal: 1920}, height: {ideal: 1920}}});
+        video.srcObject = st.stream; await video.play().catch(() => {});
+      } catch { st.stream = null; }
+      live();
+    }
+    if (file) { live(); fromFile(file).catch(() => { toast("Couldn't open that photo."); close(null); }); } else startCam();
+  });
+}
+
 function addItemSheet() {
-  const st = {blob:null, url:""};
+  const st = {blob:null, url:"", how:""};
   const paint = sh => {
     const keep = ["a-name", "a-colour", "a-type"].map(id => $("#" + id, sh)?.value);
-    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat and shoot straight down, like the rest of the closet.</p>
-      <div class="photo-pick">${st.url ? `<img src="${esc(st.url)}" alt="">` : ""}<label class="btn small">${st.url ? "Retake" : "Take or choose photo"}<input type="file" accept="image/*" id="a-photo" class="sr"></label></div>
+    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat on the floor and shoot straight down. Keep a sheet of plain white paper nearby: it fixes the colour.</p>
+      <div class="photo-pick">${st.url ? `<img src="${esc(st.url)}" alt="">` : ""}<button class="btn small${st.url ? "" : " primary"}" data-a="camera">${st.url ? "Retake" : "Take photo"}</button><label class="btn small ghost">Choose photo<input type="file" accept="image/*" id="a-photo" class="sr"></label>
+        ${st.url ? `<span class="how${st.how === "auto" ? " warn" : ""}">${st.how === "auto" ? "Colour is approximate. Retake with white paper in the box to fix it." : "Colour fixed with a white reference."}</span>` : ""}</div>
       <label class="f">Name<input id="a-name" placeholder="e.g. Waffle henley"></label>
       <label class="f">Colour<input id="a-colour" placeholder="e.g. oatmeal"></label>
       <label class="f">Type<select id="a-type">${Object.entries(TYPE_LABEL).map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label>
@@ -1778,16 +1938,22 @@ function addItemSheet() {
   };
   openSheet("", sh => {
     paint(sh);
-    sh.onchange = async e => { if (e.target.id === "a-photo" && e.target.files[0]) { st.blob = await compress(e.target.files[0], 900); st.url = URL.createObjectURL(st.blob); paint(sh); } };
+    const take = async (file) => {
+      const r = await openCamera($("#a-type", sh).value, file);
+      if (!r) return;
+      Object.assign(st, {blob: r.blob, url: r.url, how: r.how}); paint(sh); $("#a-type", sh).value = r.type;
+    };
+    sh.onchange = async e => { if (e.target.id === "a-photo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; take(f); } };
     sh.onclick = async e => {
       const b = e.target.closest("[data-a]"); if (!b) return;
+      if (b.dataset.a === "camera") return take(null);
       if (b.dataset.a === "cancel") return closeSheet();
       const name = $("#a-name", sh).value.trim(), colour = $("#a-colour", sh).value.trim(), type = $("#a-type", sh).value;
       const err = $("#a-err", sh);
       if (!st.blob || !name || !colour) { err.hidden = false; err.textContent = "Add a photo, a name and a colour."; return; }
       const id = Math.random().toString(36).slice(2, 8), path = `photos/items/${todayStr()}_${id}.jpg`;
       imgCache.set(path, st.url);
-      run("addItem", {item:{code:null, name, colour, type, slot: TYPES[type], avoid:false, uncalibrated:false, photo: path, added: todayStr()},
+      run("addItem", {item:{code:null, name, colour, type, slot: TYPES[type], avoid:false, uncalibrated: st.how === "auto", colour_ref: st.how || "auto", photo: path, added: todayStr()},
         upload:{path, b64: await blobToB64(st.blob)}});
       closeSheet(); toast(`${name} added. It can show up in tomorrow's fits.`);
     };

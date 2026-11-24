@@ -111,6 +111,7 @@ check((await page.textContent(".hamper")).includes("empty"), "hamper empty after
 // closet + add a piece
 await page.click("[data-tab=closet]"); await page.waitForSelector(".grid .piece"); await shot("6-closet");
 await page.click("[data-act=add-item]"); await page.setInputFiles("#a-photo", path.join(root, "tiles", "6070.jpg"));
+await page.waitForSelector(".cam-use"); await page.click(".cam-use");   // choosing a photo opens the colour review first
 await page.waitForSelector(".photo-pick img"); await page.fill("#a-name", "Waffle henley"); await page.fill("#a-colour", "oatmeal");
 await page.selectOption("#a-type", "knit"); await page.click("[data-a=save]");
 await until(() => JSON.parse(repo.get("wardrobe.json").buf).items.some(i => i.name === "Waffle henley"));

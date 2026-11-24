@@ -30,6 +30,12 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
     token on the device, straight to `the-rail-data` (wardrobe.json, fit-log.json, laundry.json, photos/, tools/rail.py).
 - Tests for accounts: `node test/worker.mjs` (Worker on a local D1) and `node test/accounts.mjs <out-dir>` (a friend's
   whole first visit in Playwright against the real Worker). Both need `miniflare@4`.
+- Adding a piece: `openCamera()` in index.html is an in-app viewfinder (getUserMedia) with a dashed outline per type
+  (`SIL`, 300x400 frame) and a box for a corner of white paper. `photo.js` (pure functions, `RailPhoto`) white-balances
+  each shot from that paper (falls back to a gentle ±8% gray-world and says "approximate"), lets you tap anything white
+  to re-fix, and the shot is cropped to the outline (`FRAME.garment`). Library photos: no outline/crop, tap-to-fix.
+  Items record `colour_ref` (paper / tap / auto); `uncalibrated` is true for auto. Tests: `node test/photo.mjs`,
+  `node test/camera.mjs <data> <out> <flatlay.y4m> <library.jpg>` (Chromium fake camera; make the y4m with a warm cast).
 - Every change in the app is a named op (`OPS` in index.html) that is applied locally, queued, then
   re-applied to a fresh copy of the file and written with its sha — keep ops deterministic and replayable.
 - The daily "Morning fit sheet" scheduled task writes today's plan into fit-log.json via tools/rail.py.

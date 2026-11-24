@@ -1,7 +1,7 @@
 // The Rail service worker: app shell + tiles offline. GitHub API calls always go to the network.
-const VERSION = "2026.11.24-d";   // keep in step with index.html
+const VERSION = "2026.11.24-e";   // keep in step with index.html
 const SHELL = `rail-shell-${VERSION}`;
-const ASSETS = ["./", "index.html", "engine.js", "manifest.webmanifest", "icons/rail-192.png", "icons/rail-512.png", "icons/apple-touch-icon.png"];
+const ASSETS = ["./", "index.html", "engine.js", "photo.js", "manifest.webmanifest", "icons/rail-192.png", "icons/rail-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("rail-shell-") && k !== SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim()));

@@ -115,6 +115,7 @@ await A.page.click("[data-act=add-item]");
 await A.page.waitForSelector("#a-photo", { state: "attached" });
 const jpg = Buffer.from("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==", "base64");
 await A.page.setInputFiles("#a-photo", { name: "tee.jpg", mimeType: "image/jpeg", buffer: jpg });
+await A.page.waitForSelector(".cam-use"); await A.page.click(".cam-use");   // choosing a photo opens the colour review first
 await A.page.waitForSelector(".photo-pick img");
 await A.page.fill("#a-name", "Waffle henley"); await A.page.fill("#a-colour", "oatmeal");
 await A.page.click("[data-a=save]");
