@@ -1,0 +1,27 @@
+// Deploy config for the rail-api Worker (accounts + storage). Workers Builds deploys it on every push to main.
+// Secrets (SECRET, and optionally GH_TOKEN) live in the Cloudflare dashboard; never put them here.
+{
+  "name": "rail-api",
+  "main": "worker/rail-api.js",
+  "compatibility_date": "2026-10-21",
+  "workers_dev": true,
+  "d1_databases": [
+    { "binding": "DB", "database_name": "rail", "database_id": "821def7a-20ee-486c-af6a-ae1cdfe2f67f" }
+  ],
+  "vars": {
+    // Public Google OAuth client ID (the same one Playback uses; both apps are on frostie4life9.github.io). Not a secret.
+    // Must match GCID in index.html.
+    "GOOGLE_CLIENT_ID": "961476018828-tkjmdic1fnrtr7jtfmb7ta9alrupn8km.apps.googleusercontent.com",
+    "OWNER_EMAIL": "skyfro04@gmail.com",
+    "OWNER_REPO": "Frostie4Life9/the-rail-data",
+    "OWNER_BRANCH": "main",
+    "ALLOW_ORIGINS": "https://frostie4life9.github.io"
+  },
+  "keep_vars": true,
+  // Without this block a Git deploy switches the Worker's logs off.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true }
+  }
+}
