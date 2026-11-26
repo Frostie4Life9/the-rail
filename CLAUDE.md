@@ -42,7 +42,7 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   the Lab / Church chips. Hidden pieces and pooled pieces (`qty`) stay per item; any socks can become a pool from the
   piece sheet. Test: `node test/rules.mjs <data> <out>`.
 - First visit (`setupHtml()` on Today): a 3-step card (add pieces with per-category counts → check rules → first fits) shown
-  while `inSetup()`: no fit logged yet and `setup_done` not set in wardrobe.json (the "hide this" link sets it via the
+  while `inSetup()` (friends only): no fit logged yet and `setup_done` not set in wardrobe.json (the "hide this" link sets it via the
   `setupDone` op). Suggest fits names missing categories (`missingSlots()`). Test: `node test/onboarding.mjs <data> <out>`.
 - Every change in the app is a named op (`OPS` in index.html) that is applied locally, queued, then
   re-applied to a fresh copy of the file and written with its sha — keep ops deterministic and replayable.

@@ -96,7 +96,7 @@ check((await A.page.textContent("#acct-msg")).includes("invite list"), "uninvite
 // 2. The owner signs in (no GitHub token on this phone) and invites them
 const O = await phone("owner@example.com", "o1", "Skyler");
 await O.page.waitForSelector("#fake-google"); await O.page.click("#fake-google");
-await O.page.waitForSelector(".setup");   // a brand-new account (no fits yet) gets the setup card, owner or not
+await O.page.waitForSelector("text=Your closet is empty");   // the owner never gets the friend setup card
 await O.page.click(".gear, [data-tab=settings]").catch(() => {});
 await O.page.waitForSelector("#inv-email");
 await O.page.fill("#inv-email", "Friend@Example.com"); await O.page.click("[data-act=invite]");

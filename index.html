@@ -893,7 +893,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="photo.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.26-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.26-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1037,7 +1037,7 @@ const engineRules = () => { const r = myRules(); return {cap: r.cap, labShortSle
 const CORE_SLOTS = [["top", "Tops", 3], ["bottom", "Bottoms", 2], ["shoes", "Shoes", 1], ["socks", "Socks", 1]];
 const slotCount = slot => items().filter(i => i.slot === slot && !i.avoid).length;
 const missingSlots = () => CORE_SLOTS.filter(([k]) => !slotCount(k)).map(([, l]) => l.toLowerCase());
-const inSetup = () => !!S.wardrobe && !S.wardrobe.setup_done && !(S.log?.worn || []).length;
+const inSetup = () => !isOwnerUser() && !!S.wardrobe && !S.wardrobe.setup_done && !(S.log?.worn || []).length;
 function rulesSummary() {
   const r = myRules();
   return [{always: "a cap on every fit", optional: "caps when they help", never: "no caps"}[r.cap], r.labDays ? "lab days" : "no lab days", r.church ? "church fits" : "no church fits"].join(" · ");
