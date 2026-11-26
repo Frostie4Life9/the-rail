@@ -36,6 +36,11 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   to re-fix, and the shot is cropped to the outline (`FRAME.garment`). Library photos: no outline/crop, tap-to-fix.
   Items record `colour_ref` (paper / tap / auto); `uncalibrated` is true for auto. Tests: `node test/photo.mjs`,
   `node test/camera.mjs <data> <out> <flatlay.y4m> <library.jpg>` (Chromium fake camera; make the y4m with a warm cast).
+- Per-person fit rules (Settings → "Your fit rules"): saved as `rules` in that person's wardrobe.json via the `setRules` op
+  (`{cap: "always"|"optional"|"never", labDays, church}`). Nothing saved → owner gets `RULES_OWNER` (his originals),
+  friends get `RULES_FRIEND`. `engineRules()` maps them to the engine's `{cap, labShortSleeve}`; `myOccasions()` hides
+  the Lab / Church chips. Hidden pieces and pooled pieces (`qty`) stay per item; any socks can become a pool from the
+  piece sheet. Test: `node test/rules.mjs <data> <out>`.
 - Every change in the app is a named op (`OPS` in index.html) that is applied locally, queued, then
   re-applied to a fresh copy of the file and written with its sha — keep ops deterministic and replayable.
 - The daily "Morning fit sheet" scheduled task writes today's plan into fit-log.json via tools/rail.py.

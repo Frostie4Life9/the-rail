@@ -330,6 +330,8 @@ label.f textarea{min-height:60px;resize:vertical}
 .toast.on{opacity:1}
 .err{color:var(--danger);font-size:14px;margin-top:10px}
 .settings p{color:var(--muted);font-size:15px;margin-top:10px;max-width:60ch}
+.settings .rl{margin-top:16px;margin-bottom:6px;font-weight:700;color:var(--text);font-size:14px}
+.settings .filters{flex-wrap:wrap}
 .settings code{background:var(--raised);padding:1px 5px;border-radius:4px;font-size:14px}
 .ver{color:var(--muted);font-size:13px;margin-top:28px}
 .settings details{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
@@ -874,7 +876,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="photo.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.24-e";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.26-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1004,7 +1006,16 @@ const OPS = {
     p.item.code = String(code); w.items.push(p.item); w.next_code = code + 1;
   }},
   setItem: {file:"wardrobe.json", apply(w, p) { const it = w.items.find(i => i.code === p.code); if (it) Object.assign(it, p.patch); }},
+  setRules: {file:"wardrobe.json", apply(w, p) { w.rules = Object.assign({}, w.rules || {}, p.patch); }},
 };
+
+// Each person's own fit rules, saved in their wardrobe.json. Nothing saved yet → the owner keeps his original rules
+// (cap on every fit, lab days with short sleeves, church); a friend starts with caps only when they help, no lab, no church.
+const RULES_OWNER = {cap: "always", labDays: true, church: true};
+const RULES_FRIEND = {cap: "optional", labDays: false, church: false};
+const myRules = () => Object.assign({}, isOwnerUser() ? RULES_OWNER : RULES_FRIEND, S.wardrobe?.rules || {});
+const engineRules = () => { const r = myRules(); return {cap: r.cap, labShortSleeve: !!r.labDays}; };
+const myOccasions = () => { const r = myRules(); return OCCASIONS.filter(o => (o[0] !== "lab" || r.labDays) && (o[0] !== "church" || r.church)); };
 
 function run(op, payload) {
   const def = OPS[op], key = KEY[def.file];
@@ -1121,8 +1132,10 @@ function setSync() {
   el.className = "sync" + (!online || queue.length ? " off" : "");
   el.textContent = syncing ? "Syncing…" : !online ? `Offline · ${queue.length} to sync` : queue.length ? `${queue.length} to sync` : S.synced ? "Synced" : "";
 }
+let sheetClosing = 0;   // a sheet opened while the last one is still sliding away must not be wiped by its timer
 function openSheet(html, onMount) {
   const sh = $("#sheet"), sc = $("#scrim");
+  clearTimeout(sheetClosing);
   sh.innerHTML = `<div class="grab"></div>${html}`; sh.hidden = sc.hidden = false;
   requestAnimationFrame(() => { sh.classList.add("on"); sc.classList.add("on"); });
   sc.onclick = closeSheet; onMount && onMount(sh);
@@ -1131,7 +1144,8 @@ function openSheet(html, onMount) {
 function closeSheet() {
   const sh = $("#sheet"), sc = $("#scrim");
   sh.classList.remove("on"); sc.classList.remove("on");
-  setTimeout(() => { sh.hidden = sc.hidden = true; sh.innerHTML = ""; }, 250);
+  clearTimeout(sheetClosing);
+  sheetClosing = setTimeout(() => { sh.hidden = sc.hidden = true; sh.innerHTML = ""; }, 250);
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
 // swipe a sheet down to close it (from the top of its content, or from the grab bar anywhere)
@@ -1474,7 +1488,7 @@ function viewSettings() {
       <div id="gsi-btn" class="gsi"></div><p id="acct-msg" class="err" hidden></p>`;
   }
   const showGh = !isAccount() || !me;
-  return mast("The Rail", "Settings") + `<div class="settings">${acct}
+  return mast("The Rail", "Settings") + `<div class="settings">${configured() && S.wardrobe ? rulesHtml() : ""}${acct}
     ${showGh ? `<details class="gh"${!isAccount() && configured() ? " open" : ""}><summary>Owner: connect with a GitHub token</summary>
     <p>The owner's closet, fit log and mirror pics live in a private GitHub repo. This phone needs a fine-grained token with <code>Contents: Read and write</code> on that repo only. It's stored on this device and sent only to GitHub.</p>
     <label class="f">GitHub owner<input id="s-owner" value="${esc(cfg.owner)}" autocapitalize="off" autocorrect="off"></label>
@@ -1484,6 +1498,14 @@ function viewSettings() {
     <p id="cfg-msg" class="err" hidden></p></details>` : ""}
     ${S.synced && configured() ? `<p>Last synced ${new Date(S.synced).toLocaleString()}.${queue.length ? ` ${queue.length} change(s) waiting.` : ""}</p>` : ""}
     <p class="ver">The Rail ${VERSION} · <a href="https://github.com/Frostie4Life9/the-rail/tree/v1-archive" style="color:inherit">old version (v1)</a></p></div>`;
+}
+function rulesHtml() {
+  const r = myRules(), chip = (k, v, l) => `<button class="chip" aria-pressed="${r[k] === v}" data-act="rule" data-k="${k}" data-v="${v}">${l}</button>`;
+  const yn = (k, on, off) => `<div class="filters" role="group">${chip(k, true, on)}${chip(k, false, off)}</div>`;
+  return `<h2 class="sect">Your fit rules</h2><p>Suggest fits follows these. Hide a piece or set how many pairs you own from the piece itself in Closet.</p>
+    <p class="rl">Caps</p><div class="filters" role="group" aria-label="Caps">${chip("cap", "always", "Every fit")}${chip("cap", "optional", "When it helps")}${chip("cap", "never", "Never")}</div>
+    <p class="rl">Lab days</p>${yn("labDays", "Yes, short sleeves under the coat", "No lab days")}
+    <p class="rl">Church</p>${yn("church", "Show church fits", "Don't")}`;
 }
 let invites = null;   // owner only: {invites, users}, loaded when Settings opens
 function invitesHtml() {
@@ -1715,16 +1737,16 @@ function suggestSheet() {
     const compute = () => {
       const w = weather(); st.problems = [];
       if (!w) return st.fits = [];
-      const occ = OCCASIONS.find(o => o[0] === st.kind);
+      const occ = OCCASIONS.find(o => o[0] === st.kind) || OCCASIONS[0];
       const r = RailEngine.suggest({wardrobe: S.wardrobe, log: S.log || {worn: [], planned: []}, laundry: S.laundry || DEFAULTS["laundry.json"]()},
-        {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt, exclude: st.shown, weights: learnedWeights() || undefined});
+        {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt, exclude: st.shown, rules: engineRules(), weights: learnedWeights() || undefined});
       st.problems = r.problems; st.fits = r.fits;
     };
     const paint = () => {
       const w = weather(), chip = (a, k, l, on) => `<button class="chip" aria-pressed="${on}" data-s="${a}" data-k="${k}">${l}</button>`;
       const line = w ? `${Math.round(w.lo)}–${Math.round(w.hi)}°F${w.rain >= 50 ? " · rain" : ""}${w.snow ? " · snow" : ""}${st.preset ? "" : ` · ${st.src}`}` : "Checking the forecast…";
       sh.innerHTML = `<div class="grab"></div><h2>Suggest fits</h2><p class="lead">${esc(line)}. Built from your closet, your hamper and what you've worn lately.</p>
-        <div class="filters" role="group" aria-label="Occasion">${OCCASIONS.map(([k, l]) => chip("kind", k, l, st.kind === k)).join("")}</div>
+        <div class="filters" role="group" aria-label="Occasion">${myOccasions().map(([k, l]) => chip("kind", k, l, st.kind === k)).join("")}</div>
         <div class="filters" role="group" aria-label="Weather">${Object.keys(WX_PRESETS).map(k => chip("wx", k, k[0].toUpperCase() + k.slice(1), st.preset === k)).join("")}${chip("rain", "", "Rain", !!(w && w.rain >= 50))}</div>
         ${st.fits.map((f, i) => lookHtml({n: i + 1, total: st.fits.length, name: f.name, codes: bySlot(f.items), bob: false, noteLabel: "Why this works",
           note: (f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "") + (f.capOptional ? " Cap optional." : ""),
@@ -1778,20 +1800,22 @@ function itemSheet(code) {
       <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)}</p>
       <p class="lead">Worn ${worn.length} time${worn.length === 1 ? "" : "s"}${worn[0] ? `, last ${new Date(worn[0].date + "T12:00").toLocaleDateString("en-US", {month:"short", day:"numeric"})}` : ""}.</p>
       ${pool ? `<p class="lead"><b>${pool - used}</b> of ${pool} pairs clean${used ? ` · ${used} in the hamper` : ""}.</p>
-        <div class="stepper"><span class="lead" style="margin:0">Pairs owned</span><button class="btn small ghost" data-i="qty-" aria-label="One fewer pair">−</button><b>${pool}</b><button class="btn small ghost" data-i="qty+" aria-label="One more pair">+</button></div>`
+        <div class="stepper"><span class="lead" style="margin:0">Pairs owned</span><button class="btn small ghost" data-i="qty-" aria-label="${pool <= 2 ? "Just one pair" : "One fewer pair"}">−</button><b>${pool}</b><button class="btn small ghost" data-i="qty+" aria-label="One more pair">+</button></div>`
       : manualDirty(code) ? `<p class="lead">In the hamper (you put it there).</p>`
         : lim ? `<p class="lead">${isDirty(code) ? `In the hamper after ${w} wear${w === 1 ? "" : "s"}.` : `${w} of ${lim} wears before the hamper.`}</p>` : ""}</div></div>
     <div class="sheet-actions">${pool ? (used ? `<button class="btn" data-i="wash">Washed all pairs</button>` : "") : isDirty(code) || (lim && w) ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
       ${!pool && !isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
+      ${!pool && it.slot === "socks" ? `<button class="btn ghost" data-i="pool">I own several of these</button>` : ""}
       <button class="btn ${it.avoid ? "primary" : "ghost"}" data-i="avoid">${it.avoid ? "Put back in rotation" : "Hide from fits"}</button></div>`,
     sh => {
       sh.onclick = e => {
         const b = e.target.closest("[data-i]"); if (!b) return;
         if (b.dataset.i === "wash") { run("washItem", {code, at: nowIso()}); toast(`${it.name} washed`); }
         if (b.dataset.i === "hamper") { run("hamperItem", {code, at: nowIso()}); toast(`${it.name} is in the hamper`); }
+        if (b.dataset.i === "pool") { run("setItem", {code, patch:{qty: 2}}); toast("Set how many pairs you own"); return itemSheet(code); }
         if (b.dataset.i === "qty+" || b.dataset.i === "qty-") {
-          const q = Math.max(2, pool + (b.dataset.i === "qty+" ? 1 : -1));   // stays a pool; below 2 it would stop being one
-          run("setItem", {code, patch:{qty: q}}); toast(`${q} pairs`); return itemSheet(code);
+          const q = pool + (b.dataset.i === "qty+" ? 1 : -1);   // below 2 it stops being a pool and washes like any piece
+          run("setItem", {code, patch:{qty: q < 2 ? 1 : q}}); toast(q < 2 ? "Just one now" : `${q} pairs`); return itemSheet(code);
         }
         if (b.dataset.i === "avoid") { run("setItem", {code, patch:{avoid: !it.avoid}}); toast(it.avoid ? "Hidden from fits" : "Back in rotation"); }
         closeSheet();
@@ -2003,6 +2027,10 @@ document.addEventListener("click", async e => {
   }
   if (act === "month") { diaryOff = Math.max(0, diaryOff + +a.dataset.m); render(); return; }
   if (act === "day") { const el = document.getElementById("e-" + a.dataset.d); if (el) el.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+  if (act === "rule") {
+    const k = a.dataset.k, v = a.dataset.v === "true" ? true : a.dataset.v === "false" ? false : a.dataset.v;
+    return run("setRules", {patch: {[k]: v}});
+  }
   if (act === "build-with") return buildFit({items: [a.dataset.code]});
   if (act === "item") return itemSheet(a.dataset.code);
   if (act === "add-item") return addItemSheet();

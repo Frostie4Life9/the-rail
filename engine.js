@@ -11,7 +11,8 @@
  *   opts = {today: "YYYY-MM-DD", weather: {hi, lo, rain (0-100), snow (bool), wind (mph)},
  *           occasion: {kind: "class"|"lab"|"lounge"|"out"|"church"|"errand", phase: "morning"|"day"|"evening"|"night"},
  *           n: 3, salt: 0, avoid: [codes to steer away from], exclude: [[codes], ...] fits already shown,
- *           rules: {alwaysCap, labShortSleeve}, weights}
+ *           rules: {cap: "always"|"optional"|"never", labShortSleeve}, weights}
+ *         (the old {alwaysCap: false} still works and means "optional")
  *
  * Works in the browser (window.RailEngine) and in Node (module.exports).
  */
@@ -359,6 +360,13 @@
     if (!out.top || !out.bottom || !out.shoes) return null;
     return merge(coreFeats(ctx, o, wx, out, null), out.socks ? sockFeats(ctx, out.socks, out) : {}, out.cap ? capFeats(ctx, out.cap, out) : {});
   }
+  // Each person's own rules. Missing ones fall back to the original owner defaults (cap on every fit, lab-day sleeves).
+  function normRules(r) {
+    r = Object.assign({labShortSleeve: true}, r || {});
+    if (!["always", "optional", "never"].includes(r.cap)) r.cap = r.alwaysCap === false ? "optional" : "always";
+    r.alwaysCap = r.cap === "always";
+    return r;
+  }
   const labBreak = (o, rules, out) => o.kind === "lab" && rules.labShortSleeve !== false && attrs(out.top).sleeve === "long";
 
   /* ------------------------------------------------------------------ naming */
@@ -372,7 +380,7 @@
   const defaults = opts => ({
     o: Object.assign({kind: "class", phase: "day"}, opts.occasion || {}),
     wx: Object.assign({hi: 60, lo: 45, rain: 0, snow: false, wind: 0}, opts.weather || {}),
-    rules: Object.assign({alwaysCap: true, labShortSleeve: true}, opts.rules || {}),
+    rules: normRules(opts.rules),
     w: opts.weights || W,
   });
 
@@ -405,7 +413,8 @@
     pool.forEach(c => {
       let bs = -1e9, bc = -1e9;
       B.socks.forEach(k => { const v = dot(w, sockFeats(ctx, k, c.out)) + (rand() - .5) * .3; if (v > bs) { bs = v; c.out.socks = k; } });
-      B.cap.forEach(k => { const v = dot(w, capFeats(ctx, k, c.out)) + (rand() - .5) * .3; if (v > bc) { bc = v; c.out.cap = k; } });
+      if (rules.cap !== "never") B.cap.forEach(k => { const v = dot(w, capFeats(ctx, k, c.out)) + (rand() - .5) * .3; if (v > bc) { bc = v; c.out.cap = k; } });
+      if (rules.cap === "optional" && c.out.cap && bc <= 0) { c.out.cap = null; bc = 0; }   // only when a cap actually helps the fit
       c.s += bs + (c.out.cap ? bc : 0);
     });
     pool.sort((a, b) => b.s - a.s);
@@ -433,7 +442,7 @@
       if (note.warmOK) why.unshift(note.warmOK);
       const items = [out.layer, out.top, out.bottom, out.socks, out.shoes, out.cap].filter(Boolean).map(i => i.code);
       return {name: fitName(out.top, out.layer, out.bottom), items, score: Math.round(c.s * 100) / 100, why: why.slice(0, 3),
-        capOptional: o.kind === "church"};
+        capOptional: !!out.cap && (o.kind === "church" || rules.cap === "optional")};
     });
     return {fits, problems};
   }
@@ -461,12 +470,12 @@
 
   /** Hard-rule problems with an outfit, in words (used to check the morning sheet before it's saved). */
   function check(data, opts, codes) {
-    const {o, wx} = defaults(opts), out = split(data, codes), bad = [];
+    const {o, wx, rules} = defaults(opts), out = split(data, codes), bad = [];
     const by = c => data.wardrobe.items.find(i => i.code === c);
     codes.forEach(c => { if (!by(c)) bad.push("unknown piece " + c); else if (by(c).avoid) bad.push(by(c).name + " is hidden"); });
-    if (!out.cap) bad.push("no cap");
+    if (!out.cap && rules.cap === "always") bad.push("no cap");
     if (!out.top || !out.bottom || !out.shoes) bad.push("missing a top, bottom or shoes");
-    if (out.top && o.kind === "lab" && attrs(out.top).sleeve === "long") bad.push("lab: " + out.top.name + " is long-sleeved against the skin (lab coat goes over it)");
+    if (out.top && o.kind === "lab" && rules.labShortSleeve !== false && attrs(out.top).sleeve === "long") bad.push("lab: " + out.top.name + " is long-sleeved against the skin (lab coat goes over it)");
     if (out.shoes && (wx.snow || wx.rain >= 50) && attrs(out.shoes).suede) bad.push("suede " + out.shoes.name + " on a wet day");
     if (out.bottom && out.bottom.type === "shorts" && wx.lo < 55) bad.push("shorts in the cold");
     return bad;
