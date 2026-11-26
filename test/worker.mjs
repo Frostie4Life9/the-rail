@@ -142,12 +142,22 @@ r = await call('GET', '/files/photos/items/2026-11-24_abc.jpg', { token: OT });
 ok(r.s === 404, "owner can't see friend's photo");
 r = await call('PUT', '/files/photos/items/x.jpg', { token: FT, body: { content: Buffer.from('<svg/>').toString('base64') } });
 ok(r.s === 400, 'non-JPEG refused');
+// cut-outs: PNG / WebP with transparency, made on the phone
+const png = Buffer.from('89504E470D0A1A0A0000000D49484452', 'hex');
+r = await call('PUT', '/files/photos/items/2026-11-24_abc.cut.png', { token: FT, body: { content: png.toString('base64') } });
+ok(r.s === 200, 'cut-out PNG upload');
+r = await call('GET', '/files/photos/items/2026-11-24_abc.cut.png', { token: FT });
+ok(r.s === 200 && r.h.get('content-type') === 'image/png', 'cut-out PNG read back as image/png');
+r = await call('PUT', '/files/photos/items/fake.png', { token: FT, body: { content: Buffer.from(jpg).toString('base64') } });
+ok(r.s === 400, 'JPEG bytes named .png refused');
+r = await call('PUT', '/files/photos/items/x.webp', { token: FT, body: { content: Buffer.from('RIFF\0\0\0\0WEBPVP8 ').toString('base64') } });
+ok(r.s === 200, 'cut-out WebP upload');
 r = await call('PUT', '/files/photos/../wardrobe.jpg', { token: FT, body: { content: Buffer.from(jpg).toString('base64') } });
 ok(r.s === 404, 'path trick refused');
 
 // export + delete
 r = await call('GET', '/export', { token: FT });
-ok(r.s === 200 && r.j.files['wardrobe.json'].items.length === 2 && r.j.photos.length === 1, 'export');
+ok(r.s === 200 && r.j.files['wardrobe.json'].items.length === 2 && r.j.photos.length === 3, 'export');
 r = await call('DELETE', '/me', { token: FT });
 ok(r.s === 200, 'delete account');
 r = await call('GET', '/me', { token: FT });

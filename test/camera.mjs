@@ -10,7 +10,7 @@ import path from "node:path";
 const [seedDir, outDir, y4m, libJpg] = process.argv.slice(2);
 fs.mkdirSync(outDir, { recursive: true });
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
-const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".mjs": "text/javascript", ".wasm": "application/wasm" };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname); if (p.endsWith("/")) p += "index.html";
   const f = path.join(root, p);
@@ -83,6 +83,9 @@ await page.click(".cam-use");
 await page.waitForSelector(".photo-pick img");
 check(await page.inputValue("#a-type") === "collared", "type picked in the camera comes back to the sheet");
 check((await page.textContent(".photo-pick .how")).includes("fixed"), "sheet says the colour was fixed");
+// the background cut-out runs next (test/cutout.mjs covers it); keep the background here to check the crop itself
+await page.waitForFunction(() => !document.querySelector(".cutbar") || !/Cutting|ready/.test(document.querySelector(".cutbar").textContent), null, { timeout: 60000 });
+if (await page.isVisible("[data-a=cut-off]")) await page.click("[data-a=cut-off]");
 const dims = await page.evaluate(() => new Promise(ok => { const i = document.querySelector(".photo-pick img"); const f = () => ok([i.naturalWidth, i.naturalHeight]); i.complete ? f() : i.onload = f; }));
 check(Math.abs(dims[0] / dims[1] - (0.88 * 3) / (0.76 * 4)) < 0.02 && Math.max(...dims) <= 900, `photo cropped to the outline ${dims}`);
 await page.fill("#a-name", "Test camp shirt"); await page.fill("#a-colour", "slate blue");

@@ -9,7 +9,7 @@
    and hands back its own signed token (30 days, refreshed on every GET /me).
 
    Where data lives:
-     - friends: D1 (files + photos tables). A photo is a compressed JPEG of about 100-400 KB.
+     - friends: D1 (files + photos tables). A photo is a compressed JPEG of about 100-400 KB, or a cut-out PNG/WebP.
      - the owner: once the Worker has a GitHub token for OWNER_REPO, the owner's files are passed straight through to
        that private repo, so the morning fit-sheet task (which works on that repo) keeps working. The token comes from
        the GH_TOKEN secret, or — the usual way — the owner's phone hands over the token it already uses (POST
@@ -34,7 +34,17 @@
    Binding: DB (D1). */
 
 const FILES = ['wardrobe.json', 'fit-log.json', 'laundry.json'];
-const PHOTO_RE = /^photos\/(items|worn)\/[A-Za-z0-9._-]{1,80}\.jpg$/;
+const PHOTO_RE = /^photos\/(items|worn)\/[A-Za-z0-9._-]{1,80}\.(jpg|png|webp)$/;
+// photos are JPEG; cut-outs (background removed on the phone, see cutout.js) are PNG or WebP with transparency
+const PHOTO_TYPE = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const typeOf = path => PHOTO_TYPE[path.slice(path.lastIndexOf('.') + 1)] || 'image/jpeg';
+function magicOk(path, b) {
+  const ext = path.slice(path.lastIndexOf('.') + 1);
+  if (ext === 'jpg') return b[0] === 0xFF && b[1] === 0xD8;
+  if (ext === 'png') return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+  if (ext === 'webp') return b.length > 12 && String.fromCharCode(...b.slice(0, 4)) === 'RIFF' && String.fromCharCode(...b.slice(8, 12)) === 'WEBP';
+  return false;
+}
 const FILE_MAX = 1500 * 1024;          // decoded JSON text per file
 const PHOTO_MAX = 1200 * 1024;         // decoded image bytes
 const PHOTOS_PER_USER = 1500;
@@ -331,13 +341,13 @@ async function putFile(request, env, me, path) {
 async function getPhoto(env, me, path) {
   const r = await env.DB.prepare('SELECT bytes FROM photos WHERE uid = ?1 AND path = ?2').bind(me.uid, path).first();
   if (!r) return json({ error: 'not found' }, 404);
-  return new Response(new Uint8Array(r.bytes), { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=31536000, immutable' } });
+  return new Response(new Uint8Array(r.bytes), { headers: { 'content-type': typeOf(path), 'cache-control': 'private, max-age=31536000, immutable' } });
 }
 async function putPhoto(request, env, me, path) {
   const { j, err } = await body(request, Math.ceil(PHOTO_MAX * 4 / 3) + 4096); if (err) return err;
   const bytes = fromB64(j.content);
   if (!bytes || bytes.length > PHOTO_MAX) return json({ error: 'photo is too large' }, 413);
-  if (!(bytes[0] === 0xFF && bytes[1] === 0xD8)) return json({ error: 'photos must be JPEG' }, 400);
+  if (!magicOk(path, bytes)) return json({ error: 'photo bytes do not match its name (.jpg, .png or .webp)' }, 400);
   const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM photos WHERE uid = ?1').bind(me.uid).first();
   if (n && n.n >= PHOTOS_PER_USER) return json({ error: 'photo limit reached' }, 507);
   try { await env.DB.prepare('INSERT INTO photos (uid, path, bytes, size, at) VALUES (?1, ?2, ?3, ?4, ?5)').bind(me.uid, path, bytes, bytes.length, Date.now()).run(); }
@@ -359,7 +369,7 @@ async function ownerRepo(request, env, path, kind) {
     const r = await ghFetch(env, token, path, { raw: kind === 'photo' });
     if (r.status === 401) return json({ error: 'GitHub token expired. Sign out and back in with a fresh token on the GitHub form' }, 502);
     if (!r.ok) return json({ error: 'github ' + r.status }, r.status === 404 ? 404 : 502);
-    if (kind === 'photo') return new Response(r.body, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'private, max-age=31536000, immutable' } });
+    if (kind === 'photo') return new Response(r.body, { headers: { 'content-type': typeOf(path), 'cache-control': 'private, max-age=31536000, immutable' } });
     const j = await r.json();
     return json({ content: String(j.content || '').replace(/\n/g, ''), sha: j.sha });
   }

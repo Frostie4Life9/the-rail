@@ -36,6 +36,14 @@ Phone-first PWA for Skyler's daily outfits. Static site on GitHub Pages; no buil
   to re-fix, and the shot is cropped to the outline (`FRAME.garment`). Library photos: no outline/crop, tap-to-fix.
   Items record `colour_ref` (paper / tap / auto); `uncalibrated` is true for auto. Tests: `node test/photo.mjs`,
   `node test/camera.mjs <data> <out> <flatlay.y4m> <library.jpg>` (Chromium fake camera; make the y4m with a warm cast).
+- Background cut-out (`cutout.js`, `RailCut`): after a piece's photo is taken/chosen, the add sheet cuts the background off on the
+  phone with U²-Net-p (`models/u2netp.onnx`, 4.6 MB) on ONNX Runtime Web (`vendor/ort/`, wasm, single thread since Pages
+  can't send COOP/COEP), then refines edges with a guided filter, drops specks, defringes against the floor colour, crops,
+  caps at 640px. Free, nothing leaves the phone; the SW caches `models/` + `vendor/` in `rail-cut` forever (new model = new
+  file name). Saved as `photos/items/<id>.cut.webp` (PNG on Safari) in `photo`, the original JPEG in `photo_full`; both go
+  up with the op (`uploads: [...]`). "Keep background" saves just the JPEG. The piece sheet offers "Remove background" for
+  plain photos and "Use the original photo" (keeps the cut in `photo_cut` to swap back). `isCut()` = tiles/ or .png/.webp.
+  The Worker accepts .jpg/.png/.webp photos (magic bytes checked). Test: `node test/cutout.mjs <out>`. Licences: vendor/README.md.
 - Per-person fit rules (Settings → "Your fit rules"): saved as `rules` in that person's wardrobe.json via the `setRules` op
   (`{cap: "always"|"optional"|"never", labDays, church}`). Nothing saved → owner gets `RULES_OWNER` (his originals),
   friends get `RULES_FRIEND`. `engineRules()` maps them to the engine's `{cap, labShortSleeve}`; `myOccasions()` hides

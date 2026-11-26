@@ -284,6 +284,11 @@ label.f textarea{min-height:60px;resize:vertical}
 .photo-pick{flex-wrap:wrap}
 .photo-pick .how{flex-basis:100%;font-size:13px;color:var(--muted)}
 .photo-pick .how.warn{color:var(--amber)}
+.photo-pick img.cut{width:112px;height:132px;object-fit:contain;background:radial-gradient(120% 90% at 50% 35%,var(--surface),var(--floor));filter:var(--drop);padding:4px}
+.cutbar{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cutbar .how{flex-basis:auto}
+.cutbar .chip:not([aria-pressed=true]){background:var(--raised)}
+.cutbar progress{width:120px;height:6px;accent-color:var(--text)}
 /* ---- add-a-piece camera ---- */
 .cam{position:fixed;inset:0;z-index:150;background:#0E0E0D;color:#F3F1EC;display:flex;flex-direction:column;align-items:center;
   padding:calc(10px + var(--safe-t)) 14px calc(14px + var(--safe-b));gap:10px;touch-action:manipulation}
@@ -891,9 +896,10 @@ label.f textarea{min-height:60px;resize:vertical}
 
 <script src="engine.js"></script>
 <script src="photo.js"></script>
+<script src="cutout.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.26-c";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.26-d";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1078,12 +1084,13 @@ async function flush() {
   try {
     while (queue.length) {
       const q = queue[0], def = OPS[q.op];
-      if (q.payload.upload) {            // photo travels with the op that references it
-        const u = q.payload.upload;
+      // photos travel with the op that references them (`upload`, or `uploads` for a cut-out plus its original)
+      for (const u of [q.payload.upload, ...(q.payload.uploads || [])].filter(u => u && !u.done)) {
         try { await Store().put(u.path, u.b64, null, `Photo ${u.path}`); }
         catch (e) { if (e.status !== 422) throw e; }   // 422 = already uploaded on an earlier try
-        delete q.payload.upload; saveQueue();
+        u.done = true; saveQueue();
       }
+      delete q.payload.upload; delete q.payload.uploads; saveQueue();
       for (let attempt = 0; ; attempt++) {
         const fresh = await Store().getJson(def.file);
         const data = fresh.data || DEFAULTS[def.file]();
@@ -1245,7 +1252,7 @@ const rgbOf = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const lum = h => { const [r, g, b] = rgbOf(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
 const chroma = h => { const c = rgbOf(h); return Math.max(...c) - Math.min(...c); };
 const fcOf = code => colourOf(item(code)?.colour).hex;
-const isCut = p => !!p && p.startsWith("tiles/");
+const isCut = p => !!p && (p.startsWith("tiles/") || /\.(png|webp)$/.test(p));   // the owner's cut/ photos, or a cut-out made on the phone
 const rawCls = p => isCut(p) ? "" : "raw";
 const TORSO_RANK = {outerwear:0, knit:1, hoodie:1, crewneck:1, collared:2, tee:3};
 const torso = codes => codes.filter(c => ["layer", "top"].includes(item(c)?.slot))
@@ -1856,6 +1863,8 @@ function itemSheet(code) {
     <div class="sheet-actions">${pool ? (used ? `<button class="btn" data-i="wash">Washed all pairs</button>` : "") : isDirty(code) || (lim && w) ? `<button class="btn" data-i="wash">Mark washed</button>` : ""}
       ${!pool && !isDirty(code) ? `<button class="btn" data-i="hamper">Put in hamper</button>` : ""}
       ${!pool && it.slot === "socks" ? `<button class="btn ghost" data-i="pool">I own several of these</button>` : ""}
+      ${it.photo && !isCut(it.photo) && it.photo.startsWith("photos/items/") ? `<button class="btn ghost" data-i="recut">Remove background</button>` : ""}
+      ${it.photo_full && isCut(it.photo) && !it.photo.startsWith("tiles/") ? `<button class="btn ghost" data-i="uncut">Use the original photo</button>` : ""}
       <button class="btn ${it.avoid ? "primary" : "ghost"}" data-i="avoid">${it.avoid ? "Put back in rotation" : "Hide from fits"}</button></div>`,
     sh => {
       sh.onclick = e => {
@@ -1867,6 +1876,8 @@ function itemSheet(code) {
           const q = pool + (b.dataset.i === "qty+" ? 1 : -1);   // below 2 it stops being a pool and washes like any piece
           run("setItem", {code, patch:{qty: q < 2 ? 1 : q}}); toast(q < 2 ? "Just one now" : `${q} pairs`); return itemSheet(code);
         }
+        if (b.dataset.i === "recut") return recutItem(code, b);
+        if (b.dataset.i === "uncut") { run("setItem", {code, patch: {photo: it.photo_full, photo_cut: it.photo}}); toast("Showing the original photo"); return itemSheet(code); }
         if (b.dataset.i === "avoid") { run("setItem", {code, patch:{avoid: !it.avoid}}); toast(it.avoid ? "Hidden from fits" : "Back in rotation"); }
         closeSheet();
       };
@@ -1996,18 +2007,51 @@ function openCamera(type, file) {
   });
 }
 
+/* ---------------- cut-outs (cutout.js) ----------------
+   Every new piece gets its background removed on the phone, so friends' closets look like the owner's cut-outs.
+   Free and private: a 4.6 MB model loaded once from this site, cached by the service worker, nothing leaves the phone.
+   The original photo is kept too (`photo_full`), so a better model later can re-cut it. If the cut looks wrong
+   (white tee on a white sheet, say) the person keeps the plain photo with one tap. */
+async function cutBlob(blob, onProgress) {
+  const bmp = await createImageBitmap(blob, {imageOrientation: "from-image"});
+  const k = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(bmp, 0, 0, c.width, c.height);
+  const r = await RailCut.cut(g.getImageData(0, 0, c.width, c.height), onProgress);
+  if (!r.ok) return {ok: false, why: r.why};
+  const src = document.createElement("canvas"); src.width = r.img.width; src.height = r.img.height;
+  src.getContext("2d").putImageData(new ImageData(r.img.data, r.img.width, r.img.height), 0, 0);
+  const out = document.createElement("canvas"); out.width = Math.round(r.img.width * r.scale); out.height = Math.round(r.img.height * r.scale);
+  const og = out.getContext("2d"); og.imageSmoothingQuality = "high"; og.drawImage(src, 0, 0, out.width, out.height);
+  // WebP where the browser can write it (smaller), PNG otherwise (Safari hands back PNG for webp anyway)
+  let b = await new Promise(ok => out.toBlob(ok, "image/webp", .9));
+  if (!b || b.type !== "image/webp") b = await new Promise(ok => out.toBlob(ok, "image/png"));
+  return {ok: true, blob: b, ext: b.type === "image/webp" ? "webp" : "png", url: URL.createObjectURL(b)};
+}
+const cutWarm = () => { try { RailCut.load().catch(() => {}); } catch {} };   // start the one-time download early
+
 function addItemSheet() {
-  const st = {blob:null, url:"", how:""};
+  const st = {blob:null, url:"", how:"", cut:null, useCut:true, cutting:false, pct:0, cutWhy:""};
+  cutWarm();
+  const showUrl = () => st.cut && st.useCut ? st.cut.url : st.url;
+  const cutRow = () => {
+    if (!st.url) return "";
+    if (st.cutting) return `<div class="cutbar"><span class="how">${st.pct > 0 && st.pct < 1 ? "Getting the cut-out tool ready (one time, 4.6 MB)…" : "Cutting out the background…"}</span>${st.pct > 0 && st.pct < 1 ? `<progress max="1" value="${st.pct}"></progress>` : ""}</div>`;
+    if (!st.cut) return st.cutWhy ? `<div class="cutbar"><span class="how warn">Couldn't cut this one out (${esc(st.cutWhy)}). It'll show as a plain photo. A floor that contrasts with the piece helps.</span></div>` : "";
+    return `<div class="cutbar"><button class="chip" data-a="cut-on" aria-pressed="${st.useCut}">Cut out</button><button class="chip" data-a="cut-off" aria-pressed="${!st.useCut}">Keep background</button>
+      <span class="how">${st.useCut ? "Missing a bit, or got some floor? Keep the background instead." : ""}</span></div>`;
+  };
   const paint = sh => {
     const keep = ["a-name", "a-colour", "a-type"].map(id => $("#" + id, sh)?.value);
-    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat on the floor and shoot straight down. Keep a sheet of plain white paper nearby: it fixes the colour.</p>
-      <div class="photo-pick">${st.url ? `<img src="${esc(st.url)}" alt="">` : ""}<button class="btn small${st.url ? "" : " primary"}" data-a="camera">${st.url ? "Retake" : "Take photo"}</button><label class="btn small ghost">Choose photo<input type="file" accept="image/*" id="a-photo" class="sr"></label>
-        ${st.url ? `<span class="how${st.how === "auto" ? " warn" : ""}">${st.how === "auto" ? "Colour is approximate. Retake with white paper in the box to fix it." : "Colour fixed with a white reference."}</span>` : ""}</div>
+    sh.innerHTML = `<div class="grab"></div><h2>Add a piece</h2><p class="lead">Lay it flat on the floor and shoot straight down. Keep a sheet of plain white paper nearby: it fixes the colour. The background comes off on its own.</p>
+      <div class="photo-pick">${st.url ? `<img src="${esc(showUrl())}" alt=""${st.cut && st.useCut ? ` class="cut"` : ""}>` : ""}<button class="btn small${st.url ? "" : " primary"}" data-a="camera">${st.url ? "Retake" : "Take photo"}</button><label class="btn small ghost">Choose photo<input type="file" accept="image/*" id="a-photo" class="sr"></label>
+        ${st.url ? `<span class="how${st.how === "auto" ? " warn" : ""}">${st.how === "auto" ? "Colour is approximate. Retake with white paper in the box to fix it." : "Colour fixed with a white reference."}</span>` : ""}
+        ${cutRow()}</div>
       <label class="f">Name<input id="a-name" placeholder="e.g. Waffle henley"></label>
       <label class="f">Colour<input id="a-colour" placeholder="e.g. oatmeal"></label>
       <label class="f">Type<select id="a-type">${Object.entries(TYPE_LABEL).map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label>
       <p id="a-err" class="err" hidden></p>
-      <div class="sheet-actions"><button class="btn ghost" data-a="cancel">Cancel</button><button class="btn primary" data-a="save">Add to closet</button></div>`;
+      <div class="sheet-actions"><button class="btn ghost" data-a="cancel">Cancel</button><button class="btn primary" data-a="save"${st.cutting ? " disabled" : ""}>Add to closet</button></div>`;
     ["a-name", "a-colour", "a-type"].forEach((id, i) => { if (keep[i] != null) $("#" + id, sh).value = keep[i]; });
   };
   openSheet("", sh => {
@@ -2015,23 +2059,55 @@ function addItemSheet() {
     const take = async (file) => {
       const r = await openCamera($("#a-type", sh).value, file);
       if (!r) return;
-      Object.assign(st, {blob: r.blob, url: r.url, how: r.how}); paint(sh); $("#a-type", sh).value = r.type;
+      const type = r.type;
+      Object.assign(st, {blob: r.blob, url: r.url, how: r.how, cut: null, useCut: true, cutting: true, pct: 0, cutWhy: ""}); paint(sh); $("#a-type", sh).value = type;
+      const mine = st.blob;
+      let last = 0;
+      const res = await cutBlob(r.blob, p => { st.pct = p; if (p - last > .05 || p === 1) { last = p; if (st.blob === mine) { const t = $("#a-type", sh).value; paint(sh); $("#a-type", sh).value = t; } } })
+        .catch(e => ({ok: false, why: navigator.onLine ? "the cut-out tool didn't load" : "offline"}));
+      if (st.blob !== mine) return;             // retaken meanwhile
+      st.cutting = false; st.cut = res.ok ? res : null; st.cutWhy = res.ok ? "" : res.why;
+      const t = $("#a-type", sh).value; paint(sh); $("#a-type", sh).value = t;
     };
     sh.onchange = async e => { if (e.target.id === "a-photo" && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ""; take(f); } };
     sh.onclick = async e => {
       const b = e.target.closest("[data-a]"); if (!b) return;
       if (b.dataset.a === "camera") return take(null);
       if (b.dataset.a === "cancel") return closeSheet();
+      if (b.dataset.a === "cut-on" || b.dataset.a === "cut-off") { const t = $("#a-type", sh).value; st.useCut = b.dataset.a === "cut-on"; paint(sh); $("#a-type", sh).value = t; return; }
+      if (b.dataset.a !== "save" || st.cutting) return;
       const name = $("#a-name", sh).value.trim(), colour = $("#a-colour", sh).value.trim(), type = $("#a-type", sh).value;
       const err = $("#a-err", sh);
       if (!st.blob || !name || !colour) { err.hidden = false; err.textContent = "Add a photo, a name and a colour."; return; }
-      const id = Math.random().toString(36).slice(2, 8), path = `photos/items/${todayStr()}_${id}.jpg`;
-      imgCache.set(path, st.url);
-      run("addItem", {item:{code:null, name, colour, type, slot: TYPES[type], avoid:false, uncalibrated: st.how === "auto", colour_ref: st.how || "auto", photo: path, added: todayStr()},
-        upload:{path, b64: await blobToB64(st.blob)}});
+      const id = Math.random().toString(36).slice(2, 8), full = `photos/items/${todayStr()}_${id}.jpg`;
+      const it = {code:null, name, colour, type, slot: TYPES[type], avoid:false, uncalibrated: st.how === "auto", colour_ref: st.how || "auto", photo: full, added: todayStr()};
+      const uploads = [{path: full, b64: await blobToB64(st.blob)}];
+      imgCache.set(full, st.url);
+      if (st.cut && st.useCut) {
+        const cp = `photos/items/${todayStr()}_${id}.cut.${st.cut.ext}`;
+        it.photo = cp; it.photo_full = full; imgCache.set(cp, st.cut.url);
+        uploads.unshift({path: cp, b64: await blobToB64(st.cut.blob)});
+      }
+      run("addItem", {item: it, uploads});
       closeSheet(); toast(`${name} added. It can show up in tomorrow's fits.`);
     };
   });
+}
+
+/* A piece added before cut-outs (or kept with its background): cut it out now from the stored photo. */
+async function recutItem(code, btn) {
+  const it = item(code), from = it.photo_full || it.photo;
+  if (it.photo_cut) { run("setItem", {code, patch: {photo: it.photo_cut, photo_cut: null}}); toast("Background removed"); return itemSheet(code); }   // cut before, then switched back
+  btn.disabled = true; const label = btn.textContent;
+  try {
+    const blob = from.startsWith("blob:") ? await (await fetch(from)).blob() : await (await fetch(await loadPrivatePhoto(from))).blob();
+    const res = await cutBlob(blob, p => { btn.textContent = p < 1 ? `Getting ready… ${Math.round(p * 100)}%` : "Cutting out…"; });
+    if (!res.ok) { toast(`Couldn't cut this one out (${res.why}).`); btn.disabled = false; btn.textContent = label; return; }
+    const cp = from.replace(/\.jpg$/, "") + `.cut.${res.ext}`;
+    imgCache.set(cp, res.url);
+    run("setItem", {code, patch: {photo: cp, photo_full: from}, uploads: [{path: cp, b64: await blobToB64(res.blob)}]});
+    toast("Background removed"); itemSheet(code);
+  } catch { toast("Couldn't open that photo right now."); btn.disabled = false; btn.textContent = label; }
 }
 
 function tweak(f, plan) {
