@@ -96,7 +96,7 @@ check((await A.page.textContent("#acct-msg")).includes("invite list"), "uninvite
 // 2. The owner signs in (no GitHub token on this phone) and invites them
 const O = await phone("owner@example.com", "o1", "Skyler");
 await O.page.waitForSelector("#fake-google"); await O.page.click("#fake-google");
-await O.page.waitForSelector("text=Your closet is empty");
+await O.page.waitForSelector(".setup");   // a brand-new account (no fits yet) gets the setup card, owner or not
 await O.page.click(".gear, [data-tab=settings]").catch(() => {});
 await O.page.waitForSelector("#inv-email");
 await O.page.fill("#inv-email", "Friend@Example.com"); await O.page.click("[data-act=invite]");
@@ -106,7 +106,7 @@ await O.page.screenshot({ path: path.join(outDir, "2-owner-invites.png"), fullPa
 
 // 3. Now the friend gets in, to an empty closet
 await A.page.click("#fake-google");
-await A.page.waitForSelector("text=Your closet is empty");
+await A.page.waitForSelector(".setup >> text=Add your first piece");
 check(true, "invited friend signs in and lands on an empty closet");
 await A.page.screenshot({ path: path.join(outDir, "3-friend-empty.png") });
 
@@ -135,7 +135,7 @@ check(!ex.files["wardrobe.json"], "owner's closet stays separate");
 // 6. A second phone for the same friend sees the piece
 const A2 = await phone("friend@example.com", "f1", "Fran");
 await A2.page.waitForSelector("#fake-google"); await A2.page.click("#fake-google");
-await A2.page.waitForSelector("text=No looks yet today"); await A2.page.click("nav.tabs [data-tab=closet]");
+await A2.page.waitForSelector(".setup >> text=Add another piece"); await A2.page.click("nav.tabs [data-tab=closet]");
 await A2.page.waitForTimeout(2500); await A2.page.screenshot({ path: path.join(outDir, "4-friend-closet.png") }); await A2.page.waitForSelector("text=Waffle henley", { state: "attached" });
 check(true, "same friend on another phone sees their closet");
 await A2.page.screenshot({ path: path.join(outDir, "4-friend-closet.png") });

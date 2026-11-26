@@ -90,6 +90,23 @@ img{display:block;max-width:100%}
 .filters::-webkit-scrollbar{display:none}
 .chip{min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--surface) 75%,transparent);font-size:13.5px;font-weight:600;white-space:nowrap;color:var(--text);display:inline-flex;align-items:center}
 .chip[aria-pressed=true]{background:var(--text);color:var(--page)}
+.setup{margin-top:22px;padding:24px 20px 20px;border-radius:24px;background:var(--surface);box-shadow:var(--shadow)}
+.setup h3{font-family:var(--display);font-weight:800;font-stretch:62%;text-transform:uppercase;font-size:34px;line-height:.92}
+.setup .lead{color:var(--muted);margin-top:8px}
+.setup ol{list-style:none;margin:18px 0 0;padding:0;counter-reset:st}
+.setup li{position:relative;padding:16px 0 16px 46px;border-top:1px solid var(--line);counter-increment:st}
+.setup li::before{content:counter(st);position:absolute;left:0;top:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  font:600 13px var(--mono);border:1.5px solid var(--line);color:var(--muted)}
+.setup li.done::before{content:"✓";background:var(--text);border-color:var(--text);color:var(--page)}
+.setup li.now::before{border-color:var(--text);color:var(--text)}
+.setup li b{display:block;font-size:17px}
+.setup li p{color:var(--muted);font-size:14.5px;margin-top:4px}
+.setup li.later{opacity:.55}
+.setup .slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.setup .slots span{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:var(--raised);color:var(--muted)}
+.setup .slots span.ok{background:var(--text);color:var(--page)}
+.setup .actions{margin-top:12px}
+.setup .skip{margin-top:6px;font-size:13.5px;color:var(--muted);text-decoration:underline;background:none;padding:8px 0}
 .empty{margin-top:22px;padding:24px 20px;border-radius:24px;background:var(--surface);color:var(--muted);box-shadow:var(--shadow)}
 .empty h3{color:var(--text);font-family:var(--display);font-weight:800;font-stretch:62%;text-transform:uppercase;font-size:30px;line-height:.95;margin-bottom:8px}
 .sect{font-family:var(--display);font-weight:800;font-stretch:64%;text-transform:uppercase;font-size:26px;line-height:1;margin:30px 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -876,7 +893,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="photo.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.26-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.26-b";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1007,6 +1024,7 @@ const OPS = {
   }},
   setItem: {file:"wardrobe.json", apply(w, p) { const it = w.items.find(i => i.code === p.code); if (it) Object.assign(it, p.patch); }},
   setRules: {file:"wardrobe.json", apply(w, p) { w.rules = Object.assign({}, w.rules || {}, p.patch); }},
+  setupDone: {file:"wardrobe.json", apply(w) { w.setup_done = true; }},
 };
 
 // Each person's own fit rules, saved in their wardrobe.json. Nothing saved yet → the owner keeps his original rules
@@ -1015,6 +1033,35 @@ const RULES_OWNER = {cap: "always", labDays: true, church: true};
 const RULES_FRIEND = {cap: "optional", labDays: false, church: false};
 const myRules = () => Object.assign({}, isOwnerUser() ? RULES_OWNER : RULES_FRIEND, S.wardrobe?.rules || {});
 const engineRules = () => { const r = myRules(); return {cap: r.cap, labShortSleeve: !!r.labDays}; };
+// First visit: a 3-step card on Today until the person logs their first fit (or skips it).
+const CORE_SLOTS = [["top", "Tops", 3], ["bottom", "Bottoms", 2], ["shoes", "Shoes", 1], ["socks", "Socks", 1]];
+const slotCount = slot => items().filter(i => i.slot === slot && !i.avoid).length;
+const missingSlots = () => CORE_SLOTS.filter(([k]) => !slotCount(k)).map(([, l]) => l.toLowerCase());
+const inSetup = () => !!S.wardrobe && !S.wardrobe.setup_done && !(S.log?.worn || []).length;
+function rulesSummary() {
+  const r = myRules();
+  return [{always: "a cap on every fit", optional: "caps when they help", never: "no caps"}[r.cap], r.labDays ? "lab days" : "no lab days", r.church ? "church fits" : "no church fits"].join(" · ");
+}
+function setupHtml() {
+  const n = items().length, closetOk = !missingSlots().length, rulesOk = !!S.wardrobe?.rules;
+  const step = !closetOk ? 1 : !rulesOk ? 2 : 3, cls = i => i < step ? "done" : i === step ? "now" : "later";
+  const first = (cfg.me?.name || "").split(" ")[0];
+  return `<section class="setup" aria-label="Set up The Rail"><h3>${first ? `Welcome, ${esc(first)}` : "Welcome to The Rail"}</h3>
+    <p class="lead">Three steps and it starts building fits from your own closet and the weather.</p>
+    <ol>
+      <li class="${closetOk ? "done" : step === 1 ? "now" : ""}"><b>Add your pieces</b>
+        <p>Lay each one flat on the floor with a corner of plain white printer paper in the frame. The paper keeps the colours true. A few tops and two bottoms give it enough to mix.</p>
+        <div class="slots">${CORE_SLOTS.map(([k, l, want]) => { const c = slotCount(k); return `<span class="${c ? "ok" : ""}">${l} ${c}${c < want ? `/${want}` : ""}</span>`; }).join("")}<span class="${slotCount("cap") ? "ok" : ""}">Caps ${slotCount("cap")} · optional</span></div>
+        <div class="actions"><button class="btn ${step === 1 ? "primary" : "ghost"}" data-act="add-item">${n ? "Add another piece" : "Add your first piece"}</button></div></li>
+      <li class="${cls(2)}"><b>Check your fit rules</b>
+        <p>${rulesOk ? "Set: " : "Starting with "}${esc(rulesSummary())}.</p>
+        ${step >= 2 ? `<div class="actions"><button class="btn ${step === 2 ? "primary" : "ghost"}" data-tab="settings">${rulesOk ? "Change rules" : "Check rules"}</button></div>` : ""}</li>
+      <li class="${cls(3)}"><b>Get your first fits</b>
+        <p>${step === 3 ? "Pick one you'd wear and tap Wearing this. That's how it learns your taste." : step === 2 ? "Right after your rules." : "Unlocks once you've added a top, a bottom, shoes and socks."}</p>
+        ${step === 3 ? `<div class="actions"><button class="btn primary" data-act="suggest">Suggest fits</button></div>` : ""}</li>
+    </ol>
+    <button class="skip" data-act="skip-setup">I know my way around, hide this</button></section>`;
+}
 const myOccasions = () => { const r = myRules(); return OCCASIONS.filter(o => (o[0] !== "lab" || r.labDays) && (o[0] !== "church" || r.church)); };
 
 function run(op, payload) {
@@ -1344,6 +1391,7 @@ function viewToday() {
     ${hn ? `<button class="btn small ghost" data-tab="hamper">Open</button><button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
   if (worn.length) out += `<p class="worn-badge" style="margin-top:12px">${ICON.check} Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
   if (!S.log) return out + `<div class="empty"><h3>Loading your closet</h3>Pulling your closet down.</div>`;
+  if (inSetup() && !plan) return out + setupHtml();
   if (!items().length) return out + `<div class="empty"><h3>Your closet is empty</h3>Add a few pieces: a couple of tops, a pair of pants, shoes. Fits show up here once there's enough to mix.
       <div class="actions"><button class="btn primary" data-act="add-item">Add a piece</button></div></div>`;
   if (!plan) {
@@ -1505,7 +1553,8 @@ function rulesHtml() {
   return `<h2 class="sect">Your fit rules</h2><p>Suggest fits follows these. Hide a piece or set how many pairs you own from the piece itself in Closet.</p>
     <p class="rl">Caps</p><div class="filters" role="group" aria-label="Caps">${chip("cap", "always", "Every fit")}${chip("cap", "optional", "When it helps")}${chip("cap", "never", "Never")}</div>
     <p class="rl">Lab days</p>${yn("labDays", "Yes, short sleeves under the coat", "No lab days")}
-    <p class="rl">Church</p>${yn("church", "Show church fits", "Don't")}`;
+    <p class="rl">Church</p>${yn("church", "Show church fits", "Don't")}
+    ${!S.wardrobe?.rules && !isOwnerUser() ? `<div class="actions"><button class="btn primary" data-act="rules-ok">These look right</button></div>` : ""}`;
 }
 let invites = null;   // owner only: {invites, users}, loaded when Settings opens
 function invitesHtml() {
@@ -1740,7 +1789,8 @@ function suggestSheet() {
       const occ = OCCASIONS.find(o => o[0] === st.kind) || OCCASIONS[0];
       const r = RailEngine.suggest({wardrobe: S.wardrobe, log: S.log || {worn: [], planned: []}, laundry: S.laundry || DEFAULTS["laundry.json"]()},
         {today: todayStr(), weather: w, occasion: {kind: st.kind, phase: occ[2]}, n: 3, salt: st.salt, exclude: st.shown, rules: engineRules(), weights: learnedWeights() || undefined});
-      st.problems = r.problems; st.fits = r.fits;
+      const miss = missingSlots();
+      st.problems = miss.length ? ["Add " + miss.join(", ").replace(/, ([^,]*)$/, " and $1") + " to your closet first"] : r.problems; st.fits = miss.length ? [] : r.fits;
     };
     const paint = () => {
       const w = weather(), chip = (a, k, l, on) => `<button class="chip" aria-pressed="${on}" data-s="${a}" data-k="${k}">${l}</button>`;
@@ -1751,7 +1801,7 @@ function suggestSheet() {
         ${st.fits.map((f, i) => lookHtml({n: i + 1, total: st.fits.length, name: f.name, codes: bySlot(f.items), bob: false, noteLabel: "Why this works",
           note: (f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "") + (f.capOptional ? " Cap optional." : ""),
           acts: `<button class="btn primary big" data-s="wear" data-i="${i}">${ICON.check} Wearing this</button>`})).join("")}
-        ${st.problems.length ? `<p class="lead">${esc(st.problems.join(". "))}. Do laundry or unhide something.</p>` : w && !st.fits.length ? `<p class="lead">Nothing fits those rules right now.</p>` : ""}
+        ${st.problems.length ? `<p class="lead">${esc(st.problems.join(". "))}.${missingSlots().length ? "" : " Do laundry or unhide something."}</p>` : w && !st.fits.length ? `<p class="lead">Nothing fits those rules right now.</p>` : ""}
         <div class="sheet-actions"><button class="btn ghost" data-s="close">Close</button><button class="btn" data-s="again" ${st.fits.length ? "" : "disabled"}>Show others</button></div>`;
     };
     const redo = () => { const y = sh.scrollTop; compute(); paint(); sh.scrollTop = y; };
@@ -1762,7 +1812,7 @@ function suggestSheet() {
       const a = b.dataset.s;
       if (a === "close") return closeSheet();
       if (a === "kind") { st.kind = b.dataset.k; st.salt = 0; st.shown = []; return redo(); }
-      if (a === "wx") { st.preset = st.preset === b.dataset.k ? null : b.dataset.k; st.salt = 0; st.shown = []; return redo(); }
+      if (a === "wx") { st.preset = st.preset === b.dataset.k && st.wx ? null : b.dataset.k; /* no forecast to fall back on → keep it */ st.salt = 0; st.shown = []; return redo(); }
       if (a === "rain") { const w = weather(); st.rain = !(w && w.rain >= 50); st.salt = 0; st.shown = []; return redo(); }
       if (a === "again") { st.shown = st.shown.concat(st.fits.map(f => f.items)).slice(-12); st.salt++; return redo(); }
       if (a === "wear") {
@@ -2027,6 +2077,8 @@ document.addEventListener("click", async e => {
   }
   if (act === "month") { diaryOff = Math.max(0, diaryOff + +a.dataset.m); render(); return; }
   if (act === "day") { const el = document.getElementById("e-" + a.dataset.d); if (el) el.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+  if (act === "rules-ok") { run("setRules", {patch: {}}); tab = "today"; render(); scrollTo(0, 0); return toast("Rules saved"); }
+  if (act === "skip-setup") { run("setupDone", {}); return toast("Setup hidden. Suggest fits is on Today."); }
   if (act === "rule") {
     const k = a.dataset.k, v = a.dataset.v === "true" ? true : a.dataset.v === "false" ? false : a.dataset.v;
     return run("setRules", {patch: {[k]: v}});
