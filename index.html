@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#E7E6E2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161615" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E4E1E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,280 +15,300 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/rail-32.png?v=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&family=Anybody:wdth,wght@50..150,500..900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Manrope:wght@400;500;600;700;800&family=Darker+Grotesque:wght@800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* THE RAIL · "Studio" (2026.11.24-b). Every piece is a cut-out photo laid on a photo-studio backdrop.
-   Today's looks are flat lays whose backdrop takes the outfit's own colour (--fc, set per look from its pieces);
-   type is a condensed lookbook face (Anybody), body is Hanken Grotesk, small facts read like a care label (Plex Mono).
-   Fraunces + Manrope still load because the shared suite bar uses them. --sage is the old name for "the accent". */
+/* THE RAIL · "Seamless" (2026.11.27-a). The app is a small photo studio for clothes: every screen is a sheet of
+   cool dove-grey backdrop paper, every piece a cut-out standing on it. The one loud thing is Today: each look gets
+   its own paper sweep (wall curving into floor) dyed by the outfit's colours (--fc). Everything else stays quiet.
+   Type: Darker Grotesque, heavy and lowercase like a streetwear label, for screen titles and look names only;
+   Hanken Grotesk for everything else, in sentence case. Accent is Rail's suite violet.
+   --sage is the old name for "the accent"; --pop marks counts that need doing (hamper). */
 :root{
-  --page:#E7E6E2; --floor:#D9D7D1; --surface:#FBFAF7; --raised:#F0EFEB; --tile-bg:var(--raised);
-  --line:#D6D4CE; --text:#141414; --muted:#5B5A57; --sage:#141414; --sage-ink:#FFFFFF;
-  --pop:#C9442A; --pop-ink:#FFFFFF; --amber:#A8441F; --danger:#A63D40;
-  --shadow:0 1px 2px rgba(20,20,20,.05),0 8px 22px rgba(20,20,20,.07);
-  --drop:drop-shadow(0 12px 12px rgba(20,20,20,.18)) drop-shadow(0 2px 3px rgba(20,20,20,.16));
-  --r-sheet:28px; --fc:#8A8780; --fcmix:70%;
-  --display:"Anybody","Arial Narrow",system-ui,sans-serif; --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --page:#E4E1E8; --floor:#D6D2DC; --surface:#F7F6F9; --raised:#ECEAF0; --tile-bg:var(--raised);
+  --line:#D2CED8; --text:#1D1825; --muted:#655F70; --sage:#3A2A63; --sage-ink:#FFFFFF;
+  --pop:#C2462C; --pop-ink:#FFFFFF; --amber:#A4461F; --danger:#A63D40; --ok:#3E7E58;
+  --shadow:0 1px 1px rgba(29,24,37,.04),0 6px 18px -6px rgba(29,24,37,.14);
+  --drop:drop-shadow(0 10px 10px rgba(29,24,37,.16)) drop-shadow(0 2px 2px rgba(29,24,37,.14));
+  --r-sheet:28px; --fc:#8A8790; --fcmix:62%;
+  --display:"Darker Grotesque","Hanken Grotesk",system-ui,sans-serif; --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:var(--body);
   --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
   color-scheme:light dark;
 }
 @media (prefers-color-scheme:dark){:root{
-  --page:#161615; --floor:#1F1F1D; --surface:#232321; --raised:#2B2A28;
-  --line:#3A3936; --text:#F1F0EC; --muted:#A8A6A0; --sage:#F1F0EC; --sage-ink:#141414;
-  --pop:#F07052; --pop-ink:#1A0E0A; --amber:#F0956F; --danger:#E6735F;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.3);
-  --drop:drop-shadow(0 12px 14px rgba(0,0,0,.5)) drop-shadow(0 2px 3px rgba(0,0,0,.4));
+  --page:#141218; --floor:#1C1921; --surface:#1F1C25; --raised:#28242F;
+  --line:#35303D; --text:#EEEBF3; --muted:#A29CAD; --sage:#B9A6F2; --sage-ink:#1A1426;
+  --pop:#F0805F; --pop-ink:#1F0E08; --amber:#F09A70; --danger:#E6735F; --ok:#7CC69A;
+  --shadow:0 1px 1px rgba(0,0,0,.3),0 8px 22px -8px rgba(0,0,0,.6);
+  --drop:drop-shadow(0 12px 12px rgba(0,0,0,.5)) drop-shadow(0 2px 3px rgba(0,0,0,.4));
 }}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--page);color:var(--text)}
-body{font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100dvh;padding-bottom:calc(104px + var(--safe-b))}
+body{font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;min-height:100dvh;padding-bottom:calc(104px + var(--safe-b));font-feature-settings:"tnum" 0}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0}
-:focus-visible{outline:2px solid var(--text);outline-offset:3px;border-radius:6px}
+:focus-visible{outline:2px solid var(--sage);outline-offset:3px;border-radius:6px}
 img{display:block;max-width:100%}
-.wrap{max-width:760px;margin:0 auto;padding:18px var(--sx-gut,16px) 24px}
-.k{font:500 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.disp{font-family:var(--display);font-weight:850;font-stretch:58%;text-transform:uppercase;line-height:.84;letter-spacing:-.005em}
+.wrap{max-width:760px;margin:0 auto;padding:14px var(--sx-gut,16px) 24px}
+/* small supporting text: plain, muted, sentence case */
+.k{font-size:13px;line-height:1.35;font-weight:500;color:var(--muted)}
+.disp,.ttl{font-family:var(--display);font-weight:800;text-transform:lowercase;line-height:.78;letter-spacing:-.012em}
 
-/* masthead */
-.mast .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.mast h1{font-family:var(--display);font-weight:850;font-stretch:58%;text-transform:uppercase;font-size:clamp(60px,17vw,96px);line-height:.82;margin-top:8px;overflow-wrap:anywhere}
+/* masthead: status + gear on the right, a big lowercase title */
+.mast .row{display:flex;justify-content:flex-end;align-items:center;gap:12px;min-height:40px}
+.mast h1{font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:clamp(64px,19vw,104px);line-height:.72;letter-spacing:-.02em;margin-top:6px;overflow-wrap:anywhere}
 .mast .right{display:flex;align-items:center;gap:10px}
-.mast .sub{color:var(--muted);margin-top:10px;font-size:15px;max-width:60ch}
-.gear{width:40px;height:40px;border-radius:99px;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--text)}
-.gear svg{width:19px;height:19px}
-.sync{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.mast .sub{color:var(--muted);margin-top:14px;font-size:15px;max-width:60ch}
+.gear{width:40px;height:40px;border-radius:99px;display:grid;place-items:center;color:var(--muted)}
+.gear:active{background:var(--raised)}
+.gear svg{width:20px;height:20px}
+.sync{font-size:12.5px;font-weight:500;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.sync:not(:empty)::before{content:"";width:6px;height:6px;border-radius:99px;background:var(--ok)}
 .sync.off{color:var(--amber)}
+.sync.off::before{background:var(--amber)}
 .mast .big{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.mast .big .n{font-family:var(--display);font-weight:850;font-stretch:62%;font-size:clamp(60px,17vw,96px);line-height:.82;color:var(--pop);font-variant-numeric:tabular-nums}
-.wx{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.wx span{font:500 10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:color-mix(in srgb,var(--surface) 72%,transparent)}
+.mast .big .n{font-family:var(--display);font-weight:800;font-size:clamp(64px,19vw,104px);line-height:.72;color:var(--pop);font-variant-numeric:tabular-nums}
+.wx{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.wx span{font-size:13px;font-weight:600;padding:6px 11px;border-radius:99px;background:var(--raised);color:var(--text)}
 
 /* hamper strip on Today */
-.hamper{margin:14px 0 4px;display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;min-height:48px;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);font-size:14.5px}
+.hamper{margin:16px 0 4px;display:flex;align-items:center;gap:8px;padding:5px 5px 5px 16px;min-height:48px;border-radius:99px;background:var(--surface);font-size:14.5px}
 .hamper .grow{flex:1;color:var(--muted);display:flex;align-items:center;gap:8px}
 .hamper .grow b{color:var(--text);font-weight:700}
 .hamper .dotp{width:8px;height:8px;border-radius:99px;background:var(--pop);flex:none}
-.hamper .dotp.ok{background:#3E8E5E}
+.hamper .dotp.ok{background:var(--ok)}
 
 /* buttons, chips */
 .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
 .btn{border-radius:999px;min-height:44px;padding:0 18px;font-weight:600;font-size:15px;line-height:1.1;display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--surface);border:1px solid var(--line);color:var(--text);transition:transform .1s,background .2s}
+  background:var(--surface);border:1px solid var(--line);color:var(--text);transition:transform .12s,background .2s}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--sage);color:var(--sage-ink);border-color:var(--sage)}
 .btn.ghost{background:transparent}
-.btn.small{min-height:36px;padding:0 14px;font-size:13.5px}
+.btn.small{min-height:38px;padding:0 15px;font-size:14px}
 .btn.warn{border-color:var(--amber);color:var(--amber)}
 .btn.big{min-height:56px;font-size:16px;flex:1}
 .btn.round{width:56px;min-height:56px;padding:0;flex:none}
 .btn svg{width:19px;height:19px;flex:none}
 .btn[disabled]{opacity:.5;pointer-events:none}
 .worn-badge{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:15px}
-.filters{display:flex;gap:8px;overflow-x:auto;margin-top:16px;scrollbar-width:none;padding-bottom:2px}
+.filters{display:flex;gap:6px;overflow-x:auto;margin-top:18px;scrollbar-width:none;padding-bottom:2px}
 .filters::-webkit-scrollbar{display:none}
-.chip{min-height:36px;padding:0 14px;border-radius:999px;background:color-mix(in srgb,var(--surface) 75%,transparent);font-size:13.5px;font-weight:600;white-space:nowrap;color:var(--text);display:inline-flex;align-items:center}
-.chip[aria-pressed=true]{background:var(--text);color:var(--page)}
-.setup{margin-top:22px;padding:24px 20px 20px;border-radius:24px;background:var(--surface);box-shadow:var(--shadow)}
-.setup h3{font-family:var(--display);font-weight:800;font-stretch:62%;text-transform:uppercase;font-size:34px;line-height:.92}
-.setup .lead{color:var(--muted);margin-top:8px}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);font-size:14px;font-weight:600;white-space:nowrap;color:var(--text);display:inline-flex;align-items:center}
+.chip[aria-pressed=true]{background:var(--text);color:var(--page);box-shadow:none}
+.setup{margin-top:22px;padding:24px 20px 20px;border-radius:24px;background:var(--surface)}
+.setup h3{font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:44px;line-height:.8;letter-spacing:-.015em}
+.setup .lead{color:var(--muted);margin-top:10px}
 .setup ol{list-style:none;margin:18px 0 0;padding:0;counter-reset:st}
 .setup li{position:relative;padding:16px 0 16px 46px;border-top:1px solid var(--line);counter-increment:st}
 .setup li::before{content:counter(st);position:absolute;left:0;top:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
-  font:600 13px var(--mono);border:1.5px solid var(--line);color:var(--muted)}
-.setup li.done::before{content:"✓";background:var(--text);border-color:var(--text);color:var(--page)}
-.setup li.now::before{border-color:var(--text);color:var(--text)}
+  font:700 13px var(--body);border:1.5px solid var(--line);color:var(--muted)}
+.setup li.done::before{content:"✓";background:var(--sage);border-color:var(--sage);color:var(--sage-ink)}
+.setup li.now::before{border-color:var(--sage);color:var(--sage)}
 .setup li b{display:block;font-size:17px}
 .setup li p{color:var(--muted);font-size:14.5px;margin-top:4px}
 .setup li.later{opacity:.55}
 .setup .slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.setup .slots span{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:999px;background:var(--raised);color:var(--muted)}
-.setup .slots span.ok{background:var(--text);color:var(--page)}
+.setup .slots span{font-size:13px;font-weight:600;line-height:1;padding:8px 11px;border-radius:999px;background:var(--raised);color:var(--muted)}
+.setup .slots span.ok{background:var(--sage);color:var(--sage-ink)}
 .setup .actions{margin-top:12px}
 .setup .skip{margin-top:6px;font-size:13.5px;color:var(--muted);text-decoration:underline;background:none;padding:8px 0}
-.empty{margin-top:22px;padding:24px 20px;border-radius:24px;background:var(--surface);color:var(--muted);box-shadow:var(--shadow)}
-.empty h3{color:var(--text);font-family:var(--display);font-weight:800;font-stretch:62%;text-transform:uppercase;font-size:30px;line-height:.95;margin-bottom:8px}
-.sect{font-family:var(--display);font-weight:800;font-stretch:64%;text-transform:uppercase;font-size:26px;line-height:1;margin:30px 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.sect .k{font-stretch:normal}
+.empty{margin-top:22px;padding:24px 20px;border-radius:24px;background:var(--surface);color:var(--muted)}
+.empty h3{color:var(--text);font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:38px;line-height:.8;letter-spacing:-.015em;margin-bottom:12px}
+.sect{font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:38px;line-height:.8;letter-spacing:-.015em;margin:36px 0 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sect .k{font-family:var(--body);text-transform:none;letter-spacing:0;line-height:1}
 
-/* TODAY: looks carousel. Each look is a studio set tinted by its own outfit. */
-.looks{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:16px calc(-1 * var(--sx-gut,16px)) 0;padding:0 var(--sx-gut,16px) 4px;
+/* TODAY: looks carousel. Each look stands on its own paper sweep, dyed by the outfit. */
+.looks{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:18px calc(-1 * var(--sx-gut,16px)) 0;padding:0 var(--sx-gut,16px) 4px;
   scroll-padding-inline:var(--sx-gut,16px);scrollbar-width:none;overscroll-behavior-x:contain}
 .looks::-webkit-scrollbar{display:none}
-.fit{flex:0 0 calc(100% - 22px);scroll-snap-align:start;position:relative;isolation:isolate;overflow:hidden;border-radius:30px;padding:18px 18px 20px;
-  background:color-mix(in oklab,var(--fc) 10%,var(--page));transition:background .5s}
+.fit{flex:0 0 calc(100% - 26px);scroll-snap-align:start;position:relative;isolation:isolate;overflow:hidden;border-radius:32px;padding:22px 18px 18px;
+  background:linear-gradient(180deg,color-mix(in oklab,var(--fc) 30%,var(--page)) 0%,color-mix(in oklab,var(--fc) 20%,var(--page)) 58%);transition:background .5s}
 .looks .fit:only-child{flex-basis:100%}
-.fit::before{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;z-index:-1;background:color-mix(in oklab,var(--fc) 17%,var(--floor));
-  border-radius:50% 50% 0 0 / 34px 34px 0 0}
-@media (min-width:700px){.fit{flex-basis:calc(50% - 6px)}}
+/* the floor: paper curving forward out of the wall */
+.fit::before{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:52%;z-index:-1;
+  background:linear-gradient(180deg,color-mix(in oklab,var(--fc) 26%,var(--floor)) 0%,color-mix(in oklab,var(--fc) 12%,var(--floor)) 100%);
+  border-radius:50% 50% 0 0 / 70px 70px 0 0;box-shadow:0 -1px 0 color-mix(in oklab,var(--fc) 18%,transparent)}
+@media (prefers-color-scheme:dark){
+  .fit{background:linear-gradient(180deg,color-mix(in oklab,var(--fc) 34%,var(--page)) 0%,color-mix(in oklab,var(--fc) 18%,var(--page)) 58%)}
+  .fit::before{background:linear-gradient(180deg,color-mix(in oklab,var(--fc) 22%,var(--floor)) 0%,color-mix(in oklab,var(--fc) 8%,var(--floor)) 100%)}}
+@media (min-width:700px){.fit{flex-basis:calc(50% - 5px)}}
 .fit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.fit-head h2{font-family:var(--display);font-weight:850;font-stretch:56%;text-transform:uppercase;font-size:clamp(46px,13vw,64px);line-height:.84;letter-spacing:-.005em;
-  color:color-mix(in oklab,var(--fc) var(--fcmix),var(--text));overflow-wrap:anywhere}
-@media (prefers-color-scheme:dark){.fit-head h2{color:color-mix(in oklab,var(--fc) 30%,var(--text))}}
-.fit-head .cnt{text-align:right;flex:none;padding-top:4px}
-.fit-head .cnt b{display:block;font-family:var(--display);font-weight:800;font-stretch:70%;font-size:28px;line-height:1}
-.fit-head .cnt b i{font-style:normal;opacity:.35}
-.when{margin-top:8px}
-.lay{position:relative;width:100%;max-width:460px;aspect-ratio:1/1.02;margin:10px auto 0}
+.fit-head h2{font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:clamp(52px,15vw,72px);line-height:.72;letter-spacing:-.02em;
+  color:color-mix(in oklab,var(--fc) var(--fcmix),var(--text));overflow-wrap:anywhere;padding-bottom:.08em}
+@media (prefers-color-scheme:dark){.fit-head h2{color:color-mix(in oklab,var(--fc) 26%,var(--text))}}
+.fit-head .cnt{flex:none;padding-top:2px;font-size:13px;font-weight:600;color:color-mix(in oklab,var(--fc) 40%,var(--muted));font-variant-numeric:tabular-nums;white-space:nowrap}
+.fit-head .cnt .k{color:inherit;font-size:inherit;font-weight:inherit}
+.fit-head .cnt b{font-weight:inherit}
+.fit-head .cnt b i{font-style:normal}
+.when{margin-top:10px;color:color-mix(in oklab,var(--fc) 40%,var(--muted))}
+.lay{position:relative;width:100%;max-width:460px;aspect-ratio:1/1.02;margin:12px auto 0}
 .piece.lp{position:absolute;padding:0;transform:rotate(var(--r,0deg));transition:transform .45s cubic-bezier(.2,.8,.2,1)}
 .lp img{width:100%;height:auto;filter:var(--drop)}
 .lp img.raw{aspect-ratio:4/5;object-fit:cover;border-radius:12px}
 .lp:active{transform:rotate(var(--r,0deg)) scale(.97)}
 .lp.dirty img{opacity:.5}
-.lp .tg{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%) rotate(calc(-1 * var(--r,0deg)));font:500 9px var(--mono);letter-spacing:.08em;
-  background:var(--text);color:var(--page);border-radius:5px;padding:3px 6px;white-space:nowrap}
+.lp .tg{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%) rotate(calc(-1 * var(--r,0deg)));font-size:11px;font-weight:700;
+  background:var(--pop);color:var(--pop-ink);border-radius:99px;padding:3px 8px;white-space:nowrap}
 @keyframes rail-bob{0%,100%{translate:0 0}50%{translate:0 -4px}}
 .lay.bob .lp.on img{animation:rail-bob 4.6s ease-in-out var(--d,0s) infinite}
 @media (prefers-reduced-motion:reduce){.lay.bob .lp img{animation:none}}
-.legend{font-size:12.5px;line-height:1.45;color:var(--muted);margin-top:8px;text-align:center}
-/* the styling note, printed on a hang tag */
-.swing{position:relative;margin:14px 2px 0;padding:14px 16px 14px 40px;background:var(--surface);border-radius:8px 14px 14px 8px;box-shadow:var(--shadow);
+.legend{font-size:13px;line-height:1.45;color:color-mix(in oklab,var(--fc) 30%,var(--muted));margin:10px auto 0;text-align:center;max-width:34ch}
+/* the styling note, written on a hang tag */
+.swing{position:relative;margin:16px 2px 0;padding:14px 16px 15px 42px;background:var(--surface);border-radius:8px 16px 16px 8px;
   clip-path:polygon(16px 0,100% 0,100% 100%,16px 100%,0 calc(100% - 14px),0 14px)}
-.swing::before{content:"";position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:99px;background:color-mix(in oklab,var(--fc) 10%,var(--page));box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
-.swing .k{margin-bottom:4px}
-.swing p{font-size:14px;line-height:1.42;color:var(--text)}
+.swing::before{content:"";position:absolute;left:15px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:99px;background:color-mix(in oklab,var(--fc) 22%,var(--page));box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.swing .k{margin-bottom:3px;font-weight:700;color:var(--text)}
+.swing p{font-size:14.5px;line-height:1.45;color:var(--text)}
 .fit .actions{margin-top:14px;flex-wrap:nowrap}
-.fit .btn.round{background:color-mix(in srgb,var(--surface) 80%,transparent);border:0}
-.dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
-.dots button{width:8px;height:8px;border-radius:99px;background:color-mix(in srgb,var(--text) 22%,transparent);transition:width .3s,background .3s;padding:0}
-.dots button[aria-current=true]{width:26px;background:var(--text)}
+.fit .btn.big.primary{background:var(--text);border-color:var(--text);color:var(--page)}
+.fit .btn.round{background:color-mix(in srgb,var(--surface) 82%,transparent);border:0}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:16px}
+.dots button{width:7px;height:7px;border-radius:99px;background:color-mix(in srgb,var(--text) 20%,transparent);transition:width .3s,background .3s;padding:0}
+.dots button[aria-current=true]{width:24px;background:var(--text)}
 .more{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:22px}
 
-/* tiles (Closet, Diary, sheets): the cut-out on a soft swatch of its own colour */
+/* tiles (Closet, Diary, sheets): the cut-out stands straight on the page, with its own soft shadow, no box */
 .piece{position:relative}
 .tile{min-width:0}
-.tile .ph{position:relative;aspect-ratio:1/1.05;border-radius:18px;background:color-mix(in oklab,var(--fc) 14%,var(--raised));display:grid;place-items:center;overflow:hidden}
-.tile .ph img{width:80%;height:80%;object-fit:contain;filter:var(--drop);transition:transform .3s}
-.tile .ph img.raw{width:100%;height:100%;object-fit:cover;filter:none}
-.tile:hover .ph img{transform:translateY(-3px)}
-.tile .nm{font-size:12.5px;line-height:1.2;margin-top:7px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.tile .cl{font:500 9.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.tile .ph{position:relative;aspect-ratio:1/1.08;display:grid;place-items:center}
+.tile .ph::after{content:"";position:absolute;left:18%;right:18%;bottom:5%;height:9%;border-radius:50%;z-index:-1;
+  background:radial-gradient(closest-side,color-mix(in oklab,var(--fc) 30%,rgba(29,24,37,.22)),transparent)}
+.tile .ph{isolation:isolate}
+.tile .ph img{width:88%;height:88%;object-fit:contain;filter:var(--drop);transition:transform .3s}
+.tile .ph img.raw{width:100%;height:100%;object-fit:cover;filter:none;border-radius:18px}
+.tile .ph:has(img.raw)::after{display:none}
+@media (hover:hover){.tile:hover .ph img{transform:translateY(-3px)}}
+.tile .nm{font-size:13.5px;line-height:1.2;margin-top:6px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .cl{font-size:12.5px;line-height:1.3;color:var(--muted);margin-top:2px}
 .tile.dirty .ph img{opacity:.45}
 .tile.dirty .cl{color:var(--amber)}
-.tile .hp{position:absolute;left:8px;bottom:8px;font:500 9px var(--mono);letter-spacing:.08em;background:var(--text);color:var(--page);border-radius:5px;padding:3px 6px}
+.tile .hp{position:absolute;left:4px;bottom:4px;font-size:11px;font-weight:700;background:var(--pop);color:var(--pop-ink);border-radius:99px;padding:3px 8px}
 .tile.hidden-item .ph img{filter:grayscale(1);opacity:.4}
-.piece .qty{position:absolute;top:8px;right:8px;z-index:2;min-width:26px;padding:3px 8px;border-radius:999px;background:var(--surface);color:var(--text);
-  font:500 11px/1.2 var(--mono);text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.piece .qty{position:absolute;top:6px;right:6px;z-index:2;min-width:28px;padding:3px 8px;border-radius:999px;background:var(--surface);color:var(--text);
+  font-size:12px;font-weight:700;line-height:1.2;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.16);font-variant-numeric:tabular-nums}
 .piece .qty.low{background:var(--pop);color:var(--pop-ink)}
 .lp .qty{top:-6px;right:-10px}
 .piece button.hit{position:absolute;inset:0;z-index:3}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:16px 10px;margin-top:18px}
-.rail{display:flex;gap:10px;overflow-x:auto;margin:0 calc(-1 * var(--sx-gut,16px));padding:4px var(--sx-gut,16px) 8px;scrollbar-width:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:18px 12px;margin-top:20px}
+.rail{display:flex;gap:12px;overflow-x:auto;margin:0 calc(-1 * var(--sx-gut,16px));padding:4px var(--sx-gut,16px) 8px;scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
 .rail .piece{flex:0 0 100px}
 .stepper{display:flex;align-items:center;gap:12px;margin-top:10px}
 .stepper b{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
 
-/* closet colour bar */
-.cbar{display:flex;height:16px;border-radius:99px;overflow:hidden;gap:2px;margin-top:16px}
-.cbar button{min-width:6px;padding:0;transition:opacity .2s}
-.cbar.sel button:not([aria-pressed=true]){opacity:.3}
-.cbar-k{display:flex;justify-content:space-between;margin-top:6px;gap:10px}
-.fab{position:fixed;right:calc(var(--sx-gut,16px) + 4px);bottom:calc(98px + var(--safe-b));z-index:19;width:60px;height:60px;border-radius:99px;background:var(--pop);color:var(--pop-ink);
-  display:grid;place-items:center;box-shadow:0 12px 26px color-mix(in srgb,var(--pop) 45%,transparent)}
-.fab svg{width:24px;height:24px}
+/* closet colour bar: the closet as a run of fabric swatches */
+.cbar{display:flex;height:28px;border-radius:8px;overflow:hidden;gap:2px;margin-top:20px}
+.cbar button{min-width:6px;padding:0;transition:opacity .2s,flex-grow .3s}
+.cbar.sel button:not([aria-pressed=true]){opacity:.25}
+.cbar-k{display:flex;justify-content:space-between;margin-top:8px;gap:10px}
+.fab{position:fixed;right:calc(var(--sx-gut,16px) + 4px);bottom:calc(96px + var(--safe-b));z-index:19;height:56px;padding:0 20px 0 16px;border-radius:99px;background:var(--sage);color:var(--sage-ink);
+  display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;box-shadow:0 10px 24px -6px color-mix(in srgb,var(--sage) 60%,transparent)}
+.fab::after{content:"Add a piece"}
+.fab svg{width:22px;height:22px}
 
 /* hamper */
-.pile{position:relative;height:250px;margin:6px calc(-1 * var(--sx-gut,16px)) 0}
+.pile{position:relative;height:250px;margin:10px calc(-1 * var(--sx-gut,16px)) 0}
 .pile img{position:absolute;filter:var(--drop)}
 .pile .none{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:15px}
-.alert{margin-top:6px;padding:16px;border-radius:20px;background:var(--text);color:var(--page);display:flex;gap:12px;align-items:flex-start}
-.alert svg{width:22px;height:22px;flex:none;color:#F3B06B;margin-top:1px}
+.alert{margin-top:6px;padding:16px;border-radius:20px;background:color-mix(in oklab,var(--pop) 12%,var(--surface));color:var(--text);display:flex;gap:12px;align-items:flex-start}
+.alert svg{width:22px;height:22px;flex:none;color:var(--pop);margin-top:1px}
 .alert b{display:block;font-size:15px}
-.alert span{font-size:13.5px;line-height:1.4;opacity:.8}
-.loads{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-.load{background:var(--surface);border-radius:20px;padding:14px 14px 14px 16px;box-shadow:var(--shadow)}
+.alert span{font-size:13.5px;line-height:1.4;color:var(--muted)}
+.loads{display:flex;flex-direction:column;gap:0;margin-top:14px;border-top:1px solid var(--line)}
+.load{padding:14px 0;border-bottom:1px solid var(--line)}
 .load .top{display:flex;align-items:center;gap:12px}
-.load .sw{width:30px;height:30px;border-radius:9px;flex:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 14%,transparent)}
+.load .sw{width:30px;height:30px;border-radius:8px;flex:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 14%,transparent)}
 .load .t{flex:1;min-width:0}
-.load .t b{display:block;font-size:15px}
-.load p{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.load .t b{display:block;font-size:16px}
+.load p{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.45}
 .foot{text-align:center;margin-top:12px}
 
 /* diary */
 .cal-nav{display:flex;gap:6px}
-.cal-nav button{width:40px;height:40px;border-radius:99px;background:color-mix(in srgb,var(--surface) 70%,transparent);display:grid;place-items:center}
+.cal-nav button{width:40px;height:40px;border-radius:99px;box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center}
 .cal-nav button[disabled]{opacity:.35;pointer-events:none}
 .cal-nav svg{width:18px;height:18px}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:16px}
-.cal .wd{text-align:center;font:500 10px var(--mono);color:var(--muted);padding-bottom:2px}
-.cal .d{position:relative;aspect-ratio:1/1.04;border-radius:12px;background:color-mix(in srgb,var(--surface) 45%,transparent);display:grid;place-items:center;overflow:hidden;padding:0}
-.cal .d.has{background:color-mix(in oklab,var(--fc) 16%,var(--raised))}
-.cal .d img{width:74%;height:74%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2))}
-.cal .d i{position:absolute;left:5px;top:3px;font:500 9px var(--mono);font-style:normal;color:var(--muted)}
-.cal .d.today{box-shadow:inset 0 0 0 2px var(--text)}
-.cal .d.fut{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 12%,transparent)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:16px}
+.cal .wd{text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding-bottom:4px}
+.cal .d{position:relative;aspect-ratio:1/1.08;border-radius:10px;background:color-mix(in srgb,var(--surface) 55%,transparent);display:grid;place-items:center;overflow:hidden;padding:0}
+.cal .d.has{background:color-mix(in oklab,var(--fc) 22%,var(--raised))}
+.cal .d img{width:76%;height:76%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2))}
+.cal .d i{position:absolute;left:5px;top:3px;font-size:10px;font-weight:600;font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal .d.today{box-shadow:inset 0 0 0 2px var(--sage)}
+.cal .d.fut{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 10%,transparent)}
 .cal .d.pad{visibility:hidden}
 .repeat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .repeat .cl{text-align:center}
-.nudge{margin-top:18px;width:100%;text-align:left;padding:12px 14px;border-radius:20px;background:var(--surface);display:flex;align-items:center;gap:14px;box-shadow:var(--shadow)}
-.nudge .ph{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.nudge{margin-top:18px;width:100%;text-align:left;padding:12px 14px;border-radius:20px;background:var(--surface);display:flex;align-items:center;gap:14px}
+.nudge .ph{width:56px;height:56px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 18%,var(--raised))}
 .nudge .ph img{width:44px;height:44px;object-fit:contain}
-.nudge b{display:block;font-size:14.5px;line-height:1.3}
-.nudge span{font-size:13px;color:var(--muted)}
+.nudge b{display:block;font-size:15px;line-height:1.3}
+.nudge span{font-size:13.5px;color:var(--muted)}
 .nudge svg{width:18px;height:18px;flex:none;margin-left:auto}
-.entry{padding:16px 0;border-bottom:1px solid var(--line);scroll-margin-top:90px}
+.entry{padding:18px 0;border-bottom:1px solid var(--line);scroll-margin-top:90px}
 .entry .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.entry h3{font-size:16px;font-weight:700}
+.entry h3{font-size:17px;font-weight:700}
 .entry .d{white-space:nowrap}
 .entry .strip{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
-.entry .strip .sw{width:60px;height:66px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
-.entry .strip .sw img{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
+.entry .strip .sw{width:60px;height:66px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 18%,var(--raised))}
+.entry .strip .sw img{width:82%;height:82%;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
 .entry .strip .selfie{width:66px;height:88px;object-fit:cover;border-radius:12px;margin-right:4px}
-.entry .fb{font-size:14px;margin-top:8px}
+.entry .fb{font-size:14.5px;margin-top:8px}
 .entry .fb.b{color:var(--amber)}
-.mini-list{margin-top:8px;color:var(--muted);font-size:14px;line-height:1.5}
+.mini-list{margin-top:8px;color:var(--muted);font-size:14.5px;line-height:1.5}
 
-/* tab bar: a floating pill */
+/* tab bar: a floating pill in Rail violet */
 nav.tabs{position:fixed;left:0;right:0;bottom:calc(14px + var(--safe-b));z-index:20;display:flex;justify-content:center;padding:0 var(--sx-gut,16px);pointer-events:none}
-nav.tabs .in{display:flex;max-width:440px;width:100%;height:64px;border-radius:99px;background:#141414;padding:0 8px;pointer-events:auto;
-  box-shadow:0 14px 34px rgba(0,0,0,.28)}
-@media (prefers-color-scheme:dark){nav.tabs .in{background:#2E2D2B;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.06)}}
-nav.tabs button{flex:1;position:relative;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:color .2s}
+nav.tabs .in{display:flex;max-width:420px;width:100%;height:62px;border-radius:99px;background:#2A1F48;padding:0 6px;pointer-events:auto;
+  box-shadow:0 14px 30px -8px rgba(42,31,72,.55)}
+@media (prefers-color-scheme:dark){nav.tabs .in{background:#2B2438;box-shadow:0 14px 30px -6px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.06)}}
+nav.tabs button{flex:1;position:relative;font-size:11px;font-weight:600;color:rgba(236,232,245,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:color .2s}
 nav.tabs button[aria-current=page]{color:#fff}
+nav.tabs button[aria-current=page]::after{content:"";position:absolute;bottom:7px;width:4px;height:4px;border-radius:99px;background:#B9A6F2}
 nav.tabs svg{width:22px;height:22px}
-nav.tabs .bdg{position:absolute;top:7px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--pop);color:var(--pop-ink);font:700 10px/18px var(--body)}
+nav.tabs .bdg{position:absolute;top:8px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--pop);color:#fff;font:700 10.5px/18px var(--body);font-variant-numeric:tabular-nums}
 nav.tabs .bdg:empty{display:none}
 
 /* bottom sheet */
-.scrim{position:fixed;inset:0;background:rgba(10,10,10,.42);z-index:80;opacity:0;transition:opacity .2s}
+.scrim{position:fixed;inset:0;background:rgba(20,16,28,.42);z-index:80;opacity:0;transition:opacity .2s}
 .scrim.on{opacity:1}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:81;max-height:92dvh;overflow:auto;background:var(--surface);
   border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding:10px 20px calc(20px + var(--safe-b));box-shadow:0 -14px 44px -18px rgba(0,0,0,.45);
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto;overscroll-behavior:contain}
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto;overscroll-behavior:contain}
 .sheet.on{transform:none}
 .sheet .fit{flex:none;margin-top:16px}
-.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px;touch-action:none}
-.sheet h2{font-family:var(--display);font-weight:850;font-stretch:60%;text-transform:uppercase;font-size:40px;line-height:.9}
-.sheet .lead{color:var(--muted);font-size:14px;margin-top:6px}
-.sheet .filters .chip:not([aria-pressed=true]){background:var(--raised)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 16px;touch-action:none}
+.sheet h2{font-family:var(--display);font-weight:800;text-transform:lowercase;font-size:50px;line-height:.74;letter-spacing:-.018em;padding-bottom:.06em}
+.sheet .lead{color:var(--muted);font-size:14.5px;margin-top:10px}
+.sheet .filters .chip:not([aria-pressed=true]){background:transparent}
 @media (prefers-reduced-motion:reduce){.sheet,.scrim{transition:none}}
 .rows{margin-top:14px}
 .prow{display:flex;align-items:center;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
 .prow:last-child{border-bottom:1px solid var(--line)}
-.prow .th{width:58px;height:58px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
-.prow .th img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
+.prow .th{width:58px;height:58px;border-radius:14px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 18%,var(--raised))}
+.prow .th img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
 .prow .th img.raw{width:58px;height:58px;object-fit:cover;border-radius:14px;filter:none}
 .prow .t{flex:1;min-width:0}
 .prow .t b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prow .t span{font:500 10.5px/1.35 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:block;margin-top:2px}
+.prow .t span{font-size:13px;line-height:1.35;color:var(--muted);display:block;margin-top:1px}
 .prow .t .warn{color:var(--amber)}
-label.f{display:block;margin-top:14px;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+label.f{display:block;margin-top:16px;font-size:14px;font-weight:600;color:var(--text)}
 label.f input,label.f textarea,label.f select{display:block;width:100%;margin-top:6px;background:var(--raised);border:1px solid transparent;
-  border-radius:14px;padding:12px 14px;font:400 16px var(--body);letter-spacing:0;text-transform:none;color:var(--text)}
-label.f input:focus,label.f textarea:focus,label.f select:focus{outline:none;border-color:var(--text)}
+  border-radius:14px;padding:12px 14px;font:400 16px var(--body);color:var(--text)}
+label.f input:focus,label.f textarea:focus,label.f select:focus{outline:none;border-color:var(--sage)}
 label.f textarea{min-height:60px;resize:vertical}
 .photo-pick{margin-top:14px;display:flex;gap:12px;align-items:center}
 .photo-pick img{width:72px;height:96px;object-fit:cover;border-radius:12px}
 .photo-pick{flex-wrap:wrap}
-.photo-pick .how{flex-basis:100%;font-size:13px;color:var(--muted)}
+.photo-pick .how{flex-basis:100%;font-size:13.5px;color:var(--muted)}
 .photo-pick .how.warn{color:var(--amber)}
-.photo-pick img.cut{width:112px;height:132px;object-fit:contain;background:radial-gradient(120% 90% at 50% 35%,var(--surface),var(--floor));filter:var(--drop);padding:4px}
+.photo-pick img.cut{width:112px;height:132px;object-fit:contain;background:linear-gradient(180deg,var(--raised) 55%,var(--floor));filter:var(--drop);padding:6px}
 .cutbar{flex-basis:100%;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cutbar .how{flex-basis:auto}
-.cutbar .chip:not([aria-pressed=true]){background:var(--raised)}
-.cutbar progress{width:120px;height:6px;accent-color:var(--text)}
+.cutbar .chip:not([aria-pressed=true]){background:transparent}
+.cutbar progress{width:120px;height:6px;accent-color:var(--sage)}
+/* ---- add-a-piece camera (always dark, like a camera app) ---- */
 /* ---- add-a-piece camera ---- */
 .cam{position:fixed;inset:0;z-index:150;background:#0E0E0D;color:#F3F1EC;display:flex;flex-direction:column;align-items:center;
   padding:calc(10px + var(--safe-t)) 14px calc(14px + var(--safe-b));gap:10px;touch-action:manipulation}
@@ -323,16 +343,16 @@ label.f textarea{min-height:60px;resize:vertical}
 .cam-use{height:54px;padding:0 26px;border-radius:27px;border:0;background:#F3F1EC;color:#111;font:inherit;font-size:16px;font-weight:800;cursor:pointer}
 .picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px 8px;margin-top:14px}
 .picker button{text-align:left;position:relative}
-.picker .sw{aspect-ratio:1/1.05;border-radius:14px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
-.picker .sw img{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 4px 4px rgba(0,0,0,.18))}
+.picker .sw{aspect-ratio:1/1.05;border-radius:14px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 18%,var(--raised))}
+.picker .sw img{width:82%;height:82%;object-fit:contain;filter:drop-shadow(0 4px 4px rgba(0,0,0,.18))}
 .picker .sw img.raw{width:100%;height:100%;object-fit:cover;border-radius:14px;filter:none}
-.picker span:not(.sw){display:block;font-size:12px;margin-top:5px;line-height:1.2}
-.picker .sel .sw{box-shadow:inset 0 0 0 2.5px var(--text)}
-.picker .sel::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--text);color:var(--page);font-size:13px;font-weight:700;display:grid;place-items:center}
+.picker span:not(.sw){display:block;font-size:12.5px;margin-top:5px;line-height:1.2}
+.picker .sel .sw{box-shadow:inset 0 0 0 2.5px var(--sage)}
+.picker .sel::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--sage);color:var(--sage-ink);font-size:13px;font-weight:700;display:grid;place-items:center}
 .picker .dirty .sw img{opacity:.45}
 .picker .dirty span{color:var(--amber)}
 .picked{display:flex;gap:8px;overflow-x:auto;margin-top:14px;padding:6px 0 4px;min-height:84px;align-items:flex-start}
-.picked button{flex:0 0 auto;position:relative;width:62px;height:66px;border-radius:12px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.picked button{flex:0 0 auto;position:relative;width:62px;height:66px;border-radius:12px;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 18%,var(--raised))}
 .picked img{width:80%;height:80%;object-fit:contain}
 .picked img.raw{width:100%;height:100%;object-fit:cover;border-radius:12px}
 .picked button::after{content:"✕";position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--text);color:var(--surface);font-size:10px;display:grid;place-items:center}
@@ -342,17 +362,18 @@ label.f textarea{min-height:60px;resize:vertical}
 .sheet-actions{display:flex;gap:10px;margin-top:20px;position:sticky;bottom:calc(-20px - var(--safe-b));background:var(--surface);padding:12px 0 calc(8px + var(--safe-b))}
 .sheet-actions .btn{flex:1;min-height:54px}
 .item-hero{display:flex;gap:16px;align-items:center}
-.item-hero .ph{width:120px;height:132px;border-radius:20px;flex:none;display:grid;place-items:center;background:color-mix(in oklab,var(--fc) 14%,var(--raised))}
+.item-hero .ph{width:124px;height:140px;border-radius:22px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(180deg,color-mix(in oklab,var(--fc) 26%,var(--page)) 55%,color-mix(in oklab,var(--fc) 16%,var(--floor)))}
 .item-hero .ph img{width:84%;height:84%;object-fit:contain;filter:var(--drop)}
-.item-hero .ph img.raw{width:100%;height:100%;object-fit:cover;border-radius:20px;filter:none}
-.item-hero h2{font-size:34px}
+.item-hero .ph img.raw{width:100%;height:100%;object-fit:cover;border-radius:22px;filter:none}
+.item-hero h2{font-size:46px}
 
 .toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:90;background:var(--text);color:var(--page);padding:11px 18px;border-radius:999px;
   font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.on{opacity:1}
 .err{color:var(--danger);font-size:14px;margin-top:10px}
 .settings p{color:var(--muted);font-size:15px;margin-top:10px;max-width:60ch}
-.settings .rl{margin-top:16px;margin-bottom:6px;font-weight:700;color:var(--text);font-size:14px}
+.settings .rl{margin-top:18px;margin-bottom:8px;font-weight:700;color:var(--text);font-size:14.5px}
 .settings .filters{flex-wrap:wrap}
 .settings code{background:var(--raised);padding:1px 5px;border-radius:4px;font-size:14px}
 .ver{color:var(--muted);font-size:13px;margin-top:28px}
@@ -899,7 +920,7 @@ label.f textarea{min-height:60px;resize:vertical}
 <script src="cutout.js"></script>
 <script>
 "use strict";
-const VERSION = "2026.11.26-d";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
+const VERSION = "2026.11.27-a";   // date-based: YYYY.MM.DD-letter (a, b, c… for same-day releases). Keep sw.js in step.
 const SLOTS = [["layer","Layers"],["top","Tops"],["bottom","Bottoms"],["shoes","Shoes"],["socks","Socks"],["cap","Caps"]];
 const TYPES = {tee:"top",collared:"top",crewneck:"top",hoodie:"top",knit:"top",outerwear:"layer",
   trousers:"bottom",joggers:"bottom",shorts:"bottom",shoes:"shoes",socks:"socks",cap:"cap"};
@@ -1046,7 +1067,7 @@ const missingSlots = () => CORE_SLOTS.filter(([k]) => !slotCount(k)).map(([, l])
 const inSetup = () => !isOwnerUser() && !!S.wardrobe && !S.wardrobe.setup_done && !(S.log?.worn || []).length;
 function rulesSummary() {
   const r = myRules();
-  return [{always: "a cap on every fit", optional: "caps when they help", never: "no caps"}[r.cap], r.labDays ? "lab days" : "no lab days", r.church ? "church fits" : "no church fits"].join(" · ");
+  return [{always: "a cap on every fit", optional: "caps when they help", never: "no caps"}[r.cap], r.labDays ? "lab days" : "no lab days", r.church ? "church fits" : "no church fits"].join(", ");
 }
 function setupHtml() {
   const n = items().length, closetOk = !missingSlots().length, rulesOk = !!S.wardrobe?.rules;
@@ -1057,7 +1078,7 @@ function setupHtml() {
     <ol>
       <li class="${closetOk ? "done" : step === 1 ? "now" : ""}"><b>Add your pieces</b>
         <p>Lay each one flat on the floor with a corner of plain white printer paper in the frame. The paper keeps the colours true. A few tops and two bottoms give it enough to mix.</p>
-        <div class="slots">${CORE_SLOTS.map(([k, l, want]) => { const c = slotCount(k); return `<span class="${c ? "ok" : ""}">${l} ${c}${c < want ? `/${want}` : ""}</span>`; }).join("")}<span class="${slotCount("cap") ? "ok" : ""}">Caps ${slotCount("cap")} · optional</span></div>
+        <div class="slots">${CORE_SLOTS.map(([k, l, want]) => { const c = slotCount(k); return `<span class="${c ? "ok" : ""}">${l} ${c}${c < want ? `/${want}` : ""}</span>`; }).join("")}<span class="${slotCount("cap") ? "ok" : ""}">Caps ${slotCount("cap")}, optional</span></div>
         <div class="actions"><button class="btn ${step === 1 ? "primary" : "ghost"}" data-act="add-item">${n ? "Add another piece" : "Add your first piece"}</button></div></li>
       <li class="${cls(2)}"><b>Check your fit rules</b>
         <p>${rulesOk ? "Set: " : "Starting with "}${esc(rulesSummary())}.</p>
@@ -1184,7 +1205,7 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.ad
 function setSync() {
   const el = $("#sync"); if (!el) return;
   el.className = "sync" + (!online || queue.length ? " off" : "");
-  el.textContent = syncing ? "Syncing…" : !online ? `Offline · ${queue.length} to sync` : queue.length ? `${queue.length} to sync` : S.synced ? "Synced" : "";
+  el.textContent = syncing ? "Syncing…" : !online ? `Offline, ${queue.length} to sync` : queue.length ? `${queue.length} to sync` : S.synced ? "Synced" : "";
 }
 let sheetClosing = 0;   // a sheet opened while the last one is still sliding away must not be wiped by its timer
 function openSheet(html, onMount) {
@@ -1287,8 +1308,8 @@ function pieceHtml(code, {extra = ""} = {}) {
   if (!it) return `<div class="piece tile"><div class="ph"></div><div class="nm">Unknown piece</div></div>`;
   const dirty = isDirty(code), pool = poolSize(code), clean = pool ? pairsClean(code) : 0;
   return `<div class="piece tile${dirty ? " dirty" : ""}${it.avoid ? " hidden-item" : ""}" data-sx-key="${esc(code)}" style="--fc:${fcOf(code)}">${extra}${qtyHtml(code)}
-    <div class="ph">${img(it.photo, it.name, rawCls(it.photo))}${dirty && !pool ? `<span class="hp">HAMPER</span>` : ""}</div>
-    <div class="nm">${esc(it.name)}</div><div class="cl">${pool ? `${clean} of ${pool} pairs clean` : dirty ? "In the hamper" : esc(it.colour)}${it.avoid ? " · hidden" : ""}</div></div>`;
+    <div class="ph">${img(it.photo, it.name, rawCls(it.photo))}${dirty && !pool ? `<span class="hp">In hamper</span>` : ""}</div>
+    <div class="nm">${esc(it.name)}</div><div class="cl">${pool ? `${clean} of ${pool} pairs clean` : dirty ? "In the hamper" : esc(it.colour)}${it.avoid ? ", hidden" : ""}</div></div>`;
 }
 
 /* A flat lay: pieces placed like a styled product shot. Outer layer in front, what's under it peeking out,
@@ -1310,13 +1331,13 @@ function layHtml(codes, {bob = true} = {}) {
   return `<div class="lay${bob ? " bob" : ""}">${placed.map(([c, p], i) => {
     const it = item(c), dirty = isDirty(c), pool = poolSize(c);
     return `<button class="piece lp${dirty ? " dirty" : ""}" data-sx-key="${esc(c)}" data-act="item" data-code="${esc(c)}" aria-label="${esc(it.name)}"
-      style="left:${p.l}%;top:${p.t}%;width:${p.w}%;z-index:${p.z};--r:${p.r}deg;--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${img(it.photo, "", rawCls(it.photo))}${qtyHtml(c)}${dirty && !pool ? `<span class="tg">HAMPER</span>` : ""}</button>`;
-  }).join("")}</div><p class="legend">${bySlot(known).map(c => esc(item(c).name)).join(" · ")}</p>`;
+      style="left:${p.l}%;top:${p.t}%;width:${p.w}%;z-index:${p.z};--r:${p.r}deg;--d:${BOB_DELAYS[i % BOB_DELAYS.length]}s">${img(it.photo, "", rawCls(it.photo))}${qtyHtml(c)}${dirty && !pool ? `<span class="tg">In hamper</span>` : ""}</button>`;
+  }).join("")}</div><p class="legend">${bySlot(known).map(c => esc(item(c).name)).join(", ")}</p>`;
 }
 // One look on its studio set. Shared by Today and Suggest fits.
 function lookHtml({n, total, name, when, note, noteLabel = "Styling note", codes, acts, bob = true}) {
   return `<article class="fit" style="${fcStyle(codes)}"><div class="fit-head"><h2>${esc(name)}</h2>
-      ${total ? `<div class="cnt"><span class="k">Look</span><b>${n}<i>/${total}</i></b></div>` : ""}</div>
+      ${total ? `<div class="cnt"><b>${n}<i> of ${total}</i></b></div>` : ""}</div>
     ${when ? `<p class="k when">${esc(when)}</p>` : ""}
     ${layHtml(codes, {bob})}
     ${note ? `<div class="swing"><p class="k">${esc(noteLabel)}</p><p>${esc(note)}</p></div>` : ""}
@@ -1376,8 +1397,8 @@ function goLook(i) {
   document.querySelectorAll(".dots button").forEach((b, k) => b.setAttribute("aria-current", String(k === i)));
 }
 
-function mast(kicker, title, {sub = "", count = null} = {}) {
-  return `<header class="mast"><div class="row"><span class="k">${esc(kicker)}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+function mast(kicker, title, {sub = "", count = null} = {}) {   // kicker kept in the signature; the title carries the screen now
+  return `<header class="mast"><div class="row"><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
     <div class="big"><h1>${esc(title)}</h1>${count != null ? `<span class="n">${count}</span>` : ""}</div>${sub ? `<p class="sub">${esc(sub)}</p>` : ""}</header>`;
 }
 function wxChips(sub) {   // "Provo: 50°F high / 32°F low · sunny · Chem 11" → PROVO 50° / 32° · SUNNY · CHEM 11
@@ -1390,10 +1411,10 @@ function wxChips(sub) {   // "Provo: 50°F high / 32°F low · sunny · Chem 11"
 
 function viewToday() {
   const d = new Date(), plan = todayPlan(), worn = wornOn(todayStr());
-  const date = d.toLocaleDateString("en-US", {weekday:"short"}) + " · " + d.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+  const day = d.toLocaleDateString("en-US", {weekday:"long"}), date = d.toLocaleDateString("en-US", {month:"long", day:"numeric"});
   const hn = hamperCount();
-  let out = `<header class="mast"><div class="row"><span class="k">${esc(date)}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
-    ${plan ? wxChips(plan.subtitle) : ""}</header>`;
+  let out = `<header class="mast"><div class="row"><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+    <h1>${esc(day)}</h1><p class="sub">${esc(date)}</p>${plan ? wxChips(plan.subtitle) : ""}</header>`;
   out += `<div class="hamper"><span class="grow"><span class="dotp${hn ? "" : " ok"}" aria-hidden="true"></span>${hn ? `<span><b>${hn}</b> in the hamper</span>` : "Hamper's empty"}</span>
     ${hn ? `<button class="btn small ghost" data-tab="hamper">Open</button><button class="btn small" data-act="laundry">Did laundry</button>` : ""}</div>`;
   if (worn.length) out += `<p class="worn-badge" style="margin-top:12px">${ICON.check} Logged today: ${worn.map(w => esc(w.name)).join(", ")}</p>`;
@@ -1409,7 +1430,7 @@ function viewToday() {
   const total = plan.fits.length;
   out += `<div class="looks" id="looks">${plan.fits.map(f => {
     const isWorn = worn.some(w => w.from_plan === `${plan.date}#${f.n}`);
-    const acts = (isWorn ? `<button class="btn big" data-act="wear" data-n="${f.n}">${ICON.check} Logged · Edit</button>`
+    const acts = (isWorn ? `<button class="btn big" data-act="wear" data-n="${f.n}">${ICON.check} Logged, edit</button>`
       : `<button class="btn primary big" data-act="wear" data-n="${f.n}">${ICON.check} Wearing this</button>`)
       + (isOwnerUser() ? `<button class="btn round" data-act="tweak" data-n="${f.n}" aria-label="Tweak in Claude" title="Tweak in Claude">${ICON.pen}</button>` : "");
     return lookHtml({n: f.n, total, name: f.name, when: f.when, note: f.note, codes: f.items, acts});
@@ -1433,9 +1454,9 @@ function viewCloset() {
   const named = groups.slice(0, 3).map(g => g.name);
   const chips = [["all", `All ${all.length}`], ...SLOTS, ["hamper", `Hamper ${hl.length}`]];
   return mast("Your", "Closet", {count: null}) +
-    `<p class="k" style="margin-top:8px">${all.filter(i => !i.avoid).length} pieces in rotation · ${hl.length} in the hamper</p>
+    `<p class="sub" style="color:var(--muted);margin-top:14px">${all.filter(i => !i.avoid).length} pieces in rotation, ${hl.length} in the hamper</p>
     <div class="cbar${byC ? " sel" : ""}" role="group" aria-label="Filter by colour">${groups.map(g => `<button data-filter="${g.hex}" aria-pressed="${closetFilter === g.hex}"
-      aria-label="${esc(g.name)}: ${g.n}" title="${esc(g.name)} · ${g.n}" style="flex:${g.n};background:${g.hex}${lum(g.hex) > .75 ? ";box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)" : ""}"></button>`).join("")}</div>
+      aria-label="${esc(g.name)}: ${g.n}" title="${esc(g.name)}: ${g.n}" style="flex:${g.n};background:${g.hex}${lum(g.hex) > .75 ? ";box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)" : ""}"></button>`).join("")}</div>
     <div class="cbar-k"><span class="k">${byC ? `Showing ${esc(colourOf(list[0]?.colour).name)}` : `Mostly ${esc(named.slice(0, -1).join(", "))}${named.length > 1 ? " + " : ""}${esc(named[named.length - 1] || "")}`}</span><span class="k">${groups.length} colours</span></div>
     <div class="filters" role="group" aria-label="Filter">${chips.map(([k, l]) => `<button class="chip" aria-pressed="${closetFilter === k}" data-filter="${k}">${esc(l)}</button>`).join("")}</div>
     <div class="grid">${list.map(i => pieceHtml(i.code, {extra:`<button class="hit" data-act="item" data-code="${i.code}" aria-label="${esc(i.name)}"></button>`})).join("") || `<p class="mini-list">Nothing here.</p>`}</div>
@@ -1474,7 +1495,7 @@ function viewHamper() {
     ${alert ? `<div class="alert">${ICON.clock}<div><b>${esc(alert[0])}</b><span>${esc(alert[1])}</span></div></div>` : ""}
     <div class="loads">${loads}</div>
     ${hn ? `<div class="actions"><button class="btn primary big" data-act="laundry" data-label="Did all the laundry">Did all the laundry</button></div>` : ""}
-    <p class="k foot">${clean} clean${since != null ? ` · last full wash ${since === 0 ? "today" : since === 1 ? "yesterday" : since + " days ago"}` : ""}</p>`;
+    <p class="k foot">${clean} clean${since != null ? `, last full wash ${since === 0 ? "today" : since === 1 ? "yesterday" : since + " days ago"}` : ""}</p>`;
 }
 
 /* ---------------- diary ---------------- */
@@ -1504,8 +1525,8 @@ function viewWorn() {
   const pickIdle = idle.length ? idle[Math.floor(Date.now() / 864e5) % idle.length] : null;
   const monthName = base.toLocaleDateString("en-US", {month:"long"});
   const seen = new Set();
-  let out = `<header class="mast"><div class="row"><span class="k">Diary · ${y}</span><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
-    <div class="big"><h1>${esc(monthName)}</h1><div style="text-align:right;padding-bottom:4px"><span class="n" style="font-size:44px;color:var(--text)">${inMonth.length}</span><p class="k">fits logged</p></div></div></header>
+  let out = `<header class="mast"><div class="row"><div class="right"><span id="sync" class="sync"></span>${GEAR}</div></div>
+    <div class="big"><h1>${esc(monthName)}</h1><div style="text-align:right;padding-bottom:4px"><span class="n" style="font-size:56px;color:var(--text)">${inMonth.length}</span><p class="k">fits logged</p></div></div><p class="sub">${y}</p></header>
     <div class="actions" style="justify-content:space-between"><button class="btn small" data-act="log-own">${ICON.plus} Log a fit</button>
       <div class="cal-nav"><button data-act="month" data-m="1" aria-label="Previous month" ${ym <= earliest ? "disabled" : ""}>${ICON.prev}</button><button data-act="month" data-m="-1" aria-label="Next month" ${diaryOff ? "" : "disabled"}>${ICON.next}</button></div></div>
     <div class="cal">${cells}</div>`;
@@ -1523,7 +1544,7 @@ function viewWorn() {
     ${x.worked ? `<p class="fb g">+ ${esc(x.worked)}</p>` : ""}${x.didnt ? `<p class="fb b">− ${esc(x.didnt)}</p>` : ""}
     ${(x.uncatalogued || []).length ? `<p class="mini-list">Also: ${x.uncatalogued.map(u => esc(u.name)).join(", ")}</p>` : ""}</div>`;
   }).join("");
-  if (idle.length > 1) out += `<h2 class="sect">Not worn in 30 days <span class="k">${idle.length}</span></h2><p class="mini-list">${idle.map(i => esc(i.name)).join(" · ")}</p>`;
+  if (idle.length > 1) out += `<h2 class="sect">Not worn in 30 days <span class="k">${idle.length}</span></h2><p class="mini-list">${idle.map(i => esc(i.name)).join(", ")}</p>`;
   return out;
 }
 
@@ -1533,7 +1554,7 @@ function viewSettings() {
   const ownerOnToken = !!me && !isAccount();
   let acct = "";
   if (me) {
-    acct = `<h2 class="sect">Account</h2><p>Signed in as <b>${esc(me.name)}</b> · ${esc(me.email)}${ownerOnToken ? ". Your closet still syncs through your GitHub token below." : ""}</p>
+    acct = `<h2 class="sect">Account</h2><p>Signed in as <b>${esc(me.name)}</b> (${esc(me.email)})${ownerOnToken ? ". Your closet still syncs through your GitHub token below." : ""}</p>
       <div class="actions">${ownerOnToken ? "" : `<button class="btn ghost" data-act="export">Download my data</button>`}<button class="btn ghost" data-act="signout">Sign out</button></div>
       ${me.owner ? invitesHtml() : ""}
       ${ownerOnToken ? "" : `<details class="zap"><summary>Delete my account</summary><p>This removes your closet, fit log, hamper and photos from The Rail for good. Download your data first if you want a copy.</p>
@@ -1552,7 +1573,7 @@ function viewSettings() {
     <div class="actions"><button class="btn primary" data-act="save-cfg">Save and connect</button>${configured() ? `<button class="btn ghost" data-act="resync">Sync now</button>` : ""}</div>
     <p id="cfg-msg" class="err" hidden></p></details>` : ""}
     ${S.synced && configured() ? `<p>Last synced ${new Date(S.synced).toLocaleString()}.${queue.length ? ` ${queue.length} change(s) waiting.` : ""}</p>` : ""}
-    <p class="ver">The Rail ${VERSION} · <a href="https://github.com/Frostie4Life9/the-rail/tree/v1-archive" style="color:inherit">old version (v1)</a></p></div>`;
+    <p class="ver">The Rail ${VERSION}. <a href="https://github.com/Frostie4Life9/the-rail/tree/v1-archive" style="color:inherit">old version (v1)</a></p></div>`;
 }
 function rulesHtml() {
   const r = myRules(), chip = (k, v, l) => `<button class="chip" aria-pressed="${r[k] === v}" data-act="rule" data-k="${k}" data-v="${v}">${l}</button>`;
@@ -1633,12 +1654,12 @@ function download(name, text) {
 function wearNote(c, logged) {
   const it = item(c); if (!it) return {t: "", warn: false};
   const pool = poolSize(c);
-  if (pool) return {t: `${it.colour} · ${pairsClean(c)} of ${pool} pairs clean`, warn: false};
-  if (isDirty(c) && !logged) return {t: `${it.colour} · in the hamper`, warn: true};
+  if (pool) return {t: `${it.colour}, ${pairsClean(c)} of ${pool} pairs clean`, warn: false};
+  if (isDirty(c) && !logged) return {t: `${it.colour}, in the hamper`, warn: true};
   const lim = (S.laundry?.wash_after || {})[it.type] || 0;
   if (!lim) return {t: it.colour, warn: false};
   const left = lim - wearsSinceWash(c) - (logged ? 0 : 1);
-  return {t: `${it.colour} · ${left <= 0 ? "hamper after this" : `${left} more wear${left === 1 ? "" : "s"} before a wash`}`, warn: left <= 0};
+  return {t: `${it.colour}, ${left <= 0 ? "hamper after this" : `${left} more wear${left === 1 ? "" : "s"} before a wash`}`, warn: left <= 0};
 }
 function wearSheet({date, name, when, items: codes, n, weather, kind}) {
   const existing = wornOn(date).find(w => n ? w.from_plan === `${date}#${n}` : w.name === name);
@@ -1736,7 +1757,7 @@ function buildFit(start = {}) {
         <div class="filters">${[["all", "All"], ...SLOTS].map(([k, l]) => `<button class="chip" aria-pressed="${st.f === k}" data-b="f" data-k="${k}">${l}</button>`).join("")}</div>
         <div class="picker">${list.map(i => `<button data-b="pick" data-code="${i.code}" aria-pressed="${st.sel.includes(i.code)}" class="${st.sel.includes(i.code) ? "sel" : ""} ${isDirty(i.code) ? "dirty" : ""}"><span class="sw" style="--fc:${fcOf(i.code)}">${img(i.photo, "", rawCls(i.photo))}</span><span>${esc(i.name)}${isDirty(i.code) ? " · hamper" : ""}</span></button>`).join("")}</div>
         <div class="sheet-actions"><button class="btn ghost" data-b="cancel">Cancel</button>
-          <button class="btn primary" data-b="next" ${st.sel.length ? "" : "disabled"}>Next${st.sel.length ? ` · ${st.sel.length}` : ""}</button></div>`;
+          <button class="btn primary" data-b="next" ${st.sel.length ? "" : "disabled"}>Next${st.sel.length ? ` (${st.sel.length})` : ""}</button></div>`;
     };
     const keepScroll = fn => { const y = sh.scrollTop, px = $(".picked", sh)?.scrollLeft || 0; fn(); paint(); sh.scrollTop = y; const pk = $(".picked", sh); if (pk) pk.scrollLeft = px; };
     paint();
@@ -1801,12 +1822,12 @@ function suggestSheet() {
     };
     const paint = () => {
       const w = weather(), chip = (a, k, l, on) => `<button class="chip" aria-pressed="${on}" data-s="${a}" data-k="${k}">${l}</button>`;
-      const line = w ? `${Math.round(w.lo)}–${Math.round(w.hi)}°F${w.rain >= 50 ? " · rain" : ""}${w.snow ? " · snow" : ""}${st.preset ? "" : ` · ${st.src}`}` : "Checking the forecast…";
+      const line = w ? `${Math.round(w.lo)}–${Math.round(w.hi)}°F${w.rain >= 50 ? ", rain" : ""}${w.snow ? ", snow" : ""}${st.preset ? "" : `, ${st.src}`}` : "Checking the forecast…";
       sh.innerHTML = `<div class="grab"></div><h2>Suggest fits</h2><p class="lead">${esc(line)}. Built from your closet, your hamper and what you've worn lately.</p>
         <div class="filters" role="group" aria-label="Occasion">${myOccasions().map(([k, l]) => chip("kind", k, l, st.kind === k)).join("")}</div>
         <div class="filters" role="group" aria-label="Weather">${Object.keys(WX_PRESETS).map(k => chip("wx", k, k[0].toUpperCase() + k.slice(1), st.preset === k)).join("")}${chip("rain", "", "Rain", !!(w && w.rain >= 50))}</div>
         ${st.fits.map((f, i) => lookHtml({n: i + 1, total: st.fits.length, name: f.name, codes: bySlot(f.items), bob: false, noteLabel: "Why this works",
-          note: (f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(" · ") + "." : "") + (f.capOptional ? " Cap optional." : ""),
+          note: (f.why.length ? f.why.map((x, j) => j ? x : x[0].toUpperCase() + x.slice(1)).join(". ") + "." : "") + (f.capOptional ? " Cap optional." : ""),
           acts: `<button class="btn primary big" data-s="wear" data-i="${i}">${ICON.check} Wearing this</button>`})).join("")}
         ${st.problems.length ? `<p class="lead">${esc(st.problems.join(". "))}.${missingSlots().length ? "" : " Do laundry or unhide something."}</p>` : w && !st.fits.length ? `<p class="lead">Nothing fits those rules right now.</p>` : ""}
         <div class="sheet-actions"><button class="btn ghost" data-s="close">Close</button><button class="btn" data-s="again" ${st.fits.length ? "" : "disabled"}>Show others</button></div>`;
@@ -1854,9 +1875,9 @@ function itemSheet(code) {
   const lim = (S.laundry?.wash_after || {})[it.type] || 0, w = wearsSinceWash(code);
   const pool = poolSize(code), used = pool ? pairsUsed(code) : 0;
   openSheet(`<div class="item-hero"><span class="ph" style="--fc:${fcOf(code)}">${img(it.photo, it.name, rawCls(it.photo))}</span><div><h2>${esc(it.name)}</h2>
-      <p class="lead">${esc(it.colour)} · ${esc(TYPE_LABEL[it.type] || it.type)}</p>
+      <p class="lead">${esc(it.colour)}, ${esc((TYPE_LABEL[it.type] || it.type).toLowerCase())}</p>
       <p class="lead">Worn ${worn.length} time${worn.length === 1 ? "" : "s"}${worn[0] ? `, last ${new Date(worn[0].date + "T12:00").toLocaleDateString("en-US", {month:"short", day:"numeric"})}` : ""}.</p>
-      ${pool ? `<p class="lead"><b>${pool - used}</b> of ${pool} pairs clean${used ? ` · ${used} in the hamper` : ""}.</p>
+      ${pool ? `<p class="lead"><b>${pool - used}</b> of ${pool} pairs clean${used ? `, ${used} in the hamper` : ""}.</p>
         <div class="stepper"><span class="lead" style="margin:0">Pairs owned</span><button class="btn small ghost" data-i="qty-" aria-label="${pool <= 2 ? "Just one pair" : "One fewer pair"}">−</button><b>${pool}</b><button class="btn small ghost" data-i="qty+" aria-label="One more pair">+</button></div>`
       : manualDirty(code) ? `<p class="lead">In the hamper (you put it there).</p>`
         : lim ? `<p class="lead">${isDirty(code) ? `In the hamper after ${w} wear${w === 1 ? "" : "s"}.` : `${w} of ${lim} wears before the hamper.`}</p>` : ""}</div></div>

@@ -82,7 +82,7 @@ await page.click("[data-s=close]"); await page.waitForTimeout(400);
 for (const s of ["top", "top", "bottom", "bottom", "shoes", "socks", "cap"]) await F.add(s);
 await page.waitForSelector(".setup li.now >> text=Check your fit rules");
 check(await page.isVisible(".setup li.done >> text=Add your pieces"), "closet step ticks off once top/bottom/shoes/socks are in");
-check(await page.isVisible("text=Starting with caps when they help · no lab days · no church fits"), "shows the friend's starting rules");
+check(await page.isVisible("text=Starting with caps when they help, no lab days, no church fits"), "shows the friend's starting rules");
 await F.shot("2-rules-step");
 
 await page.click(".setup [data-tab=settings]");

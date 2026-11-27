@@ -41,12 +41,15 @@ for (const scheme of ["light", "dark"]) {
   await page.route("https://fonts.googleapis.com/**", r => {
     if (!fontDir) return r.fulfill({ status: 200, body: "", contentType: "text/css" });
     const face = (fam, file, extra = "") => `@font-face{font-family:"${fam}";src:url(https://fonts.gstatic.com/${file});${extra}}`;
-    r.fulfill({ status: 200, contentType: "text/css", body: face("Anybody", "Anybody.ttf", "font-weight:100 900;font-stretch:50% 150%") +
-      face("Hanken Grotesk", "HankenGrotesk.ttf", "font-weight:100 900") + face("IBM Plex Mono", "IBMPlexMono.ttf.ttf", "font-weight:400 500") + face("Manrope", "Manrope.ttf", "font-weight:200 800") });
+    // any font files present in fonts-dir (.ttf / .woff / .woff2) are served under the families the app asks for
+    r.fulfill({ status: 200, contentType: "text/css", body: face("Darker Grotesque", "DarkerGrotesque-800.woff2", "font-weight:800") +
+      face("Hanken Grotesk", "HankenGrotesk-400.woff2", "font-weight:400") + face("Hanken Grotesk", "HankenGrotesk-500.woff2", "font-weight:500") +
+      face("Hanken Grotesk", "HankenGrotesk-600.woff2", "font-weight:600") + face("Hanken Grotesk", "HankenGrotesk-700.woff2", "font-weight:700") +
+      face("Manrope", "Manrope.ttf", "font-weight:200 800") + face("Fraunces", "Fraunces.ttf", "font-weight:100 900") });
   });
   await page.route("https://fonts.gstatic.com/**", r => {
     const f = fontDir && path.join(fontDir, path.basename(new URL(r.request().url()).pathname));
-    return f && fs.existsSync(f) ? r.fulfill({ status: 200, body: fs.readFileSync(f), contentType: "font/ttf" }) : r.abort();
+    return f && fs.existsSync(f) ? r.fulfill({ status: 200, body: fs.readFileSync(f), contentType: "font/woff2" }) : r.abort();
   });
   await page.route("https://api.open-meteo.com/**", r => r.abort());
   await page.route("https://api.github.com/**", async route => {
@@ -69,7 +72,7 @@ for (const scheme of ["light", "dark"]) {
   check(await page.locator(".looks .fit").count() === plan.fits.length, tag + "one look per planned fit");
   const lay = await page.$$eval(".looks .fit", els => els.map(e => e.querySelectorAll(".lay .lp").length));
   check(lay.every((n, i) => n === plan.fits[i].items.filter(c => W.some(w => w.code === c)).length), tag + "every piece is on its flat lay " + lay);
-  const fc = await page.$$eval(".looks .fit", els => els.map(e => getComputedStyle(e).backgroundColor));
+  const fc = await page.$$eval(".looks .fit", els => els.map(e => getComputedStyle(e).backgroundImage));
   check(new Set(fc).size > 1 || fc.length === 1, tag + "each look gets its own backdrop " + fc.join(" | "));
   const txt = await page.innerText("#view");
   check(!W.some(i => new RegExp(`\\b${i.code}\\b`).test(txt)), tag + "no item numbers on Today");
